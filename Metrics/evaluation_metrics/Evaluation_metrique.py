@@ -24,15 +24,6 @@ def confusion_matrix(y_true, y_pred, classes=None):
     
     return matrix
 
-# Exemple d'utilisation
-y_true = [0, 1, 1, 0, 1, 0, 1, 1]
-y_pred = [0, 1, 0, 0, 1, 1, 1, 1]
-
-cm = confusion_matrix(y_true, y_pred)
-print("Matrice de confusion:")
-for true_class in cm:
-    print(true_class, cm[true_class])
-####
 
 def accuracy(y_true, y_pred):
     """
@@ -48,9 +39,6 @@ def accuracy(y_true, y_pred):
     correct = sum(1 for true, pred in zip(y_true, y_pred) if true == pred)
     return correct / len(y_true)
 
-# Exemple d'utilisation
-acc = accuracy(y_true, y_pred)
-print(f"Accuracy: {acc:.2f}")
 
 
 def precision(y_true, y_pred, positive_class=1):
