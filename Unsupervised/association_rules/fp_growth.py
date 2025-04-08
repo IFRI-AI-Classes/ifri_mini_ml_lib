@@ -25,13 +25,6 @@ class FPNode:
         """Incrémente le compteur du nœud."""
         self.count += count
 
-    def display(self, indent=0):
-        """Affiche le nœud et ses enfants de manière récursive."""
-        if self.item is not None:
-            print("  " * indent + f"{self.item}: {self.count}")
-        for child in self.children.values():
-            child.display(indent + 1)
-
 
 class FPGrowth:
     """
