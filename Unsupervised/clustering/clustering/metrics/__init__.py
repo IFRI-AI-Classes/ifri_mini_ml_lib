@@ -1,0 +1,1 @@
+from .inertia import calculate_inertia
