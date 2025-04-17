@@ -1,48 +1,61 @@
 import numpy as np
-from utils.utils import euclidean_distance  # Importez la fonction euclidean_distance
+from utils.utils import euclidean_distance  # Import function euclidean_distance
 
 class DBSCAN:
     """
-    Implémentation de l'algorithme DBSCAN pour le clustering.
-    """
+    DBSCAN (Density-Based Spatial Clustering of Applications with Noise) Class.
+
+    DBSCAN is a clustering algorithm that identifies clusters based on the density of points in a given space. It works by grouping together nearby points (defined by an epsilon radius and a minimum number of points) and identifying points labeled as "noise" that do not belong to any cluster.
+
+    The algorithm is particularly effective for arbitrary-shaped clusters and is robust to noise and outliers.
+
+    Attributes:
+   - epsilon (float): The radius of the neighborhood around a point.
+   - min_samples (int): The minimum number of points required for a group to be considered a cluster.
+   - labels_ (array): Assigns a label to each data point, with -1 representing noise points.
+
+   Methods:
+   - fit(X): Applies the DBSCAN algorithm on a dataset X.
+   - _expand_cluster(X, labels, point_idx, cluster_id): Expands a cluster starting from a given point.
+   """
 
     def __init__(self, eps=0.5, min_samples=5):
         """
-        Initialise les paramètres de DBSCAN.
+        Initializes the DBSCAN parameters.
 
         Args:
-            eps (float): Le rayon maximal pour considérer deux points comme voisins.
-            min_samples (int): Le nombre minimal de points pour former un cluster.
+        eps (float): The maximum radius to consider two points as neighbors.
+        min_samples (int): The minimum number of points to form a cluster.
         """
         self.eps = eps
         self.min_samples = min_samples
-        self.labels = None  # Étiquettes des clusters
+        self.labels = None  # Cluster labels
 
     def fit_predict(self, data):
         """
-        Effectue le clustering DBSCAN sur les données fournies.
+        Performs DBSCAN clustering on the provided data.
 
         Args:
-            data (numpy.ndarray): Les données à clusteriser (n_samples, n_features).
+        data (numpy.ndarray): The data to cluster (n_samples, n_features).
 
         Returns:
-            numpy.ndarray: Les étiquettes de cluster pour chaque point (-1 pour le bruit).
+        numpy.ndarray: The cluster labels for each point (-1 for noise).
         """
-        self.labels = np.full(len(data), -1)  # Initialise tous les points comme bruit
+        self.labels = np.full(len(data), -1)  # Initialize all points as noise
         cluster_id = 0
 
         for i in range(len(data)):
             if self.labels[i] != -1:
-                continue  # Point déjà visité
+                continue  # Point already visited
 
-            # Trouve les voisins du point courant
+            # Find the neighbors of the current point
             neighbors = self._region_query(data, i)
 
             if len(neighbors) < self.min_samples:
-                # Pas un point central, reste bruit
+                # Not a central point, remains noise
                 continue
 
-            # Nouveau cluster
+            # New cluster
             self._expand_cluster(data, i, cluster_id, neighbors)
             cluster_id += 1
 
@@ -50,14 +63,14 @@ class DBSCAN:
 
     def _region_query(self, data, point_index):
         """
-        Trouve les voisins d'un point dans un rayon donné.
+        Finds the neighbors of a point within a given radius.
 
         Args:
-            data (numpy.ndarray): Les données.
-            point_index (int): L'index du point.
+        data (numpy.ndarray): The data.
+        point_index (int): The point index.
 
         Returns:
-            list: Les indices des voisins.
+        list: The neighbor indices.
         """
         neighbors = []
         for i in range(len(data)):
@@ -67,25 +80,25 @@ class DBSCAN:
 
     def _expand_cluster(self, data, point_index, cluster_id, neighbors):
         """
-        Étend un cluster à partir d'un point central.
+        Extends a cluster from a center point.
 
         Args:
-            data (numpy.ndarray): Les données.
-            point_index (int): L'index du point central.
-            cluster_id (int): L'ID du cluster courant.
-            neighbors (list): Les indices des voisins du point central.
+        data (numpy.ndarray): The data.
+        point_index (int): The index of the center point.
+        cluster_id (int): The ID of the current cluster.
+        neighbors (list): The indices of the center point's neighbors.
         """
         self.labels[point_index] = cluster_id
         i = 0
         while i < len(neighbors):
             neighbor_index = neighbors[i]
             if self.labels[neighbor_index] == -1:
-                # Visite le voisin
+                # Go to neighor
                 self.labels[neighbor_index] = cluster_id
 
-                # Trouve les voisins du voisin
+                # Find neighors to neighor
                 new_neighbors = self._region_query(data, neighbor_index)
                 if len(new_neighbors) >= self.min_samples:
-                    # Ajoute les nouveaux voisins à la liste des voisins à visiter
+                    # Adds new neighbors to the list of neighbors to visit
                     neighbors += new_neighbors
             i += 1
