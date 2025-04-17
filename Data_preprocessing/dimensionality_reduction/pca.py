@@ -19,7 +19,8 @@ class ACP:
     def __init__(self, n_component: int):
        
         """
-        Initializes the PCA model.
+        Description:
+            Initializes the PCA model.
 
         Args:
             n_component (int): Number of principal components to keep
@@ -40,7 +41,8 @@ class ACP:
     def fit(self, X: np.ndarray) -> 'ACP':
 
         """
-        Model training (calculation of statistics and components).
+        Description:
+            Model training (calculation of statistics and components).
 
         Args:
             X (np.ndarray): 2D data matrix (shape: [n_samples, n_features])
@@ -78,7 +80,8 @@ class ACP:
     def transform(self, X: np.ndarray) -> np.ndarray:
 
         """
-        Projection of data into the reduced space.
+        Description:
+            Projection of data into the reduced space.
 
         Args:
             X (np.ndarray): Data to transform (shape: [n_samples, n_features])
@@ -99,7 +102,8 @@ class ACP:
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
 
         """
-        One-step learning + projection.
+        Description:
+            One-step learning + projection.
 
         Args:
             X (np.ndarray): Input data
@@ -118,7 +122,8 @@ class ACP:
     def plot_cov_matrix(self) -> None:
         
         """
-        Displays the covariance matrix with annotations.
+        Description:
+            Displays the covariance matrix with annotations.
 
         Example:
             >>> model.plot_cov_matrix()
@@ -139,7 +144,8 @@ class ACP:
     def explained_variances(self) -> np.ndarray:        
 
         """
-        Returns the sorted eigenvalues.
+        Description:
+            Returns the sorted eigenvalues.
 
         Returns:
             np.ndarray: Vector of eigenvalues
@@ -153,7 +159,8 @@ class ACP:
     def explained_variances_ratio(self) -> np.ndarray:     
 
         """
-        Calculates the ratio of variance explained by component.
+        Description:
+            Calculates the ratio of variance explained by component.
 
         Returns:
             np.ndarray: Vector of ratios (sum to 1)
@@ -167,7 +174,8 @@ class ACP:
     def plot_cumulative_explained_variance_ratio(self) -> None:
        
         """
-        Displays the cumulative explained variance ratio plot.
+        Description:
+            Displays the cumulative explained variance ratio plot.
 
         Example:
             >>> model.plot_cumulative_explained_variance_ratio()
