@@ -2,12 +2,46 @@ import numpy as np
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt 
-# sys.path.append('../utils')
 from utils.utils import euclidean_distance
 
 class KMeans:
+    """
+    KMeans Class: Custom implementation of the K-Means unsupervised clustering algorithm.
+
+    Definition:
+    ------------
+    K-Means is an unsupervised learning algorithm that groups data into k clusters by minimizing 
+    intra-cluster distances. It iteratively assigns points to the nearest centroid and updates 
+    the centroids based on the current assignments.
+
+    Constructor Arguments:
+    -----------------------
+    - n_clusters (int): Number of clusters (k) to form.
+    - max_iter (int): Maximum number of iterations for the algorithm.
+    - tol (float): Tolerance to declare convergence (based on centroid shifts).
+    - init (str): Initialization method for centroids ('random' or 'k-means++').
+    - random_state (int): Seed value for reproducibility.
+
+    Main Methods:
+    --------------
+    - _initialize_centroids(X): Initializes centroids based on the chosen method.
+    - fit(X): Trains the KMeans model on dataset X.
+    - predict(X): Predicts the cluster index for each sample in X.
+    - fit_predict(X): Combines fit() and predict(), returns cluster labels.
+    - plot_clusters(X): Displays the clusters in 2D space (only if X has 2 features).
+    """
     def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, init='random', random_state=None):
-        """Implémentation de l'algorithme k-means."""
+        """
+        Initializes the KMeans clustering model with specified parameters.
+
+        Parameters:
+        -------------
+        - n_clusters (int): Number of clusters to form. Default is 3.
+        - max_iter (int): Maximum number of iterations allowed for convergence. Default is 300.
+        - tol (float): Tolerance value used to check convergence based on centroid movement. Default is 1e-4.
+        - init (str): Method to initialize centroids. Either 'random' or 'k-means++'. Default is 'random'.
+        - random_state (int or None): Seed value for random number generator to ensure reproducibility. Default is None.
+        """
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.tol = tol
@@ -17,7 +51,22 @@ class KMeans:
         self.labels = None
 
     def _initialize_centroids(self, X):
-        """Initialise les centroïdes."""
+    """
+    Initializes the centroids for KMeans based on the chosen initialization method.
+
+    Parameters:
+    -------------
+    - X (ndarray): Input data of shape (n_samples, n_features).
+
+    Behavior:
+    ----------
+    - If init == 'random': Randomly selects k samples from X as initial centroids.
+    - If init == 'k-means++': Implements the k-means++ strategy to spread out initial centroids.
+    
+    Raises:
+    -------
+    - ValueError: If the init method is not 'random' or 'k-means++'.
+    """
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
@@ -40,7 +89,19 @@ class KMeans:
             raise ValueError("init must be 'random' or 'k-means++'")
 
     def fit(self, X):
-        """Entraîne le modèle k-means sur les données X."""
+        """
+        Fits the KMeans model to the data X by iteratively updating cluster assignments and centroids.
+
+        Parameters:
+        -------------
+        - X (ndarray): Input data of shape (n_samples, n_features).
+
+        Procedure:
+        -----------
+        - Assigns each point to the nearest centroid.
+        - Updates centroids as the mean of assigned points.
+        - Repeats until centroids converge or max_iter is reached.
+        """
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
@@ -58,19 +119,19 @@ class KMeans:
             self.centroids = new_centroids
 
     def predict(self, X):
-        """Prédit les clusters pour de nouvelles données."""
+        """Predicts clusters for new data."""
         distances = np.array([[euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
         return np.argmin(distances, axis=1)
 
     def fit_predict(self, X):
-        """Applique la méthode fit puis la méthode predict."""
+        """Apply the fit method then the predict method."""
         self.fit(X)
         return self.predict(X)
     
     def plot_clusters(self, X):
-        """Visualise les clusters dans un espace 2D."""
+        """Visualizes clusters in 2D space."""
         if X.shape[1] != 2:
-            print("Avertissement : La visualisation n'est possible qu'en 2D.")
+            print("Warning: Visualization is only possible in 2D.")
             return
 
         plt.figure(figsize=(8, 6))
