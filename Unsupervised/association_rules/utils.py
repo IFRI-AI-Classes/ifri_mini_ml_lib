@@ -4,8 +4,53 @@ from typing import Union, List, Set, Optional
 
 class DataAdapter:
     """
-    Classe utilitaire pour convertir différents formats de données en transactions
-    pour l'algorithme Apriori.
+    Utility class for converting different data formats into transactions
+    for association rule mining algorithms.
+    
+    Examples:
+    
+    >>> # Converting from a pandas DataFrame
+    >>> import pandas as pd
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.utils import DataAdapter
+    >>> # Create a sample DataFrame
+    >>> df = pd.DataFrame({
+    ...     'item1': [1, 0, 1, 1, 0],
+    ...     'item2': [1, 1, 0, 1, 1],
+    ...     'item3': [0, 1, 1, 1, 0]
+    ... })
+    >>> # Convert to transactions (binary mode)
+    >>> transactions = DataAdapter.convert_to_transactions(df, binary_mode=True)
+    >>> for t in transactions:
+    ...     print(sorted(t))
+    ['item1', 'item2']
+    ['item2', 'item3']
+    ['item1', 'item3']
+    ['item1', 'item2', 'item3']
+    ['item2']
+    
+    >>> # Converting non-binary data
+    >>> df_cat = pd.DataFrame({
+    ...     'color': ['red', 'blue', 'green', 'red', 'blue'],
+    ...     'size': ['large', 'medium', 'small', 'medium', 'large']
+    ... })
+    >>> # Convert to transactions (categorical data)
+    >>> transactions = DataAdapter.convert_to_transactions(df_cat, binary_mode=False)
+    >>> for t in transactions[:2]:
+    ...     print(sorted(t))
+    ['color_red', 'size_large']
+    ['color_blue', 'size_medium']
+    
+    >>> # Converting from a list of sets
+    >>> list_data = [
+    ...     {'bread', 'milk'},
+    ...     {'bread', 'diaper', 'beer'},
+    ...     {'milk', 'diaper', 'beer'},
+    ...     {'bread', 'milk', 'diaper'},
+    ...     {'bread', 'milk', 'beer'}
+    ... ]
+    >>> transactions = DataAdapter._convert_from_list(list_data)
+    >>> print(len(transactions), "transactions loaded")
+    5 transactions loaded
     """
     
     @staticmethod
@@ -14,38 +59,38 @@ class DataAdapter:
                                columns: Optional[List[str]] = None,
                                separator: str = "_") -> List[Set[str]]:
         """
-        Convertit différents types de données en transactions pour Apriori.
+        Converts different data types into transactions for association rule mining.
         
         Args:
-            data: Source de données (DataFrame, NumPy array ou liste)
-            binary_mode: Si True, considère les valeurs 1/True comme présence d'item
-            columns: Liste des colonnes à considérer (uniquement pour DataFrame)
-            separator: Séparateur utilisé pour joindre le nom des attributs et leurs valeurs
+            data: Data source (DataFrame, NumPy array or list)
+            binary_mode: If True, considers 1/True values as item presence
+            columns: List of columns to consider (only for DataFrame)
+            separator: Separator used to join attribute names and their values
         
         Returns:
-            Liste de transactions où chaque transaction est un ensemble d'items
+            List of transactions where each transaction is a set of items
             
         Raises:
-            TypeError: Si le type de données n'est pas supporté
-            ValueError: Si les données sont vides ou mal formées
+            TypeError: If the data type is not supported
+            ValueError: If data is empty or malformed
         """
         if data is None or (hasattr(data, '__len__') and len(data) == 0):
-            raise ValueError("Les données ne peuvent pas être vides")
+            raise ValueError("Data cannot be empty")
             
-        # Conversion depuis pandas DataFrame
+        # Convert from pandas DataFrame
         if isinstance(data, pd.DataFrame):
             return DataAdapter._convert_from_dataframe(data, binary_mode, columns, separator)
             
-        # Conversion depuis numpy array
+        # Convert from numpy array
         elif isinstance(data, np.ndarray):
             return DataAdapter._convert_from_numpy(data, binary_mode, separator)
             
-        # Conversion depuis liste
+        # Convert from list
         elif isinstance(data, list):
             return DataAdapter._convert_from_list(data)
             
         else:
-            raise TypeError("Type de données non supporté. Formats acceptés: pandas DataFrame, numpy array, liste de transactions")
+            raise TypeError("Unsupported data type. Accepted formats: pandas DataFrame, numpy array, list of transactions")
     
     @staticmethod
     def _convert_from_dataframe(df: pd.DataFrame, 
@@ -53,33 +98,33 @@ class DataAdapter:
                                columns: Optional[List[str]],
                                separator: str) -> List[Set[str]]:
         """
-        Convertit un DataFrame pandas en liste de transactions.
+        Converts a pandas DataFrame into a list of transactions.
         
         Args:
-            df: DataFrame source
-            binary_mode: Indique si les colonnes sont binaires (1/True = présent)
-            columns: Liste des colonnes à utiliser (None = toutes les colonnes)
-            separator: Séparateur entre nom d'attribut et valeur
+            df: Source DataFrame
+            binary_mode: Indicates if columns are binary (1/True = present)
+            columns: List of columns to use (None = all columns)
+            separator: Separator between attribute name and value
             
         Returns:
-            Liste de transactions
+            List of transactions
         """
-        # Sélectionner les colonnes si spécifiées
+        # Select columns if specified
         if columns:
             df = df[columns]
         
-        # Vérifier s'il y a des valeurs manquantes
+        # Check for missing values
         has_missing = df.isna().any().any()
         
         if binary_mode:
-            # Pour données binaires: chaque colonne où valeur = 1/True devient un item
+            # For binary data: each column where value = 1/True becomes an item
             return [
                 {f"{col}" for col, val in row.items() 
                  if val == 1 or val is True} 
                 for _, row in df.iterrows()
             ]
         else:
-            # Pour données catégorielles: format "colonne_valeur" pour chaque item
+            # For categorical data: format "column_value" for each item
             return [
                 {f"{col}{separator}{str(val).strip()}" for col, val in row.items() 
                  if pd.notna(val) and str(val).strip() != ""} 
@@ -91,29 +136,29 @@ class DataAdapter:
                            binary_mode: bool,
                            separator: str) -> List[Set[str]]:
         """
-        Convertit un array NumPy en liste de transactions.
+        Converts a NumPy array into a list of transactions.
         
         Args:
-            arr: Array source
-            binary_mode: Indique si l'array est binaire (1/True = présent)
-            separator: Séparateur entre nom d'attribut et valeur
+            arr: Source array
+            binary_mode: Indicates if the array is binary (1/True = present)
+            separator: Separator between attribute name and value
             
         Returns:
-            Liste de transactions
+            List of transactions
         """
         if arr.ndim < 2:
-            # Convertir un array 1D en array 2D
+            # Convert a 1D array into a 2D array
             arr = arr.reshape(1, -1)
             
         if binary_mode:
-            # Pour data binaire: numéro de colonne devient l'item si valeur = 1/True
+            # For binary data: column number becomes the item if value = 1/True
             return [
                 {f"feature_{j}" for j in range(arr.shape[1]) 
                  if row[j] == 1 or row[j] is True} 
                 for row in arr
             ]
         else:
-            # Pour data non-binaire: format "feature_i_valeur" pour chaque item
+            # For non-binary data: format "feature_i_value" for each item
             return [
                 {f"feature_{j}{separator}{val}" for j, val in enumerate(row) 
                  if val is not None and not (isinstance(val, float) and np.isnan(val))
@@ -124,37 +169,37 @@ class DataAdapter:
     @staticmethod
     def _convert_from_list(data: List) -> List[Set[str]]:
         """
-        Convertit une liste en liste de transactions.
-        Suppose que l'entrée est déjà une liste de listes/ensembles d'items.
+        Converts a list into a list of transactions.
+        Assumes that the input is already a list of lists/sets of items.
         
         Args:
-            data: Liste source (liste de listes/ensembles d'items)
+            data: Source list (list of lists/sets of items)
             
         Returns:
-            Liste de transactions
+            List of transactions
             
         Raises:
-            ValueError: Si la structure de la liste n'est pas adaptée
+            ValueError: If the list structure is not suitable
         """
-        # Vérifier que l'input a la bonne structure
+        # Check that the input has the right structure
         if not data:
             return []
             
-        # Conversion en liste d'ensembles
+        # Convert to list of sets
         transactions = []
         for transaction in data:
-            # Si c'est déjà un ensemble, utiliser tel quel
+            # If it's already a set, use as is
             if isinstance(transaction, set):
                 transactions.append(transaction)
-            # Si c'est une liste ou un tuple, convertir en ensemble
+            # If it's a list or tuple, convert to set
             elif isinstance(transaction, (list, tuple)):
-                # Filtrer les valeurs vides ou None
+                # Filter empty values or None
                 clean_transaction = {str(item).strip() for item in transaction 
                                     if item is not None and str(item).strip() != ""}
-                if clean_transaction:  # Ne pas ajouter d'ensembles vides
+                if clean_transaction:  # Don't add empty sets
                     transactions.append(clean_transaction)
             else:
-                # Si élément unique, créer un ensemble avec cet élément
+                # If single element, create a set with this element
                 if transaction is not None and str(transaction).strip() != "":
                     transactions.append({str(transaction).strip()})
                 
@@ -164,36 +209,36 @@ class DataAdapter:
     def load_csv_to_transactions(file_path: str, header: Optional[int] = None, 
                                 separator: str = ',') -> List[Set[str]]:
         """
-        Charge un fichier CSV et le convertit directement en transactions.
+        Loads a CSV file and converts it directly into transactions.
         
         Args:
-            file_path: Chemin vers le fichier CSV
-            header: Numéro de ligne d'en-tête (None = pas d'en-tête)
-            separator: Séparateur de colonnes dans le fichier CSV
+            file_path: Path to the CSV file
+            header: Header row number (None = no header)
+            separator: Column separator in the CSV file
             
         Returns:
-            Liste de transactions
+            List of transactions
             
         Raises:
-            FileNotFoundError: Si le fichier n'existe pas
-            ValueError: Si le fichier est vide ou mal formé
+            FileNotFoundError: If the file doesn't exist
+            ValueError: If the file is empty or malformed
         """
         try:
-            # Charger le CSV comme DataFrame
+            # Load CSV as DataFrame
             df = pd.read_csv(file_path, header=header, sep=separator)
             
-            # Convertir chaque ligne en ensemble d'items (en ignorant les valeurs manquantes)
+            # Convert each row to a set of items (ignoring missing values)
             transactions = []
             for _, row in df.iterrows():
-                # Filtrer les valeurs non-null/non-empty
+                # Filter non-null/non-empty values
                 transaction = {str(item).strip() for item in row.dropna() 
                               if str(item).strip() != ""}
-                if transaction:  # Ne pas ajouter de transactions vides
+                if transaction:  # Don't add empty transactions
                     transactions.append(transaction)
                     
             return transactions
             
         except FileNotFoundError:
-            raise FileNotFoundError(f"Le fichier {file_path} n'a pas été trouvé")
+            raise FileNotFoundError(f"File {file_path} not found")
         except Exception as e:
-            raise ValueError(f"Erreur lors du chargement du fichier CSV: {str(e)}")
+            raise ValueError(f"Error while loading CSV file: {str(e)}")

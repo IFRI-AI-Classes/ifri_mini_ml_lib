@@ -6,19 +6,49 @@ import time
 
 class Apriori:
     """
-    L'algorithme Apriori est utilisé pour découvrir des règles d'association 
-    intéressantes dans de grands ensembles de données transactionnels.
+    The Apriori algorithm is used to discover interesting association rules
+    in large transactional datasets. For more details: 
+    `Agrawal, R., & Srikant, R. (1994, September) <http://www.vldb.org/conf/1994/P487.PDF>`_
 
     Args:
-        min_support(float): Support minimal pour considérer un itemset
-        min_confiance(float): Seuil minimal de confiance pour une règle
+        min_support(float): Minimum support threshold for considering an itemset
+        min_confiance(float): Minimum confidence threshold for a rule
+        
+    Examples:
+
+    >>> transactions = [
+    ...     {'bread', 'milk', 'butter'},
+    ...     {'bread', 'jam', 'eggs'},
+    ...     {'milk', 'butter', 'cheese'},
+    ...     {'bread', 'milk', 'butter', 'cheese'},
+    ...     {'bread', 'jam', 'milk'}
+    ... ]
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Apriori
+    >>> apriori = Apriori(min_support=0.4, min_confiance=0.6)
+    >>> apriori.fit(transactions) # Frequents itemsets + Rules generation
+    <ifri_mini_ml_lib.Unsupervised.association_rules.apriori.Apriori object>
+    >>> frequent_itemsets = apriori.get_frequent_itemsets()
+    >>> # Displaying frequent itemsets of size 1
+    >>> for item in frequent_itemsets[1]:
+    ...     print(f"Item: {list(item)[0]}")
+    Item: bread
+    Item: milk
+    Item: butter
+    >>> rules = apriori.get_rules()
+    >>> # Displaying some association rules
+    >>> if rules:
+    ...     for rule in rules[:2]:
+    ...         print(f"{set(rule['antecedent'])} -> {set(rule['consequent'])}, "
+    ...               f"Support: {rule['support']:.2f}, Confidence: {rule['confidence']:.2f}")
+    {'milk'} -> {'bread'}, Support: 0.60, Confidence: 0.75
+    {'bread'} -> {'milk'}, Support: 0.60, Confidence: 0.75
     """
     def __init__(self, min_support: float, min_confiance: float):
         
         if not 0 <= min_support <= 1:
-            raise ValueError("Le support minimal doit être compris entre 0 et 1")
+            raise ValueError("Minimum support must be between 0 and 1")
         if not 0 <= min_confiance <= 1:
-            raise ValueError("La confiance minimale doit être comprise entre 0 et 1")
+            raise ValueError("Minimum confidence must be between 0 and 1")
         
         self.min_support = min_support
         self.min_confiance = min_confiance
@@ -27,81 +57,81 @@ class Apriori:
 
     def fit(self, transactions: list):
         """
-        Méthode principale pour l'apprentissage des itemsets fréquents et des règles.
+        Main method for learning frequent itemsets and rules.
         
         Args:
-            transactions: Données d'entrée (list[set])
+            transactions: Input data (list[set])
             
         Returns:
-            self: L'instance courante pour chaînage des méthodes
+            self: The current instance for method chaining
         """
         start_time = time.time()
         
-        # Vérifier la conformité du format des données en entrée
+        # Check the conformity of the input data format
         if isinstance(transactions, list):
             transactions_list = DataAdapter._convert_from_list(transactions)
         else:
-            raise TypeError("Format de données non respecté! List[set] format uniquement acceptés.")
+            raise TypeError("Data format not respected! Only List[set] format is accepted.")
         
-        print(f"\nApplication de l'algorithme Apriori avec:")
-        print(f"- Support minimum: {self.min_support} ({self.min_support*100}%)")
-        print(f"- Confiance minimum: {self.min_confiance} ({self.min_confiance*100}%)")
+        print(f"\nApplying Apriori algorithm with:")
+        print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
+        print(f"- Minimum confidence: {self.min_confiance} ({self.min_confiance*100}%)")
 
-        print(f"Nombre de transactions valides : {len(transactions_list)}")
+        print(f"Number of valid transactions: {len(transactions_list)}")
         if transactions_list:
-            print(f"Exemple de transaction : {list(transactions_list[0])[:5]}...")
+            print(f"Example transaction: {list(transactions_list[0])[:5]}...")
 
-        # Générer les itemsets fréquents
+        # Generate frequent itemsets
         self._fit_apriori(transactions_list)
-        # Générer les règles d'association
+        # Generate association rules
         self._generate_rules(transactions_list)
 
         elapsed_time = time.time() - start_time
 
-        print(f"\nTemps d'exécution: {elapsed_time:.2f} secondes")
+        print(f"\nExecution time: {elapsed_time:.2f} seconds")
         return self
     
     def _fit_apriori(self, transactions: list[set]):
         """
-        Extraction des k-itemsets fréquents
+        Extraction of k-frequent itemsets
 
-        ## Étapes:
-            1. Extraire tous les items uniques
-            2. Trouver les 1-itemsets fréquents
-            3. Générer itérativement des itemsets de taille croissante
+        ## Steps:
+            1. Extract all unique items
+            2. Find 1-itemsets that are frequent
+            3. Iteratively generate itemsets of increasing size
         """
-        # Récupérer les items uniques
+        # Get unique items
         items = set(chain(*transactions))
-        # Récupérer les 1-itemsets fréquents
+        # Get 1-itemsets that are frequent
         self.frequent_itemsets_ = {
             1: self._get_one_itemsets(items, transactions)
         }
         
-        # Générer les itemsets de taille croissante
+        # Generate itemsets of increasing size
         size = 1
         while True:
             size += 1
             candidates = self._generate_candidates(self.frequent_itemsets_[size-1])
             frequent = self._prune_candidates(candidates, transactions)
 
-            # Arrêter si aucun item fréquent n'est trouvé
+            # Stop if no frequent item is found
             if not frequent: 
                 break
-            # Stocker les itemsets fréquents de cette taille
+            # Store frequent itemsets of this size
             self.frequent_itemsets_[size] = frequent
 
     def _get_one_itemsets(self, items: set, transactions: list[set]):
         """
-        Calcule les 1-itemsets fréquents (items individuels).
+        Computes the frequent 1-itemsets (individual items).
         
         Args:
-            items: Ensemble de tous les items uniques
-            transactions: Liste des transactions
+            items: Set of all unique items
+            transactions: List of transactions
         
         Returns:
-            Ensemble des items fréquents respectant le support minimal
+            Set of frequent items that satisfy the minimum support
         """
-        # Occurence de chaque item unique dans la base de données
+        # Occurrence of each unique item in the database
         items_counts = defaultdict(int)
         for t in transactions:
             for i in items:
@@ -115,33 +145,33 @@ class Apriori:
 
     def _generate_candidates(self, previous_itemsets: set):
         """
-        Génère de nouveaux candidats en combinant les itemsets précédents.
-        Utilise l'approche optimisée "join-and-prune" qui combine uniquement 
-        les itemsets partageant les mêmes k-1 premiers éléments.
+        Generates new candidates by combining previous itemsets.
+        Uses the optimized "join-and-prune" approach that only combines
+        itemsets sharing the same first k-1 elements.
         
         Args:
-            previous_itemsets: Itemsets de la taille précédente k
+            previous_itemsets: Itemsets of the previous size k
         
         Returns:
-            Nouveaux candidats de taille supérieure k + 1
+            New candidates of size k + 1
         """
         candidates = set()
         previous_list = list(previous_itemsets)
         k = len(list(previous_list[0])) if previous_list else 0
         
-        # Phase de jointure
+        # Join phase
         for i in range(len(previous_list)):
             for j in range(i+1, len(previous_list)):
-                # Convertir en liste pour pouvoir comparer les éléments par index
+                # Convert to list to compare elements by index
                 items1 = sorted(list(previous_list[i]))
                 items2 = sorted(list(previous_list[j]))
                 
-                # Vérifier si les k-1 premiers éléments sont identiques
+                # Check if the first k-1 elements are identical
                 if items1[:k-1] == items2[:k-1]:
-                    # Créer un nouvel itemset candidat
+                    # Create a new candidate itemset
                     new_candidate = frozenset(previous_list[i] | previous_list[j])
                     
-                    # Phase d'élagage - tous les sous-ensembles doivent être fréquents
+                    # Prune phase - all subsets must be frequent
                     should_add = True
                     for subset in combinations(new_candidate, k):
                         if frozenset(subset) not in previous_itemsets:
@@ -155,14 +185,14 @@ class Apriori:
 
     def _prune_candidates(self, candidates: set, transactions: list[set]):
         """
-        Filtre les candidats selon le support minimal de manière optimisée.
+        Filters candidates according to minimum support in an optimized way.
         
         Args:
-            candidates: Ensemble des candidats à tester
-            transactions: Liste des transactions
+            candidates: Set of candidates to test
+            transactions: List of transactions
         
         Returns:
-            Itemsets fréquents parmi les candidats
+            Frequent itemsets among the candidates
         """
         if not candidates:
             return set()
@@ -171,26 +201,26 @@ class Apriori:
     
     def _generate_rules(self, transactions: list[set]):
         """
-        Génère les règles d'association à partir des itemsets fréquents.
-        Calcule la confiance et le lift pour chaque règle.
+        Generates association rules from frequent itemsets.
+        Calculates confidence and lift for each rule.
         
         Args:
-            transactions: Liste des transactions
+            transactions: List of transactions
         """
         self.rules_ = []
         
-        # Parcourir les itemsets fréquents en ignorant ceux de taille 1
+        # Go through frequent itemsets ignoring those of size 1
         for itemset in chain(*(self.frequent_itemsets_.values())):
             if len(itemset) < 2:
                 continue
 
-            # Générer toutes les combinaisons possibles de règles
+            # Generate all possible rule combinations
             for i in range(1, len(itemset)):
                 for antecedent in combinations(itemset, i):
                     antecedent = frozenset(antecedent)
                     consequent = itemset - antecedent
                     
-                    # Calculer les métriques
+                    # Calculate metrics
                     conf = confidence(antecedent, consequent, transactions)
                     
                     if conf >= self.min_confiance:
@@ -206,20 +236,20 @@ class Apriori:
 
     def get_frequent_itemsets(self):
         """
-        Récupérer les itemsets fréquents découverts.
+        Retrieve the discovered frequent itemsets.
         
         Returns:
-            dict: Dictionnaire des itemsets fréquents où les clés sont les tailles
-                et les valeurs sont des ensembles d'itemsets
+            dict: Dictionary of frequent itemsets where keys are sizes
+                and values are sets of itemsets
         """
         return self.frequent_itemsets_
 
     def get_rules(self):
         """
-        Récupérer les règles d'association générées.
+        Retrieve the generated association rules.
         
         Returns:
-            Liste des règles d'association
+            List of association rules
         """
         return self.rules_
-    
+

@@ -1,6 +1,46 @@
 """
-Module contenant des fonctions pour calculer les métriques d'évaluation 
-des règles d'association.
+Module containing functions to calculate evaluation metrics
+for association rules.
+
+Examples:
+    
+    >>> # Creating a simple example of transactions
+    >>> transactions = [
+    ...     {'A', 'B', 'C'},
+    ...     {'A', 'B'},
+    ...     {'A', 'D'},
+    ...     {'B', 'C', 'E'},
+    ...     {'A', 'B', 'C', 'E'}
+    ... ]
+    >>> # Calculating support for an itemset
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import support
+    >>> support_ab = support({'A', 'B'}, transactions)
+    >>> print(f"Support({'A', 'B'}) = {support_ab:.2f}")
+    Support({'A', 'B'}) = 0.60
+    
+    >>> # Calculating confidence for a rule A → B
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import confidence
+    >>> conf_a_to_b = confidence({'A'}, {'B'}, transactions)
+    >>> print(f"Confidence({'A'} → {'B'}) = {conf_a_to_b:.2f}")
+    Confidence({'A'} → {'B'}) = 0.75
+    
+    >>> # Calculating lift for a rule A → C
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import lift
+    >>> lift_a_to_c = lift({'A'}, {'C'}, transactions)
+    >>> print(f"Lift({'A'} → {'C'}) = {lift_a_to_c:.2f}")
+    Lift({'A'} → {'C'}) = 1.25
+    
+    >>> # Complete evaluation of a rule
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import evaluate_rule
+    >>> metrics = evaluate_rule({'B'}, {'C'}, transactions)
+    >>> for metric_name, value in metrics.items():
+    ...     print(f"{metric_name}: {value:.2f}")
+    support: 0.60
+    confidence: 0.75
+    lift: 1.25
+    conviction: 2.00
+    leverage: 0.15
+    jaccard: 0.50
 """
 from typing import Set, List, Dict, Union, FrozenSet
 import warnings
@@ -8,16 +48,16 @@ import warnings
 
 def support(itemset: Union[Set, FrozenSet], transactions: List[Set]) -> float:
     """
-    Calcule le support d'un itemset.
+    Calculates the support of an itemset.
     
-    Le support est la proportion de transactions qui contiennent l'itemset.
+    Support is the proportion of transactions that contain the itemset.
     
     Args:
-        itemset: Ensemble d'items
-        transactions: Liste des transactions
+        itemset: Set of items
+        transactions: List of transactions
         
     Returns:
-        float: Valeur du support entre 0 et 1
+        float: Support value between 0 and 1
     """
     if not transactions:
         return 0
@@ -29,18 +69,18 @@ def confidence(antecedent: Union[Set, FrozenSet],
                consequent: Union[Set, FrozenSet], 
                transactions: List[Set]) -> float:
     """
-    Calcule la confiance d'une règle d'association (X → Y).
+    Calculates the confidence of an association rule (X → Y).
     
-    La confiance est la probabilité conditionnelle du conséquent sachant l'antécédent:
+    Confidence is the conditional probability of the consequent given the antecedent:
     conf(X → Y) = supp(X ∪ Y) / supp(X)
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        float: Valeur de confiance entre 0 et 1
+        float: Confidence value between 0 and 1
     """
     if not transactions:
         return 0
@@ -48,7 +88,7 @@ def confidence(antecedent: Union[Set, FrozenSet],
     supp_ant = support(antecedent, transactions)
     
     if supp_ant == 0:
-        warnings.warn("Support de l'antécédent est 0, confiance indéfinie (retourne 0)")
+        warnings.warn("Antecedent support is 0, confidence is undefined (returns 0)")
         return 0
     
     supp_total = support(antecedent.union(consequent), transactions)
@@ -60,35 +100,35 @@ def lift(antecedent: Union[Set, FrozenSet],
          consequent: Union[Set, FrozenSet], 
          transactions: List[Set]) -> float:
     """
-    Calcule le lift d'une règle d'association (X → Y).
+    Calculates the lift of an association rule (X → Y).
     
-    Le lift mesure l'indépendance entre l'antécédent et le conséquent:
+    Lift measures the independence between the antecedent and the consequent:
     lift(X → Y) = conf(X → Y) / supp(Y)
     
-    Interprétation:
-    - lift > 1: Association positive (X favorise Y)
-    - lift = 1: Indépendance (X n'influence pas Y)
-    - lift < 1: Association négative (X défavorise Y)
+    Interpretation:
+    - lift > 1: Positive association (X favors Y)
+    - lift = 1: Independence (X does not influence Y)
+    - lift < 1: Negative association (X disfavors Y)
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        float: Valeur du lift (≥ 0)
+        float: Lift value (≥ 0)
     """
     if not transactions:
         return 0
     
-    # Calculer la confiance
+    # Calculate confidence
     conf_value = confidence(antecedent, consequent, transactions)
     
-    # Calculer le support du conséquent
+    # Calculate the support of the consequent
     supp_cons = support(consequent, transactions)
     
     if supp_cons == 0:
-        warnings.warn("Support du conséquent est 0, lift indéfini (retourne 0)")
+        warnings.warn("Consequent support is 0, lift is undefined (returns 0)")
         return 0
     
     return conf_value / supp_cons
@@ -98,36 +138,36 @@ def conviction(antecedent: Union[Set, FrozenSet],
                consequent: Union[Set, FrozenSet], 
                transactions: List[Set]) -> float:
     """
-    Calcule la conviction d'une règle d'association (X → Y).
+    Calculates the conviction of an association rule (X → Y).
     
-    La conviction mesure l'implication de la règle:
+    Conviction measures the implication of the rule:
     conviction(X → Y) = (1 - supp(Y)) / (1 - conf(X → Y))
     
-    Interprétation:
-    - conviction > 1: X implique Y avec une force proportionnelle
-    - conviction = 1: X et Y sont indépendants
-    - conviction < 1: X implique ¬Y (la négation de Y)
-    - conviction = ∞: Implication parfaite (confiance = 1)
+    Interpretation:
+    - conviction > 1: X implies Y with proportional strength
+    - conviction = 1: X and Y are independent
+    - conviction < 1: X implies ¬Y (the negation of Y)
+    - conviction = ∞: Perfect implication (confidence = 1)
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        float: Valeur de conviction (peut être infinie)
+        float: Conviction value (can be infinite)
     """
     if not transactions:
         return 0
     
-    # Calculer la confiance
+    # Calculate confidence
     conf_value = confidence(antecedent, consequent, transactions)
     
-    # Si la confiance est 1, la conviction est infinie
+    # If confidence is 1, conviction is infinite
     if conf_value == 1:
         return float('inf')
     
-    # Calculer le support du conséquent
+    # Calculate the support of the consequent
     supp_cons = support(consequent, transactions)
     
     return (1 - supp_cons) / (1 - conf_value) if conf_value < 1 else float('inf')
@@ -137,36 +177,36 @@ def leverage(antecedent: Union[Set, FrozenSet],
              consequent: Union[Set, FrozenSet], 
              transactions: List[Set]) -> float:
     """
-    Calcule le leverage d'une règle d'association (X → Y).
+    Calculates the leverage of an association rule (X → Y).
     
-    Le leverage mesure la différence entre la probabilité observée 
-    de cooccurrence et celle attendue sous indépendance:
+    Leverage measures the difference between the observed probability
+    of co-occurrence and that expected under independence:
     leverage(X → Y) = supp(X ∪ Y) - (supp(X) * supp(Y))
     
-    Interprétation:
-    - leverage > 0: Association positive 
-    - leverage = 0: Indépendance
-    - leverage < 0: Association négative
+    Interpretation:
+    - leverage > 0: Positive association 
+    - leverage = 0: Independence
+    - leverage < 0: Negative association
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        float: Valeur du leverage entre -0.25 et 0.25
+        float: Leverage value between -0.25 and 0.25
     """
     if not transactions:
         return 0
     
-    # Calculer le support de l'union
+    # Calculate the support of the union
     supp_union = support(antecedent.union(consequent), transactions)
     
-    # Calculer les supports individuels
+    # Calculate individual supports
     supp_ant = support(antecedent, transactions)
     supp_cons = support(consequent, transactions)
     
-    # Calculer le leverage
+    # Calculate leverage
     return supp_union - (supp_ant * supp_cons)
 
 
@@ -174,28 +214,28 @@ def jaccard(antecedent: Union[Set, FrozenSet],
             consequent: Union[Set, FrozenSet], 
             transactions: List[Set]) -> float:
     """
-    Calcule le coefficient de Jaccard pour une règle d'association (X → Y).
+    Calculates the Jaccard coefficient for an association rule (X → Y).
     
-    Le coefficient de Jaccard mesure la similarité entre les ensembles:
+    The Jaccard coefficient measures the similarity between sets:
     jaccard(X, Y) = supp(X ∪ Y) / (supp(X) + supp(Y) - supp(X ∪ Y))
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        float: Valeur du coefficient de Jaccard entre 0 et 1
+        float: Jaccard coefficient value between 0 and 1
     """
     if not transactions:
         return 0
     
-    # Calculer les supports
+    # Calculate supports
     supp_ant = support(antecedent, transactions)
     supp_cons = support(consequent, transactions)
     supp_union = support(antecedent.union(consequent), transactions)
     
-    # Éviter la division par zéro
+    # Avoid division by zero
     denominator = supp_ant + supp_cons - supp_union
     if denominator == 0:
         return 0
@@ -207,15 +247,15 @@ def evaluate_rule(antecedent: Union[Set, FrozenSet],
                  consequent: Union[Set, FrozenSet], 
                  transactions: List[Set]) -> Dict[str, float]:
     """
-    Évalue une règle d'association selon plusieurs métriques.
+    Evaluates an association rule according to multiple metrics.
     
     Args:
-        antecedent: Partie gauche de la règle (X)
-        consequent: Partie droite de la règle (Y)
-        transactions: Liste des transactions
+        antecedent: Left-hand side of the rule (X)
+        consequent: Right-hand side of the rule (Y)
+        transactions: List of transactions
         
     Returns:
-        Dict: Dictionnaire contenant les différentes métriques calculées
+        Dict: Dictionary containing the different calculated metrics
     """
     return {
         'support': support(antecedent.union(consequent), transactions),

@@ -4,23 +4,57 @@ import time
 
 class Eclat:
     """
-    L'algorithme ECLAT est un algorithme de recherche en profondeur qui utilise une structure 
-    de base de données verticale. Plutôt que de lister explicitement toutes les transactions, 
-    chaque élément est associé à sa couverture (ou liste de transactions contenant cet élément). 
-    L'approche par intersection est utilisée pour calculer le support des ensembles d'éléments. 
-    Cet algorithme est particulièrement efficace pour les ensembles de données de petite taille 
-    et nécessite moins d'espace et de temps que l'algorithme Apriori pour générer des motifs fréquents.
+    The ECLAT (**Equivalence Class Clustering and bottom-up Lattice Traversal**) algorithm is a depth-first search algorithm that uses a vertical database
+    structure. Rather than explicitly listing all transactions, each item is associated 
+    with its coverage (or list of transactions containing that item). The intersection 
+    approach is used to calculate the support of itemsets. This algorithm is particularly 
+    efficient for small datasets and requires less space and time than the Apriori 
+    algorithm to generate frequent patterns.
+
+    For details on algorithm consult 
+    `research paper <https://sci2s.ugr.es/keel/pdf/algorithm/articulo/2000%20-%20IEEETKDE%20-%20Zaki%20-%20(Eclat)%20ScalableAlgorithms%20for%20Association%20Mining%20.pdf>`_.
 
     Args:
-        min_support (float): Seuil minimal de support (entre 0 et 1) pour les itemsets fréquents.
-        min_confidence (float): Seuil minimal de confiance (entre 0 et 1) pour les règles d'association.
+        min_support (float): Minimum support threshold (between 0 and 1) for frequent itemsets.
+        min_confidence (float): Minimum confidence threshold (between 0 and 1) for association rules.
+        
+    Examples:
+
+    >>> transactions = [
+    ...     {'bread', 'milk', 'butter'},
+    ...     {'bread', 'jam', 'eggs'},
+    ...     {'milk', 'butter', 'cheese'},
+    ...     {'bread', 'milk', 'butter', 'cheese'},
+    ...     {'bread', 'jam', 'milk'}
+    ... ]
+    >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Eclat
+    >>> eclat = Eclat(min_support=0.4, min_confidence=0.6)
+    >>> eclat.fit(transactions) # Frequents itemsets + Rules generation
+    <ifri_mini_ml_lib.Unsupervised.association_rules.eclat.Eclat object>
+    >>> frequent_itemsets = eclat.get_frequent_itemsets()
+    >>> # Displaying frequent itemsets of size 1
+    >>> for itemset, tidset in frequent_itemsets[1].items():
+    ...     item = list(itemset)[0]
+    ...     support = len(tidset) / len(transactions)
+    ...     print(f"Item: {item}, Support: {support:.2f}")
+    Item: bread, Support: 0.80
+    Item: milk, Support: 0.80
+    Item: butter, Support: 0.60
+    >>> rules = eclat.get_rules()
+    >>> # Displaying some association rules
+    >>> if rules:
+    ...     for rule in rules[:2]:
+    ...         print(f"{set(rule['antecedent'])} -> {set(rule['consequent'])}, "
+    ...               f"Confidence: {rule['confidence']:.2f}, Lift: {rule['lift']:.2f}")
+    {'milk'} -> {'bread'}, Confidence: 0.75, Lift: 0.94
+    {'bread'} -> {'milk'}, Confidence: 0.75, Lift: 0.94
     """
 
-    def __init__(self, min_support=0.1, min_confidence=0.7):
+    def __init__(self, min_support: float, min_confidence:float):
         if not 0 <= min_support <= 1:
-            raise ValueError("Le support minimal doit être compris entre 0 et 1")
+            raise ValueError("Minimum support must be between 0 and 1")
         if not 0 <= min_confidence <= 1:
-            raise ValueError("La confiance minimale doit être comprise entre 0 et 1")
+            raise ValueError("Minimum confidence must be between 0 and 1")
 
         self.min_support = min_support
         self.min_confidence = min_confidence
@@ -31,55 +65,55 @@ class Eclat:
 
     def fit(self, transactions):
         """
-        Méthode principale pour l'apprentissage des itemsets fréquents.
+        Main method for learning frequent itemsets.
         
         Args:
-            transactions: Liste de transactions (chaque transaction est un ensemble d'items)
+            transactions: List of transactions (each transaction is a set of items)
 
         Returns:
-            self: L'instance courante pour chaînage des méthodes
+            self: The current instance for method chaining
         """
         start_time = time.time()
         
-        # Vérifier la conformité du format des données en entrée
+        # Check the conformity of the input data format
         if isinstance(transactions, list):
             transactions_list = transactions
         else:
-            raise TypeError("Format de données non respecté! List[set] format uniquement acceptés.")
+            raise TypeError("Data format not respected! Only List[set] format is accepted.")
         
         self.n_transactions = len(transactions_list)
         
-        print(f"\nApplication de l'algorithme Eclat avec:")
-        print(f"- Support minimum: {self.min_support} ({self.min_support*100}%)")
-        print(f"- Confiance minimum: {self.min_confidence} ({self.min_confidence*100}%)")
+        print(f"\nApplying Eclat algorithm with:")
+        print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
+        print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
 
-        print(f"Nombre de transactions valides : {self.n_transactions}")
+        print(f"Number of valid transactions: {self.n_transactions}")
 
-        # Trouver les itemsets fréquents
+        # Find frequent itemsets
         self._fit_eclat(transactions_list)
 
-        # Générer les règles d'association
+        # Generate association rules
         self._generate_rules()
 
         elapsed_time = time.time() - start_time
 
-        print(f"\nTemps d'exécution: {elapsed_time:.2f} secondes")
+        print(f"\nExecution time: {elapsed_time:.2f} seconds")
         return self
 
     def _fit_eclat(self, transactions):
         """
-        Implémentation de la phase d'extraction des itemsets fréquents.
+        Implementation of the frequent itemset extraction phase.
         
         Args:
-            transactions: Liste de transactions (chaque transaction est un ensemble d'items)
+            transactions: List of transactions (each transaction is a set of items)
         """
-        # Récupérer tous les items uniques dans les transactions
+        # Get all unique items in the transactions
         all_items = set(chain(*transactions))
         
-        # Stocker les items fréquents de taille 1
+        # Store frequent items of size 1
         self.frequent_itemsets[1] = self.get_single_items_TIDset(all_items, transactions)
         
-        # Générer des itemsets de taille croissante
+        # Generate itemsets of increasing size
         k = 1
         while self.frequent_itemsets.get(k):            
             k += 1
@@ -88,15 +122,15 @@ class Eclat:
             if not candidates:
                 break
                 
-            # Calculer les TIDsets pour les nouveaux candidats
+            # Calculate TIDsets for the new candidates
             level_frequent = {}
             for candidate in candidates:
                 subsets = [frozenset(subset) for subset in combinations(candidate, k-1)]
                 if all(subset in self.frequent_itemsets[k-1] for subset in subsets):
-                    # Intersection des TIDsets des sous-ensembles
+                    # Intersection of TIDsets of subsets
                     TIDset = set.intersection(*[self.frequent_itemsets[k-1][subset] for subset in subsets])
                     
-                    # Vérifier le support
+                    # Check support
                     if len(TIDset) / self.n_transactions >= self.min_support:
                         level_frequent[candidate] = TIDset
             
@@ -106,7 +140,7 @@ class Eclat:
                 break
 
     def get_single_items_TIDset(self, items, transactions):
-        """Construction des TIDsets pour les items individuels"""
+        """Build TIDsets for individual items"""
         single_items_TIDsets = {}
         for item in items:
             TIDset = set()
@@ -114,7 +148,7 @@ class Eclat:
                 if item in transaction:
                     TIDset.add(tid)
             
-            # Vérifier si l'item atteint le support minimum
+            # Check if the item meets the minimum support
             if len(TIDset) / self.n_transactions >= self.min_support:
                 single_items_TIDsets[frozenset([item])] = TIDset
 
@@ -122,22 +156,22 @@ class Eclat:
     
     def _generate_candidates(self, k):
         """
-        Générer des candidats de taille k à partir des itemsets fréquents de taille k-1.
+        Generate candidates of size k from frequent itemsets of size k-1.
         
         Args:
-            k: Taille des candidats à générer
+            k: Size of candidates to generate
             
         Returns:
-            Ensemble des candidats générés
+            Set of generated candidates
         """
         candidates = set()
         prev_frequent = self.frequent_itemsets.get(k-1, {})
         
         for itemset1, itemset2 in combinations(prev_frequent.keys(), 2):
-            # Jointure d'itemsets ayant k-2 éléments en commun
+            # Join itemsets having k-2 elements in common
             union = itemset1.union(itemset2)
             if len(union) == k:
-                # Vérifier que tous les sous-ensembles de taille k-1 sont fréquents
+                # Check that all subsets of size k-1 are frequent
                 if all(frozenset(subset) in prev_frequent for subset in combinations(union, k-1)):
                     candidates.add(union)
         
@@ -145,11 +179,11 @@ class Eclat:
 
     def _generate_rules(self):
         """
-        Générer des règles d'association à partir des itemsets fréquents.
+        Generate association rules from frequent itemsets.
         """
         self.rules_ = []
         
-        # Parcourir tous les itemsets fréquents de taille > 1
+        # Go through all frequent itemsets of size > 1
         for k in range(2, len(self.frequent_itemsets) + 1):
             if k not in self.frequent_itemsets:
                 continue
@@ -157,22 +191,22 @@ class Eclat:
             for itemset, TIDset in self.frequent_itemsets[k].items():
                 itemset_support = len(TIDset) / self.n_transactions
                 
-                # Générer toutes les règles possibles à partir de cet itemset
+                # Generate all possible rules from this itemset
                 for i in range(1, k):
                     for antecedent_items in combinations(itemset, i):
                         antecedent = frozenset(antecedent_items)
                         consequent = itemset.difference(antecedent)
                         
-                        # Calculer la confiance
+                        # Calculate confidence
                         antecedent_support = len(self.frequent_itemsets[len(antecedent)][antecedent]) / self.n_transactions
                         confidence = itemset_support / antecedent_support
                         
                         if confidence >= self.min_confidence:
-                            # Calculer le lift
+                            # Calculate lift
                             consequent_support = len(self.frequent_itemsets[len(consequent)][consequent]) / self.n_transactions
                             lift = confidence / consequent_support
                             
-                            # Ajouter la règle à la liste
+                            # Add the rule to the list
                             self.rules_.append({
                                 'antecedent': antecedent,
                                 'consequent': consequent,
@@ -184,19 +218,19 @@ class Eclat:
 
     def get_frequent_itemsets(self):
         """
-        Récupérer les itemsets fréquents découverts.
+        Retrieve the discovered frequent itemsets.
         
         Returns:
-            dict: Dictionnaire des itemsets fréquents où les clés sont les tailles
-                et les valeurs sont des ensembles d'itemsets
+            dict: Dictionary of frequent itemsets where keys are sizes
+                and values are sets of itemsets
         """
         return self.frequent_itemsets
     
     def get_rules(self):
         """
-        Accesseur pour récupérer les règles d'association générées.
+        Accessor to retrieve the generated association rules.
         
         Returns:
-            Liste des règles d'association
+            List of association rules
         """
         return self.rules_
