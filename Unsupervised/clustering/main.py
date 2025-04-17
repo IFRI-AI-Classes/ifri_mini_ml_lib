@@ -11,38 +11,38 @@ import matplotlib.pyplot as plt
 import numpy as np  
 
 def main():
-    # Charger les données à partir du fichier CSV
+    # Load data from CSV
     try:
         data = pd.read_csv('./data/data.csv')
-        X = data.values  # Convertir les données en un tableau NumPy
+        X = data.values  # Convert data to NumPy array
     except FileNotFoundError:
-        print("Erreur : Le fichier data.csv n'a pas été trouvé. Assurez-vous qu'il se trouve dans le dossier 'data'.")
+        print("Error : Le fichier data.csv was not found. Make sure it is in the 'data' folder.")
         return
 
-    # Demander à l'utilisateur de choisir l'algorithme
-    print("Choisissez l'algorithme à utiliser :")
+    # Ask to User to choose the algorithm
+    print("Choose algorithm to use :")
     print("1. KMeans")
     print("2. DBSCAN")
     print("3. Hierarchical")
-    choix = input("Entrez le numéro de votre choix (1, 2 ou 3) : ")
+    choix = input("Enter the number of your votre choice (1, 2 ou 3) : ")
 
     if choix == '1':
-        # Utiliser l'algorithme KMeans
-        n_clusters = int(input("Entrez le nombre de clusters souhaité : "))
+        # Use algorithm KMeans
+        n_clusters = int(input("Enter the number of clusters wished : "))
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         labels = kmeans.fit_predict(X)
 
-        print("Labels des clusters (KMeans) :", labels)
+        print("Labels of clusters (KMeans) :", labels)
 
-        # Calculer et afficher l'inertie
+        # Calculate and print inertia score
         inertia = calculate_inertia(X, labels, kmeans.centroids)
-        print(f"Inertie: {inertia}")
+        print(f"Inertia: {inertia}")
 
-        # Calculer et afficher le score silhouette
+        # Calculate and print silhouette score
         silhouette = calculate_silhouette(X, labels)
-        print(f"Silhouette: {silhouette}")
+        print("Silhouette: {silhouette}")
 
-        # Visualiser les clusters (si les données sont en 2D)
+        # Visualize clusters (if data are 2D)
         if X.shape[1] == 2:
             plt.figure(figsize=(8, 6))
             for i in range(kmeans.n_clusters):
@@ -54,22 +54,22 @@ def main():
             plt.legend()
             plt.show()
         else:
-            print("Les données ne sont pas en 2D, la visualisation n'est pas possible.")
+            print("Data aren't 2D, the visualization isn't possible.")
 
     elif choix == '2':
-        # Utiliser l'algorithme DBSCAN
-        eps = float(input("Entrez la valeur de eps (rayon) : "))
-        min_samples = int(input("Entrez le nombre minimal de samples : "))
+        # Use algorithm DBSCAN
+        eps = float(input("Enter the value of eps (ray) : "))
+        min_samples = int(input("Enter the minimum number of samples : "))
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)
         labels = dbscan.fit_predict(X)
 
-        print("Labels des clusters (DBSCAN) :", labels)
+        print("Labels of clusters (DBSCAN) :", labels)
 
-        # Calculer et afficher le score silhouette
+        # Calculate and print silhouette score
         silhouette = calculate_silhouette(X, labels)
         print(f"Silhouette: {silhouette}")
 
-        # Visualiser les clusters (si les données sont en 2D)
+        # Visualize clusters 
         if X.shape[1] == 2:
             plt.figure(figsize=(8, 6))
             unique_labels = set(labels)
@@ -89,27 +89,27 @@ def main():
             plt.ylabel('Feature 2')
             plt.show()
         else:
-            print("Les données ne sont pas en 2D, la visualisation n'est pas possible.")
+            print("Data aren't 2D. The visualization isn't possible.")
     elif choix == '3':
-        # Utiliser l'algorithme Hierarchical
-        n_clusters = int(input("Entrez le nombre de clusters souhaité : "))
-        linkage = input("Entrez le critère de linkage ('single', 'complete', 'average') : ")
-        method = input("Entrez la méthode ('agglomerative', 'divisive') : ")
+        # Use algorithm Hierarchical
+        n_clusters = int(input("Enter the number of clusters whised : "))
+        linkage = input("Enter the linkage criteron ('single', 'complete', 'average') : ")
+        method = input("Enter method ('agglomerative', 'divisive') : ")
 
         hierarchical = HierarchicalClustering(n_clusters=n_clusters, linkage=linkage, method=method)
         labels = hierarchical.fit_predict(X)
 
-        print("Labels des clusters (Hierarchical) :", labels)
+        print("Labels of clusters (Hierarchical) :", labels)
 
-        # Calculer et afficher le score silhouette
+        # Calculate and print silhouette score
         silhouette = calculate_silhouette(X, labels)
         print(f"Silhouette: {silhouette}")
 
-        # Afficher le dendrogramme (si la méthode est agglomérative)
+        # Print dendrogram (if method is agglomerative)
         if method == 'agglomerative':
             hierarchical.plot_dendrogram(X)
 
-        # Visualiser les clusters (si les données sont en 2D)
+        # Visualize clusters (if data are 2D)
         if X.shape[1] == 2:
             plt.figure(figsize=(8, 6))
             unique_labels = set(labels)
@@ -124,9 +124,9 @@ def main():
             plt.ylabel('Feature 2')
             plt.show()
         else:
-            print("Les données ne sont pas en 2D, la visualisation n'est pas possible.")
+            print("Data aren't 2D, the visualisation isn't possible.")
     else:
-        print("Choix invalide. Veuillez choisir 1, 2 ou 3.")
+        print("Choice invalid. Please choice 1, 2 ou 3.")
 
 if __name__ == "__main__":
     main()
