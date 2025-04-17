@@ -5,17 +5,27 @@ import numpy as np
 
 def selection_rates(df, y_pred, privileged_group, unprivileged_group):
   """
-  function (selection_rates) : measures the proportion of individuals in a given group who receive a positive decision
+  Description: Selection rates is a that is function used to measure the proportion of individuals in a given group who receive a positive decision
 
-  privileged_group : group with the highest selection rate
+  Args:  
+      y_pred (list): predicted labels returned by the classifier
+      df : dataframe containing predictions and groups
+      privileged_group(float) : group with the highest selection rate
+      unprivilegied_group(float) : group with the lowest selection rate and therefore disadvantaged
 
-  unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
+  Return: 
+        the selection rates of the two groups
+  
+  Example:
+       Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
+       a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call
 
-  args :  y_pred (list): predicted labels returned by the classifier
-          df : dataframe containing predictions and groups
+       Then call on the function :
+       result = selection_rates(df, y_pred, privileged_group, unprivileged_group); 
+       print("Selection Rate:", result)
+       it's going to return the proportion of positive predicitions for each group 
 
-  return : the selection rates of the two groups
-  """
+   """
   prob_privileged = df[df['group'] == privileged_group][y_pred].mean()
   prob_unprivileged = df[df['group'] == unprivileged_group][y_pred].mean()
   return prob_privileged, prob_unprivileged
@@ -23,18 +33,29 @@ def selection_rates(df, y_pred, privileged_group, unprivileged_group):
 
 def matrix (y_true, y_pred, group_mask):
     """
-    function (matrix)  : establishes the confusion matrix for each group
-    tn : true negative
-    fp : false postive
-    fn : false negative
-    tp : true positive
+    Description: Matrix is a function thzt is used to establishe the confusion matrix for each group
+    
+    Args: 
+        y_true (list) : truth labels provides to the classifier
+        y_pred (list): predicted labels returned by the classifier
+        group_mask (list) : Boolean mask indicating the elements belonging to the group for which we wish to calculate the confusion matrix
 
-    args : y_true (list) : truth labels provides to the classifier
-            y_pred (list): predicted labels returned by the classifier
-            group_mask (list) : Boolean mask indicating the elements belonging to
-            the group for which we wish to calculate the confusion matrix
+    Return:
+        tn, fp, fn, tp
+        tn : true negative
+        fp : false postive
+        fn : false negative
+        tp : true positive
 
-    return : tn, fp, fn, tp
+    Example: 
+          Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
+          a list which will be used to calculate the confusion matrix
+
+          And then, call on the function by doing :
+          result = confusion_matrix(y_true_group, y_pred_group, classes=[0, 1])
+          print("Confusion matrix:", result) 
+          It's going to return tn, fp, fn, tp
+
     """
     # Appliquer le groupe mask pour obtenir les prédictions et les vraies valeurs pour le groupe
     y_true_group = [y_true[i] for i in range(len(y_true)) if group_mask[i]]
@@ -54,17 +75,26 @@ def matrix (y_true, y_pred, group_mask):
 
 def group_rate (y_true, y_pred, group_mask):
   """
-  function (group_rate): calculate the true positive and false positive rates for each group
-  tpr : true positive rate
-  fpr : false positive rate
+  Description: Group Rate is a function that is used to calculate the true positive and false positive rates for each group
+ 
+  Args:
+       y_true (list) : truth labels provides to the classifier
+       y_pred (list): predicted labels returned by the classifier 
+       group_mask (list) : Boolean mask indicating the elements belonging to the group for which we wish to calculate the confusion matrix
 
-    args : y_true (list) : truth labels provides to the classifier
-            y_pred (list): predicted labels returned by the classifier
-            group_mask (list) : Boolean mask indicating the elements belonging to
-            the group for which we wish to calculate the confusion matrix
+  Return : tpr, fpr
+      tpr : true positive rate
+      fpr : false positive rate
 
-    return : tpr, fpr
-    """
+  Example:
+      Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
+      a list which will be used to calculate the confusion matrix
+
+      And then, call on the function by doing :
+          result = group_rate (y_true, y_pred, group_mask)
+          print("Group Rate:", result) 
+          It's going to return tpr, fpr for each group
+  """
   tn, fp, fn, tp = matrix (y_true, y_pred, group_mask)
   tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
   fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
@@ -72,18 +102,29 @@ def group_rate (y_true, y_pred, group_mask):
   return tpr, fpr
 
 
-def ifri_demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, group):
+def demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, group):
   """
-  function : Calculate the demographic parity ratio between unprivileged and privileged groups
-  args:
+  Description: This is a function used to calculate the demographic parity ratio between unprivileged and privileged groups
+  This demographic parity is a metric of equity in AI that measures whether a model gives positibe predictions in an equitable 
+  way between different groups
 
-  privileged_group : group with the highest selection rate
+  Args:
+      y_pred (list): predicted labels returned by the classifier 
+      privileged_group(float): group with the highest selection rate
+      unprivilegied_group(float): group with the lowest selection rate and therefore disadvantaged
+      group(list): list of groups
 
-  unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
+  Return: 
+      demographic parity ratio (float)
 
-  group : list of groups
+  Example:
+      Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
+      a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call 
 
-  return: demographic parity ratio (float)
+      And then, call on the function by doing :
+      result = demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, group)
+      print(" demographic parity ratio:", result) 
+      It's going to return the ratio of the prob_unprivileged by the prob_privileged
 
   """
   # Conversion to data frame
@@ -91,25 +132,34 @@ def ifri_demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, g
   df = pd.DataFrame(dict)
   # Calculate the selection rate for each group
   prob_privileged, prob_unprivileged = selection_rates(df, y_pred)
-  # Calculate the demographic parity ratio
-
+  
   return prob_unprivileged / prob_privileged if prob_privileged != 0 else 0
 
 
 
-def ifri_demographic_parity_difference(y_pred,priviligied_group, unpriviligied_group, group):
+def demographic_parity_difference(y_pred,priviligied_group, unpriviligied_group, group):
   """
-  function : Calculate the demographic parity difference between the unpriviligied and priviligied groups
-  args:
-  y_pred (list): predicted labels returned by the classifier
+  Description: This is a function used to calculate the demographic parity difference between unprivileged and privileged groups
+  This demographic parity difference is a metric of equity in AI that measures whether a model gives positibe predictions in an equitable 
+  way between different groups. And this by making the absolute difference between this different groups.
 
-  privileged_group : group with the highest selection rate
+  Args:
+      y_pred (list): predicted labels returned by the classifier
+      privileged_group : group with the highest selection rate
+      unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
+      group : list of groups
 
-  unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
+  Return: 
+      demographic parity difference (float)
 
-  group : list of groups
+  Example: 
+      Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
+      a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call 
 
-  return: demographic parity difference (float)
+      And then, call on the function by doing :
+      result = demographic_parity_difference(y_pred,privileged_group, unprivileged_group, group)
+      print(" demographic parity diffence:", result) 
+      It's going to return the absolute difference between the prob_unprivileged and the prob_privileged
 
   """
   # Conversion to data frame
@@ -122,21 +172,26 @@ def ifri_demographic_parity_difference(y_pred,priviligied_group, unpriviligied_g
   return abs(prob_unprivileged - prob_privileged)
 
 
-def ifri_equalized_odds(y_true, y_pred, privileged_group, unprivileged_group,sensitive_features):
+def equalized_odds(y_true, y_pred, privileged_group, unprivileged_group,sensitive_features):
   """
-  function: Compare the rates of False Positives and True Positives between groups
+  Description: This is a function used to compare the rates of False Positives and True Positives between groups
+  Equalized odd is an algorithmic equity metric that assesses whether a binary classification model treats different groups fairly
 
-  args:
-   y_pred (list): predicted labels returned by the classifier
+  Args:
+      y_pred (list): predicted labels returned by the classifier
+      privileged_group(float) : group with the highest selection rate
+      unprivilegied_group(float) : group with the lowest selection rate and therefore disadvantage
+      sensitive_features(list) : list of the sensitive features over which equal opportunity should be assessed
 
-  privileged_group : group with the highest selection rate
+  Return: 
+      the equalized odds ratio (float)
 
-  unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
+  Example: 
+    Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
+    a list which will be used to calculate the confusion matrix for each group
 
-  sensitive_features : list of the sensitive features over which equal opportunity should be assessed
-
-  return: the equalized odds ratio (float)
-
+    And then, call on the function group_rate (y_true, y_pred, group_mask) to obtain the tpr and the fpr of each group
+    
   """
   # Convert data to NumPy arrays
   y_true = np.array(y_true)
