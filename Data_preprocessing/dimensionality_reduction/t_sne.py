@@ -4,39 +4,43 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 class TSNE:
-    def __init__(self, n_components=2, perplexity=30.0, 
-                 early_exaggeration=12.0, learning_rate=200.0, 
-                 n_iter=1000, min_grad_norm=1e-7, 
-                 random_state=None, verbose=0):
+
+    """
+    Implementation of the t-Distributed Stochastic Neighbor Embedding (t-SNE) algorithm
+    for dimensionality reduction and data visualization.
+
+    Attributes:
+        n_components (int): Dimension of the projection space (2 or 3)
+        perplexity (float): Effective number of local neighbors (typically between 5 and 50)
+        early_exaggeration (float): Initial exaggeration factor for optimization
+        learning_rate (float): Learning rate for gradient descent
+        n_iter (int): Maximum number of iterations
+        embedding_ (np.ndarray): Projection result (shape: [n_samples, n_components])
+        kl_divergence_ (float): Last KL divergence value
+        n_iter_ (int): Actual number of iterations performed
+    """
+
+    def __init__(self, n_components=2, perplexity=30.0, early_exaggeration=12.0, 
+                 learning_rate=200.0, n_iter=1000, min_grad_norm=1e-7, random_state=None, verbose=0):
+
         """
-        Implémentation from scratch de t-SNE.
-        
-        Paramètres:
-        -----------
-        n_components : int, (défaut: 2)
-            Dimension de l'espace embarqué
-            
-        perplexity : float, (défaut: 30)
-            Contrôle le nombre de voisins locaux considérés
-            
-        early_exaggeration : float, (défaut: 12.0)
-            Facteur d'exagération initial pour séparer les clusters
-            
-        learning_rate : float, (défaut: 200.0)
-            Taux d'apprentissage pour la descente de gradient
-            
-        n_iter : int, (défaut: 1000)
-            Nombre maximal d'itérations
-            
-        min_grad_norm : float, (défaut: 1e-7)
-            Seuil minimal de la norme du gradient pour continuer
-            
-        random_state : int ou None, (défaut: None)
-            Graine pour le générateur aléatoire
-            
-        verbose : int, (défaut: 0)
-            Niveau de verbosité (0: silencieux, 1: progress, 2: détaillé)
+        Description:
+            Initializes the t-SNE parameters.
+
+        Args:
+            n_components (int): Output dimension (default: 2)
+            perplexity (float): Perplexity (default: 30.0)
+            early_exaggeration (float): Initial exaggeration factor (default: 12.0)
+            learning_rate (float): Learning rate (default: 200.0)
+            n_iter (int): Maximum number of iterations (default: 1000)
+            min_grad_norm (float): Gradient norm stopping threshold (default: 1e-7)
+            random_state (int): Reproducibility seed (default: None)
+            verbose (int): Verbosity level (0 or 1) (default: 0)
+
+        Example:
+            >>> tsne = TSNE(n_components=2, perplexity=20)
         """
+
         self.n_components = n_components
         self.perplexity = perplexity
         self.early_exaggeration = early_exaggeration
@@ -54,15 +58,42 @@ class TSNE:
         if random_state is not None:
             np.random.seed(random_state)
     
-    def _euclidean_distance(self, X):
-        """Calcule la matrice des distances euclidiennes carrées entre tous les points."""
+
+    def _euclidean_distance(self, X: np.ndarray) -> np.ndarray:
+       
+        """
+        Description:
+            Computes the squared Euclidean distance matrix.
+
+        Args:
+            X (np.ndarray): Input data (shape: [n_samples, n_features])
+
+        Returns:
+            np.ndarray: Squared distance matrix (shape: [n_samples, n_samples])
+        """
+
         sum_X = np.sum(np.square(X), axis=1)
         distances = np.add(-2 * np.dot(X, X.T), sum_X).T + sum_X
         np.fill_diagonal(distances, 0.0)
         return distances
     
-    def _binary_search_perplexity(self, distances, perplexity, tol=1e-5, max_iter=50):
-        """Trouve les sigma appropriés pour obtenir la perplexité souhaitée."""
+
+    def _binary_search_perplexity(self, distances, perplexity, tol=1e-5, max_iter=50) -> np.ndarray:
+
+        """
+        Description:
+            Dichotomous search to find the optimal sigmas.
+
+        Args:
+            distances (np.ndarray): Distance matrix
+            perplexity (float): Target perplexity
+            tol (float): Convergence tolerance
+            max_iter (int): Maximum iterations
+
+        Returns:
+            np.ndarray: Conditional probability matrix P
+        """
+
         n_samples = distances.shape[0]
         P = np.zeros((n_samples, n_samples))
         beta = np.ones((n_samples, 1))
@@ -109,8 +140,21 @@ class TSNE:
         
         return P
     
-    def _compute_joint_probabilities(self, X, perplexity):
-        """Calcule les probabilités jointes p_ij."""
+
+    def _compute_joint_probabilities(self, X: np.ndarray, perplexity: float) -> np.ndarray:
+
+        """
+        Description:
+            Computes the joint probabilities P in high dimensions.
+
+        Args:
+            X (np.ndarray): Original data
+            perplexity (float): Desired perplexity
+
+        Returns:
+            np.ndarray: Symmetric joint probability matrix
+        """
+
         # Calcul des distances euclidiennes carrées
         distances = self._euclidean_distance(X)
         
@@ -123,8 +167,22 @@ class TSNE:
         
         return P
     
-    def _compute_low_dimensional_probabilities(self, Y):
-        """Calcule les probabilités q_ij en basse dimension."""
+    def _compute_low_dimensional_probabilities(self, Y: np.ndarray) -> np.ndarray:
+
+        """
+        Description:
+            Computes the low-dimensional joint probabilities q_ij according to a Student t distribution.
+
+        Args:
+            Y (np.ndarray): Current low-dimensional embedding (shape: [n_samples, n_components])
+
+        Returns:
+            np.ndarray: Probability matrix Q (shape: [n_samples, n_samples])
+
+        Example:
+            >>> q_matrix = self._compute_low_dimensional_probabilities(current_embedding)
+        """
+
         distances = self._euclidean_distance(Y)
         inv_distances = 1.0 / (1.0 + distances)
         np.fill_diagonal(inv_distances, 0.0)
@@ -132,8 +190,25 @@ class TSNE:
         Q = np.maximum(Q, 1e-12)
         return Q
     
-    def _compute_gradient(self, P, Q, Y):
-        """Calcule le gradient de la divergence KL par rapport à l'embedding."""
+
+    def _compute_gradient(self, P: np.ndarray, Q: np.ndarray, Y: np.ndarray) -> np.ndarray:
+
+        """
+        Description:
+            Computes the gradient of the KL divergence with respect to the embedding coordinates.
+
+        Args:
+            P (np.ndarray): High-dimensional probability matrix
+            Q (np.ndarray): Low-dimensional probability matrix
+            Y (np.ndarray): Current embedding
+
+        Returns:
+            np.ndarray: Gradient matrix (same shape as Y)
+
+        Example:
+            >>> grad = self._compute_gradient(p_matrix, q_matrix, current_embedding)
+        """
+
         n = Y.shape[0]
         gradient = np.zeros_like(Y)
         
@@ -147,12 +222,46 @@ class TSNE:
         
         return gradient
     
-    def _compute_kl_divergence(self, P, Q):
-        """Calcule la divergence KL entre P et Q."""
+
+    def _compute_kl_divergence(self, P: np.ndarray, Q: np.ndarray) -> float:
+
+        """
+        Description:
+            Computes the Kullback-Leibler divergence between the P and Q distributions.
+
+        Args:
+            P (np.ndarray): Reference probability distribution
+            Q (np.ndarray): Approximate distribution
+
+        Returns:
+            float: KL divergence value (in bits)
+
+        Example:
+            >>> kl = self._compute_kl_divergence(p_matrix, q_matrix)
+        """
         return np.sum(P * np.log(P / Q))
     
-    def fit(self, X):
-        """Fit le modèle aux données X."""
+
+    def fit(self, X: np.ndarray) -> 'TSNE':
+
+        """
+        Description:
+            Training the t-SNE model.
+
+        Args:
+            X (np.ndarray): Data to project (shape: [n_samples, n_features])
+
+        Returns:
+            TSNE: Trained instance
+
+        Raises:
+            ValueError: If n_samples < 3 * perplexity
+
+        Example:
+            >>> data = np.random.rand(100, 10)
+            >>> tsne.fit(data)
+        """
+
         n_samples = X.shape[0]
         
         # Vérification des données
@@ -219,14 +328,45 @@ class TSNE:
         
         return self
     
-    def fit_transform(self, X):
-        """Fit le modèle aux données et retourne l'embedding."""
+    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+
+        """
+        Description:
+            One-step data training and projection.
+
+        Args:
+            X (np.ndarray): Data to transform
+
+        Returns:
+            np.ndarray: Projected data (shape: [n_samples, n_components])
+
+        Example:
+            >>> embedding = tsne.fit_transform(data)
+        """
+
         self.fit(X)
         return self.embedding_
 
 
+    @staticmethod
     def generate_test_data(n_samples=300, case='blobs', random_state=None):
-        """Génère des données de test."""
+
+        """
+        Description:
+            Generates test data for visualization.
+
+        Args:
+            n_samples (int): Number of samples (default: 300)
+            case (str): Data type ('blobs', 'swiss_roll', or other) (default: 'blobs')
+            random_state (int): Random seed (default: None)
+
+        Returns:
+            tuple: (X, y) data and labels
+
+        Example:
+            >>> X, y = TSNE.generate_test_data(case='swiss_roll')
+        """
+
         if random_state:
             np.random.seed(random_state)
         
@@ -252,8 +392,24 @@ class TSNE:
         X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
         return X, y
 
+
+    @staticmethod
     def plot_results(X, y, title, ax=None):
-        """Visualise les résultats en 2D ou 3D."""
+
+        """
+        Description:
+            Views the projection results.
+
+        Args:
+            X (np.ndarray): Projected data (2D or 3D)
+            y (np.ndarray): Labels for coloring
+            title (str): Plot title
+            ax (matplotlib.axes.Axes): Optional axis for the plot
+
+        Example:
+            >>> TSNE.plot_results(embedding, y, 't-SNE Projection')
+        """
+
         if ax is None:
             fig = plt.figure()
             if X.shape[1] == 3:
@@ -268,3 +424,7 @@ class TSNE:
         ax.set_title(title)
         ax.grid(True)
 
+
+
+
+        
