@@ -10,29 +10,23 @@ import pandas as pd
 
 class StandardScaler:
     """
-    Implémentation d'un standardiseur de données similaire à celui de scikit-learn.
+    Description:
+        A custom implementation of a standard scaler similar to scikit-learn's StandardScaler.
 
-    Cette classe permet de centrer et réduire les données (moyenne nulle, écart-type unitaire).
-    Elle supporte aussi bien les tableaux numpy que les DataFrames pandas.
+        This class centers and scales input data so that each feature has a mean of 0 and a standard deviation of 1.
+        It supports both NumPy arrays and pandas DataFrames.
 
-    Attributs :
-    ----------
-    mean_ : np.ndarray
-        Moyenne de chaque colonne des données d'entraînement.
-
-    std_ : np.ndarray
-        Écart-type de chaque colonne des données d'entraînement.
-
-    is_dataframe : bool
-        Indique si les données d'origine étaient un DataFrame pandas.
-
-    columns : Index or None
-        Les noms des colonnes si les données d'origine étaient un DataFrame.
+    Attributes:
+        mean_ (np.ndarray): Mean of each feature in the training data.
+        std_ (np.ndarray): Standard deviation of each feature in the training data.
+        is_dataframe (bool): Whether the input was a pandas DataFrame.
+        columns (Index or None): Column names of the DataFrame if applicable.
     """
-    
+
     def __init__(self):
         """
-        Initialise le StandardScaler avec des attributs vides.
+        Description:
+            Initializes the StandardScaler with default attributes.
         """
         self.mean_ = None
         self.std_ = None
@@ -41,12 +35,14 @@ class StandardScaler:
 
     def _convert_to_array(self, X):
         """
-        Convertit les données en tableau numpy si ce n'est pas déjà le cas.
+        Description:
+            Converts input data to a NumPy array if it's a DataFrame.
 
-        :param X: Données d'entrée (np.ndarray ou pd.DataFrame)
-        :type X: np.ndarray or pd.DataFrame
-        :return: Données converties en tableau numpy
-        :rtype: np.ndarray
+        Args:
+            X (np.ndarray or pd.DataFrame): Input data.
+
+        Returns:
+            np.ndarray: Converted NumPy array.
         """
         if isinstance(X, pd.DataFrame):
             self.is_dataframe = True
@@ -57,12 +53,14 @@ class StandardScaler:
 
     def _convert_to_dataframe(self, X_scaled):
         """
-        Convertit les données standardisées en DataFrame si les données initiales en étaient un.
+        Description:
+            Converts the scaled NumPy array back to a pandas DataFrame if the original data was a DataFrame.
 
-        :param X_scaled: Données transformées
-        :type X_scaled: np.ndarray
-        :return: Données sous forme de DataFrame ou ndarray selon l'entrée d'origine
-        :rtype: pd.DataFrame or np.ndarray
+        Args:
+            X_scaled (np.ndarray): Scaled data.
+
+        Returns:
+            pd.DataFrame or np.ndarray: Data in original input format.
         """
         if self.is_dataframe:
             return pd.DataFrame(X_scaled, columns=self.columns)
@@ -70,10 +68,15 @@ class StandardScaler:
 
     def fit(self, X):
         """
-        Calcule la moyenne et l'écart-type des données.
+        Description:
+            Computes the mean and standard deviation of each feature from the input data.
 
-        :param X: Données d'entrée (chaque ligne est un exemple)
-        :type X: np.ndarray or pd.DataFrame
+        Args:
+            X (np.ndarray or pd.DataFrame): Input data where each row is a sample.
+
+        Example:
+            scaler = StandardScaler()
+            scaler.fit(data)
         """
         X = self._convert_to_array(X)
         self.mean_ = np.mean(X, axis=0)
@@ -81,47 +84,65 @@ class StandardScaler:
 
     def transform(self, X):
         """
-        Applique la transformation de standardisation aux données.
+        Description:
+            Applies standardization to the input data using the previously computed mean and std.
 
-        :param X: Données à transformer
-        :type X: np.ndarray or pd.DataFrame
-        :return: Données standardisées
-        :rtype: np.ndarray or pd.DataFrame
-        :raises ValueError: Si 'fit' n'a pas été appelé auparavant
+        Args:
+            X (np.ndarray or pd.DataFrame): Input data to standardize.
+
+        Returns:
+            np.ndarray or pd.DataFrame: Standardized data.
+
+        Raises:
+            ValueError: If fit was not called before transform.
+
+        Example:
+            X_scaled = scaler.transform(data)
         """
         X = self._convert_to_array(X)
         if self.mean_ is None or self.std_ is None:
-            raise ValueError("Le scaler n'a pas été ajusté. Appelez 'fit' avant 'transform'.")
-        
+            raise ValueError("Scaler has not been fitted. Call 'fit' before 'transform'.")
+
         X_scaled = (X - self.mean_) / self.std_
         return self._convert_to_dataframe(X_scaled)
 
     def fit_transform(self, X):
         """
-        Ajuste le scaler aux données puis applique la transformation.
+        Description:
+            Fits the scaler to the data and then transforms it.
 
-        :param X: Données d'entrée
-        :type X: np.ndarray or pd.DataFrame
-        :return: Données standardisées
-        :rtype: np.ndarray or pd.DataFrame
+        Args:
+            X (np.ndarray or pd.DataFrame): Input data to fit and transform.
+
+        Returns:
+            np.ndarray or pd.DataFrame: Standardized data.
+
+        Example:
+            X_scaled = scaler.fit_transform(data)
         """
         self.fit(X)
         return self.transform(X)
 
     def inverse_transform(self, X_scaled):
         """
-        Annule la standardisation et récupère les valeurs d'origine.
+        Description:
+            Reverses the standardization process and returns data to its original scale.
 
-        :param X_scaled: Données transformées
-        :type X_scaled: np.ndarray or pd.DataFrame
-        :return: Données ramenées à leur échelle d'origine
-        :rtype: np.ndarray or pd.DataFrame
-        :raises ValueError: Si 'fit' n'a pas été appelé auparavant
+        Args:
+            X_scaled (np.ndarray or pd.DataFrame): Standardized data.
+
+        Returns:
+            np.ndarray or pd.DataFrame: Data restored to original scale.
+
+        Raises:
+            ValueError: If fit was not called before inverse_transform.
+
+        Example:
+            original_data = scaler.inverse_transform(X_scaled)
         """
         X_scaled = self._convert_to_array(X_scaled)
         if self.mean_ is None or self.std_ is None:
-            raise ValueError("Le scaler n'a pas été ajusté. Appelez 'fit' avant 'inverse_transform'.")
-        
+            raise ValueError("Scaler has not been fitted. Call 'fit' before 'inverse_transform'.")
+
         X_original = (X_scaled * self.std_) + self.mean_
         return self._convert_to_dataframe(X_original)
-
