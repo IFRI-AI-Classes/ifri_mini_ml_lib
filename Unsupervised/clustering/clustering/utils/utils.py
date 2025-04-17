@@ -2,13 +2,13 @@ import numpy as np
 
 def euclidean_distance(x1, x2):
     """
-    Calcule la distance euclidienne entre deux vecteurs.
+    Computes the Euclidean distance between two vectors.
 
-    Paramètres:
-    - x1 (numpy.ndarray): Premier vecteur.
-    - x2 (numpy.ndarray): Second vecteur.
+    Parameters:
+    - x1 (numpy.ndarray): First vector.
+    - x2 (numpy.ndarray): Second vector.
 
-    Retour:
-    - float: La distance euclidienne entre x1 et x2.
+    Returns:
+    - float: The Euclidean distance between x1 and x2.
     """
     return np.sqrt(np.sum((x1 - x2)**2))
