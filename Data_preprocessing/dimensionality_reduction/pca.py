@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class ACP:
+class PCA:
 
     """
     Implementation of Principal Component Analysis (PCA) for dimensionality reduction.
@@ -38,7 +38,7 @@ class ACP:
         self.components = None
 
 
-    def fit(self, X: np.ndarray) -> 'ACP':
+    def fit(self, X: np.ndarray) -> 'PCA':
 
         """
         Description:
@@ -129,8 +129,7 @@ class ACP:
             >>> model.plot_cov_matrix()
         """
 
-        plt.figure(figsize=(6,5))
-        cov_img = plt.matshow(self.cov, cmap=plt.cm.Reds, fognum=1)
+        cov_img = plt.matshow(self.cov, cmap=plt.cm.Reds)
         plt.colorbar(cov_img, ticks=[-1, 0, 1])
         plt.xlabel("Variables")
         plt.ylabel("Variables")
