@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import product
 from utils import clone
-from CrossValidation import k_fold_cross_validation
+from cross_validation import k_fold_cross_validation
 
 class RandomSearchCV_Scratch:
     """

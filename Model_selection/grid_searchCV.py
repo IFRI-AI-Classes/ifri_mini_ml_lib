@@ -1,7 +1,7 @@
 import numpy as np
 from utils import clone
 from itertools import product
-from CrossValidation import k_fold_cross_validation
+from cross_validation import k_fold_cross_validation
 
 class GridSearchCV_Scratch:
     def __init__(self, model, param_grid, scoring,  k=5, stratified = False):
