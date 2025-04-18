@@ -63,7 +63,7 @@ class BaggingRegressor:
             raise ValueError("X and y must have the same number of samples.")
             
         if not (hasattr(self.base_model, 'fit') and hasattr(self.base_model, 'predict')):
-            raise ValueError("The base model must implement both fit() and predict().")
+            raise ValueError("The base model must implement both fit() and predict() methods.")
         
         np.random.seed(self.random_state)
         n_samples = X.shape[0]
@@ -165,7 +165,7 @@ class BaggingClassifier:
             raise ValueError("X and y must have the same number of samples.")
             
         if not (hasattr(self.base_model, 'fit') and hasattr(self.base_model, 'predict')):
-            raise ValueError("The base model must implement both fit() and predict()")
+            raise ValueError("The base model must implement both fit() and predict() methods")
         
         np.random.seed(self.random_state)
         n_samples = X.shape[0]

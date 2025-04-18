@@ -37,7 +37,7 @@ def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
 
         #Gestion des erreurs sur le nbre de folds
         if k > n_samples or k < 2:
-            raise ValueError("Le nombre de folds doit être entre 2 et le nombre total d'échantillons")
+            raise ValueError("Number of folds must be between 2 and the number of samples.")
     
         if stratified:
             class_indices = defaultdict(list)
@@ -57,8 +57,6 @@ def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
            
             indices = np.concatenate([fold for fold in folds])
             
-
-        
         else: 
             #Melanger les indices pour eviter les biais liés à l'ordre des données et améliorer la généralisation du modele
             indices = np.arange(n_samples) # array ([0, 1, 2, 3, ..., n_samples-1]
@@ -73,14 +71,11 @@ def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
             if (n_samples % k) != 0 :
                 folds[-1] = np.concatenate([folds[-1], indices[k * fold_size:]])
 
-        #Validation Croisée
+        #Cross Validation
         scores = []
 
         for test_indices in folds:
             #separons à present chaque fold en train/test
-            #train_indices = [idx for idx in indices if idx not in test_indices] #coûteux
-            #train_indices = list(set(indices) - set(test_indices)) #bien mais perd l'ordre et peut-être coûteux
-            
             train_indices = np.setdiff1d(indices, test_indices, assume_unique=True) #operation vectorielle optimisée
 
             X_train, X_test = X[train_indices], X[test_indices]
@@ -89,7 +84,7 @@ def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
             model.fit(X_train, y_train)
             y_predict = model.predict(X_test)
             if not (hasattr(model, "fit") and hasattr(model, "predict")):
-                raise ValueError("Le modèle doit avoir les méthodes .fit() et .predict()")
+                raise ValueError("The model must implement both .fit() et .predict() methods")
 
             scores.append(metric(y_test, y_predict))
 
