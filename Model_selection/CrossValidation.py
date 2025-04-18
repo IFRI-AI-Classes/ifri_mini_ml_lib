@@ -2,19 +2,34 @@ import numpy as np
 from collections import defaultdict 
 def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
         """
-        Implémentation de la validation croisée k-Fold
+    Description:
+        Implements k-Fold Cross-Validation, a technique for assessing the performance 
+        of a machine learning model by dividing the dataset into k subsets (folds), 
+        training the model on k-1 folds and testing it on the remaining one. This 
+        process is repeated k times, each time with a different test fold. Optionally, 
+        stratification ensures class balance across folds.
 
-        Parameters:
-        - model : ML model with .set_params(), .fit() and .predict() methods
-        - X : Features (list or numpy array)
-        - y : Target (list or numpy array)
-        - k : Number of folds (default, 5)
-        - metric : (accuracy, mse, f1-score etc..)
+    Args:
+        model: A machine learning model implementing .set_params(), .fit(), and .predict() methods.
+        X: Input features (list or NumPy array) of shape (n_samples, n_features).
+        y: Target values (list or NumPy array) of shape (n_samples,).
+        metric: A scoring function to evaluate the model’s performance (e.g., accuracy, f1_score, mse).
+        stratified: Boolean. If True, performs stratified k-fold (preserving label proportions).
+        k: Integer, number of folds (default is 5). Must be between 2 and the number of samples.
 
-        returns :
-        - k-fold Mean score, 
-        - écart type
+    Returns:
+        A tuple containing:
+            - mean_score (float): The average metric score across all folds.
+            - std_score (float): The standard deviation of the metric scores across folds.
 
+    Example:
+        >>> from ifri_mini_lib.supervised.classification import LogisticRegression
+        >>> from ifri_mini_lib.metrics import accuracy_score
+        >>> X = [[1], [2], [3], [4], [5]]
+        >>> y = [0, 0, 1, 1, 1]
+        >>> model = LogisticRegression()
+        >>> k_fold_cross_validation(model, X, y, accuracy_score, stratified=True, k=3)
+        (0.83, 0.12)  # Example output
         """
         
         X, y = np.array(X), np.array(y) 
