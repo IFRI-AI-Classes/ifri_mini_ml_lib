@@ -2,42 +2,68 @@ import numpy as np
 from utils import clone
 
 class BaggingRegressor:
-    ''' 
-        BaggingRegressor est une implémentation du bagging (Bootstrap Aggregating) pour des modèles de régression.
-        Cette méthode agrège les prédictions des modèles de régression en calculant la moyenne 
-        des prédictions de plusieurs sous-modèles entraînés sur des échantillons bootstrap(avec remise) du jeu de données original.
+    """
+    Description:
+        BaggingRegressor is an implementation of the Bagging (Bootstrap Aggregating) technique for regression tasks.
+        It trains multiple copies of a base model on different bootstrap samples of the training set, and 
+        aggregates predictions by averaging them.
 
-        Attributs :
+    Args:
+        base_model (object): A regression model implementing `fit()` and `predict()` methods.
+        n_estimators (int): Number of models to train. Default is 10.
+        random_state (int, optional): Seed for reproducibility. Default is None.
+        pretrained_models (list, optional): A list of already trained models to use instead of training new ones.
 
-        base_model : Le modele de regression de base à utiliser pour le bagging
-        
-        n_estimators (int) : Le nombre de modèles à entraîner. Par défaut, la valeur est 10.
-        
-        random_state : pour la reproductibilité. Default = None
-        
-        Retourne:
-        La moyenne des predictions des modeles
-        '''
-    def __init__(self, base_model, n_estimators=10, random_state=None):
+    Returns:
+        None
+
+    Example:
+        Case 1 - base model which need fitting
+        >>> model = BaggingRegressor(base_model=DecisionTreeClassifier(), n_estimators=5, random_state=123)
+        >>> model.fit(X_train, y_train)
+        >>> y_pred = model.predict(X_test)
+
+        Case 2 - base models already trained which don't need fitting
+        >>> trained_models = [trained_model1, trained_model2, trained_model3]
+        >>> model = BaggingRegressor(pretrained_models=trained_models)
+        >>> y_pred = model.predict(X_test)
+    """
+
+    def __init__(self, base_model= None, n_estimators=10, random_state=None, pretrained_models = None):
         self.base_model = base_model
         self.n_estimators = n_estimators
         self.random_state = random_state
-        self.models = []
+        self.models = pretrained_models if pretrained_models is not None else []
+        self.pretrained = pretrained_models is not None
 
     def fit(self, X, y):
-        ''' 
-        La méthode fit entraîne les différentes versions du modele apres echantillonage boostrap
-        Attributs :
-        - X : les features
-        - y : la target
+        """
+        Description:
+            Trains multiple instances of the base model on bootstrap samples of the training data.
 
-        '''
+        Args:
+            X (array-like): Feature matrix of shape (n_samples, n_features).
+            y (array-like): Target vector of shape (n_samples,).
+
+        Returns:
+            None
+
+        Example:
+            >>> model.fit(X_train, y_train)
+        """
+        if self.pretrained:
+            for model in self.models:
+                if not hasattr(model, 'predict'):
+                    raise ValueError("Each pretrained model must implement the predict() method.")
+            return #We skip training
+        
+
         X, y = np.array(X), np.array(y)
         if X.shape[0] != y.shape[0]:
-            raise ValueError("X et y doivent avoir le même nombre d'échantillons")
+            raise ValueError("X and y must have the same number of samples.")
             
         if not (hasattr(self.base_model, 'fit') and hasattr(self.base_model, 'predict')):
-            raise ValueError("Le modèle de base doit implémenter fit() et predict()")
+            raise ValueError("The base model must implement both fit() and predict().")
         
         np.random.seed(self.random_state)
         n_samples = X.shape[0]
@@ -54,6 +80,19 @@ class BaggingRegressor:
             self.models.append(model)
 
     def predict(self, X):
+        """
+        Description:
+            Predicts target values for given input samples by averaging the predictions of all models.
+
+        Args:
+            X (array-like): Feature matrix of shape (n_samples, n_features).
+
+        Returns:
+            np.ndarray: Averaged predictions for all samples.
+
+        Example:
+            >>> y_pred = model.predict(X_test)
+        """
         X = np.array(X)
         predictions = np.zeros((self.n_estimators, X.shape[0]))
         for i, model in enumerate(self.models):
@@ -62,37 +101,71 @@ class BaggingRegressor:
         return np.mean(predictions, axis=0)
 
 class BaggingClassifier:
-    ''' 
-        BaggingClassifier est une implémentation du bagging (Bootstrap Aggregating) pour des modèles de classification.
-        Cette méthode agrège les prédictions des modèles de classification en faisant un vote majoritaire (la classe ayant le plus été choisi par les modeles sera 
-        finalement attribuée à la donnée à classer) des prédictions de plusieurs sous-modèles entraînés sur des échantillons bootstrap(avec remise) du jeu de données original.
+    """
+    Description:
+        BaggingClassifier is an implementation of the Bagging (Bootstrap Aggregating) technique for classification tasks.
+        It trains multiple copies of a base classifier on bootstrap samples of the training set, and 
+        aggregates predictions using majority voting.
 
-        Attributs :
+    Args:
+        base_model (object): A classification model implementing `fit()` and `predict()` methods.
+        n_estimators (int): Number of models to train. Default is 10.
+        random_state (int, optional): Seed for reproducibility. Default is None.
+        pretrained_models (list, optional): A list of already trained models to use instead of training new ones.
 
-        base_model : Le modele de regression base à utiliser pour le bagging
-        
-        n_estimators (int) : Le nombre de modèles à entraîner. Par défaut, la valeur est 10.
-        
-        random_state : pour la reproductibilité. Default = None
+    Returns:
+        None
 
-        Retourne:
-        Les classes predites apres vote majoritaire
-    '''
+    Example:
+        Case 1 - base model which need fitting
+        >>> model = BaggingClassifier(base_model=DecisionTreeClassifier(), n_estimators=5, random_state=123)
+        >>> model.fit(X_train, y_train)
+        >>> y_pred = model.predict(X_test)
 
-    def __init__(self, base_model, n_estimators=10, random_state = None):
+        Case 2 - base models already trained which don't need fitting
+        >>> trained_models = [trained_model1, trained_model2, trained_model3]
+        >>> model = BaggingClassifier(pretrained_models=trained_models)
+        >>> y_pred = model.predict(X_test)
+
+    """
+
+    def __init__(self, base_model=None, n_estimators=10, random_state = None, pretrained_models = None):
         
         self.base_model = base_model
         self.n_estimators = n_estimators
         self.random_state = random_state
-        self.models = []
+        self.models = pretrained_models if pretrained_models is not None else []
+        self.pretrained = pretrained_models is not None
+
 
     def fit(self, X, y):
+        """
+        Description:
+            Trains multiple instances of the base model on bootstrap samples of the training data.
+
+        Args:
+            X (array-like): Feature matrix of shape (n_samples, n_features).
+            y (array-like): Target vector of shape (n_samples,).
+
+        Returns:
+            None
+
+        Example:
+            >>> model.fit(X_train, y_train)
+        """
+
+        if self.pretrained:
+            for model in self.models:
+                if not hasattr(model, 'predict'):
+                    raise ValueError("Each pretrained model must implement the predict() method.")
+            return  # Skip training
+        
         X, y = np.array(X), np.array(y)
         if X.shape[0] != y.shape[0]:
-            raise ValueError("X et y doivent avoir le même nombre d'échantillons")
+            raise ValueError("X and y must have the same number of samples.")
             
         if not (hasattr(self.base_model, 'fit') and hasattr(self.base_model, 'predict')):
-            raise ValueError("Le modèle de base doit implémenter fit() et predict()")
+            raise ValueError("The base model must implement both fit() and predict()")
         
         np.random.seed(self.random_state)
         n_samples = X.shape[0]
@@ -107,6 +180,20 @@ class BaggingClassifier:
             self.models.append(model)
 
     def predict(self, X):
+        """
+        Description:
+            Predicts target classes for given input samples using majority voting across all models.
+
+        Args:
+            X (array-like): Feature matrix of shape (n_samples, n_features).
+
+        Returns:
+            np.ndarray: Predicted class labels for all samples.
+
+        Example:
+            >>> y_pred = model.predict(X_test)
+        """
+
         predictions = np.zeros((self.n_estimators, X.shape[0]))
         for i, model in enumerate(self.models):
             predictions[i] = model.predict(X)
