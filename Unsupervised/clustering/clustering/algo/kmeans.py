@@ -51,22 +51,22 @@ class KMeans:
         self.labels = None
 
     def _initialize_centroids(self, X):
-    """
-    Initializes the centroids for KMeans based on the chosen initialization method.
+        """
+        Initializes the centroids for KMeans based on the chosen initialization method.
 
-    Parameters:
-    -------------
-    - X (ndarray): Input data of shape (n_samples, n_features).
+        Parameters:
+        -------------
+        - X (ndarray): Input data of shape (n_samples, n_features).
 
-    Behavior:
-    ----------
-    - If init == 'random': Randomly selects k samples from X as initial centroids.
-    - If init == 'k-means++': Implements the k-means++ strategy to spread out initial centroids.
+        Behavior:
+        ----------
+        - If init == 'random': Randomly selects k samples from X as initial centroids.
+        - If init == 'k-means++': Implements the k-means++ strategy to spread out initial centroids.
     
-    Raises:
-    -------
-    - ValueError: If the init method is not 'random' or 'k-means++'.
-    """
+        Raises:
+        -------
+        - ValueError: If the init method is not 'random' or 'k-means++'.
+        """
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
