@@ -1,5 +1,5 @@
 import numpy as np
-from utils.utils import euclidean_distance  # Importez la fonction euclidean_distance
+from utils.utils import euclidean_distance  # Import function euclidean_distance
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 from clustering.algo.kmeans import KMeans
@@ -71,7 +71,8 @@ class HierarchicalClustering:
         clusters = [{i} for i in range(len(data))]
         distances = self._compute_distance_matrix(data)
 
-        while len(clusters) > 1:
+        # Agglomerative clustering loop
+        while len(clusters) > self.n_clusters if self.n_clusters else len(clusters) > 1:
             # Find the two closest clusters
             min_i, min_j = None, None
             min_distance = float('inf')
@@ -81,9 +82,14 @@ class HierarchicalClustering:
                     if distance < min_distance:
                         min_distance = distance
                         min_i, min_j = i, j
+
             # Merge the two closest clusters
             clusters[min_i] = clusters[min_i].union(clusters[min_j])
             del clusters[min_j]
+
+            # Break if the desired number of clusters is reached
+            if self.n_clusters and len(clusters) <= self.n_clusters:
+                break
 
         # Assign labels
         labels = np.zeros(len(data), dtype=int)
@@ -236,28 +242,42 @@ class HierarchicalClustering:
             # Divisive hierarchical clustering
             print("Dendrogram not supported for the divisive method.")
             return
+        
+    def plot_clusters(self, data, labels):
+        """
+        Plots a scatter plot of the data points colored by their cluster labels.
+        Args:
+        data (numpy.ndarray): 2D data array (n_samples, 2).
+        labels (numpy.ndarray): Cluster labels for each data point.
+        """
+        plt.figure(figsize=(8, 6))
+        unique_labels = np.unique(labels)
+        colors = plt.cm.get_cmap("tab10", len(unique_labels))
 
-     def plot_clusters(data, labels, title="Cluster Visualization"):
-         """
-         Plots a scatter plot of the data points colored by their cluster labels.
+        for i, label in enumerate(unique_labels):
+            cluster_points = data[labels == label]
+            plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
+                        label=f"Cluster {label}", color=colors(i), s=50)
 
-         Args:
-           data (numpy.ndarray): 2D data array (n_samples, 2).
-           labels (numpy.ndarray): Cluster labels for each data point.
-           title (str): Title of the plot.
-          """
-          plt.figure(figsize=(8, 6))
-          unique_labels = np.unique(labels)
-          colors = plt.cm.get_cmap("tab10", len(unique_labels))
-
-          for i, label in enumerate(unique_labels):
-              cluster_points = data[labels == label]
-          plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
-                      label=f"Cluster {label}", color=colors(i), s=50)
-
-        plt.title("Hierarchical Clsuetring Result")
+        plt.title("Hierarchical Clustering Result")
         plt.xlabel("Feature 1")
         plt.ylabel("Feature 2")
         plt.legend()
         plt.grid(True)
         plt.show()
+if __name__ == '__main__':
+    # Generate some sample data (replace with your own data)
+    np.random.seed(0)
+    data = np.random.rand(10, 2)
+
+    # Initialize and fit the HierarchicalClustering model
+    hc = HierarchicalClustering(n_clusters=3, method='divisive') # You can also use 'agglomerative'
+    labels = hc.fit_predict(data)
+
+    # Plot the clusters
+    hc.plot_clusters(data, labels)
+
+    # If using agglomerative clustering, you can plot the dendrogram
+    # if hc.method == 'agglomerative':
+    #     hc.plot_dendrogram(data)
+
