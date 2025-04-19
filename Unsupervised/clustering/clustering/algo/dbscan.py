@@ -104,7 +104,7 @@ class DBSCAN:
                     neighbors += new_neighbors
             i += 1
             
-        def plot_clusters(self, data):
+    def plot_clusters(self, data):
         """
         Plots the resulting clusters after calling fit_predict().
 
