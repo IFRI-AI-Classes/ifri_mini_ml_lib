@@ -1,6 +1,6 @@
 import numpy as np
 from utils.utils import euclidean_distance  # Import function euclidean_distance
-from matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 class DBSCAN:
     """
