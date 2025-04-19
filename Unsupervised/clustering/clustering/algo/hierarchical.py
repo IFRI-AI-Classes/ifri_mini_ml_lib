@@ -265,19 +265,5 @@ class HierarchicalClustering:
         plt.legend()
         plt.grid(True)
         plt.show()
-if __name__ == '__main__':
-    # Generate some sample data (replace with your own data)
-    np.random.seed(0)
-    data = np.random.rand(10, 2)
 
-    # Initialize and fit the HierarchicalClustering model
-    hc = HierarchicalClustering(n_clusters=3, method='divisive') # You can also use 'agglomerative'
-    labels = hc.fit_predict(data)
-
-    # Plot the clusters
-    hc.plot_clusters(data, labels)
-
-    # If using agglomerative clustering, you can plot the dendrogram
-    # if hc.method == 'agglomerative':
-    #     hc.plot_dendrogram(data)
 
