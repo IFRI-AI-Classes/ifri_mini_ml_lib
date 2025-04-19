@@ -1,5 +1,6 @@
 import numpy as np
 from utils.utils import euclidean_distance  # Import function euclidean_distance
+from matplotlib.pyplot as plt
 
 class DBSCAN:
     """
@@ -77,7 +78,7 @@ class DBSCAN:
             if euclidean_distance(data[point_index], data[i]) <= self.eps:
                 neighbors.append(i)
         return neighbors
-
+        
     def _expand_cluster(self, data, point_index, cluster_id, neighbors):
         """
         Extends a cluster from a center point.
@@ -102,3 +103,37 @@ class DBSCAN:
                     # Adds new neighbors to the list of neighbors to visit
                     neighbors += new_neighbors
             i += 1
+            
+        def plot_clusters(self, data):
+        """
+        Plots the resulting clusters after calling fit_predict().
+
+        Args:
+        data (numpy.ndarray): Input data (n_samples, 2 features max).
+        """
+        if data.shape[1] > 2:
+            raise ValueError("plot_clusters supports only 2D data.")
+
+        unique_labels = set(self.labels)
+        colors = plt.cm.get_cmap('tab10', len(unique_labels))
+
+        for label in unique_labels:
+            if label == -1:
+                # Noise points
+                color = 'k'
+                label_name = 'Noise'
+            else:
+                color = colors(label)
+                label_name = f'Cluster {label}'
+
+            cluster_points = data[self.labels == label]
+            plt.scatter(cluster_points[:, 0], cluster_points[:, 1], c=[color], label=label_name)
+
+        plt.title("DBSCAN Clustering Result")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        
