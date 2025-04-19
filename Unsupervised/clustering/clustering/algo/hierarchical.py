@@ -250,6 +250,10 @@ class HierarchicalClustering:
         data (numpy.ndarray): 2D data array (n_samples, 2).
         labels (numpy.ndarray): Cluster labels for each data point.
         """
+        if data.shape[1] != 2:
+            print("Warning: The visualization is only possible on 2D.")
+            return
+            
         plt.figure(figsize=(8, 6))
         unique_labels = np.unique(labels)
         colors = plt.cm.get_cmap("tab10", len(unique_labels))
