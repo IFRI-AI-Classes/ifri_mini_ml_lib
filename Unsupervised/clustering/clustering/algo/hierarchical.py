@@ -216,7 +216,7 @@ class HierarchicalClustering:
         Generates and displays the dendrogram.
 
         Args:
-         data (numpy.ndarray): The data used for clustering.
+        data (numpy.ndarray): The data used for clustering.
          **kwargs: Additional arguments to pass to SciPy's dendrogram function.
         """
         # Calculate the linkage matrix
@@ -236,3 +236,28 @@ class HierarchicalClustering:
             # Divisive hierarchical clustering
             print("Dendrogram not supported for the divisive method.")
             return
+
+     def plot_clusters(data, labels, title="Cluster Visualization"):
+         """
+         Plots a scatter plot of the data points colored by their cluster labels.
+
+         Args:
+           data (numpy.ndarray): 2D data array (n_samples, 2).
+           labels (numpy.ndarray): Cluster labels for each data point.
+           title (str): Title of the plot.
+          """
+          plt.figure(figsize=(8, 6))
+          unique_labels = np.unique(labels)
+          colors = plt.cm.get_cmap("tab10", len(unique_labels))
+
+          for i, label in enumerate(unique_labels):
+              cluster_points = data[labels == label]
+          plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
+                      label=f"Cluster {label}", color=colors(i), s=50)
+
+        plt.title("Hierarchical Clsuetring Result")
+        plt.xlabel("Feature 1")
+        plt.ylabel("Feature 2")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
