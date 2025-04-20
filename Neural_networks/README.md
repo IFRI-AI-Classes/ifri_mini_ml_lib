@@ -74,8 +74,8 @@ Parameter for momentum optimizer
 
 ```
 python
-# X_train : données d'entraînement, shape (n_samples, n_features)
-# y_train : labels d'entraînement, shape (n_samples,)
+# X_train : training data, shape (n_samples, n_features)
+# y_train : training labels, shape (n_samples,)
 model.fit(X_train, y_train)
 ```
 
@@ -83,9 +83,9 @@ model.fit(X_train, y_train)
 
 ```
 python
-# Prédire les classes
+# Predict class
 y_pred = model.predict(X_test)
 
-# Prédire les probabilités pour chaque classe
+# Predict probabilities for each class
 probas = model.predict_proba(X_test)
 ```
