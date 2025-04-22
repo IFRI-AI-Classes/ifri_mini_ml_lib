@@ -50,7 +50,7 @@ class TSNE:
         self.random_state = random_state
         self.verbose = verbose
         
-        # Résultats
+        # Results
         self.embedding_ = None
         self.kl_divergence_ = None
         self.n_iter_ = None
@@ -99,25 +99,25 @@ class TSNE:
         beta = np.ones((n_samples, 1))
         log_perplexity = np.log(perplexity)
         
-        # On ignore la diagonale (distance à soi-même = 0)
+        # We ignore the diagonal (distance from oneself = 0)
         for i in range(n_samples):
             beta_min = -np.inf
             beta_max = np.inf
             dist_i = distances[i, np.concatenate((np.r_[0:i], np.r_[i+1:n_samples]))]
             
             for _ in range(max_iter):
-                # Calcul des probabilités conditionnelles
+                # Calculation of conditional probabilities
                 P_i = np.exp(-dist_i * beta[i])
                 sum_Pi = np.sum(P_i)
                 
                 if sum_Pi == 0:
                     sum_Pi = 1e-8
                 
-                # Calcul de l'entropie
+                # Calculation of entropy
                 H = np.log(sum_Pi) + beta[i] * np.sum(dist_i * P_i) / sum_Pi
                 P_i = P_i / sum_Pi
                 
-                # Ajustement de beta (précision binaire)
+                # Beta adjustment (binary precision)
                 H_diff = H - log_perplexity
                 if np.abs(H_diff) < tol:
                     break
@@ -135,7 +135,7 @@ class TSNE:
                     else:
                         beta[i] = (beta[i] + beta_min) / 2.0
             
-            # Remplir la matrice P
+            # Fill in the P matrix
             P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n_samples]))] = P_i
         
         return P
@@ -155,13 +155,13 @@ class TSNE:
             np.ndarray: Symmetric joint probability matrix
         """
 
-        # Calcul des distances euclidiennes carrées
+        # Calculation of square Euclidean distances
         distances = self._euclidean_distance(X)
         
-        # Calcul des probabilités conditionnelles
+        # Calculation of conditional probabilities
         P = self._binary_search_perplexity(distances, perplexity)
         
-        # Symétrisation et normalisation
+        # Symmetrization and normalization
         P = (P + P.T) / (2.0 * P.shape[0])
         P = np.maximum(P, 1e-12)
         
@@ -212,11 +212,11 @@ class TSNE:
         n = Y.shape[0]
         gradient = np.zeros_like(Y)
         
-        # Calcul des termes (p_ij - q_ij) * (1 + ||y_i - y_j||²)^-1
+        # Calculation of terms (p_ij - q_ij) * (1 + ||y_i - y_j||²)^-1
         dist = 1.0 / (1.0 + self._euclidean_distance(Y))
         pq_diff = (P - Q) * dist
         
-        # Calcul du gradient
+        # Gradient calculation
         for i in range(n):
             gradient[i] = 4.0 * np.sum((Y[i] - Y) * pq_diff[:, i][:, np.newaxis], axis=0)
         
@@ -264,37 +264,37 @@ class TSNE:
 
         n_samples = X.shape[0]
         
-        # Vérification des données
+        # Data verification
         if n_samples < 3 * self.perplexity:
-            raise ValueError(f"Le nombre d'échantillons ({n_samples}) doit être au moins 3 * perplexity ({3*self.perplexity})")
+            raise ValueError(f"The number of samples ({n_samples}) must be at least 3 * perplexity ({3*self.perplexity})")
         
         if self.verbose:
-            print("Calcul des probabilités jointes P...")
+            print("Calculation of joint probabilities P...")
         
-        # Calcul des P en haute dimension
+        # Calculation of P in high dimension
         P = self._compute_joint_probabilities(X, self.perplexity)
         P *= self.early_exaggeration
         
-        # Initialisation aléatoire de Y
+        # Random initialization of Y
         Y = 1e-4 * np.random.randn(n_samples, self.n_components).astype(np.float32)
         
-        # Variables pour l'optimisation
+        # Variables for optimization
         previous_gradient = np.zeros_like(Y)
         gains = np.ones_like(Y)
         
         if self.verbose:
-            print("Optimisation de l'embedding...")
+            print("Optimization of embedding...")
         
         # Optimisation
         for i in range(self.n_iter):
-            # Calcul des Q en basse dimension
+            # Calculation of Q in low dimension
             Q = self._compute_low_dimensional_probabilities(Y)
             
-            # Calcul du gradient
+            # Gradient calculation
             gradient = self._compute_gradient(P, Q, Y)
             grad_norm = np.linalg.norm(gradient)
             
-            # Mise à jour avec momentum
+            # Update with momentum
             gains = (gains + 0.2) * ((gradient > 0) != (previous_gradient > 0)) + \
                     (gains * 0.8) * ((gradient > 0) == (previous_gradient > 0))
             gains = np.clip(gains, 0.01, np.inf)
@@ -302,26 +302,26 @@ class TSNE:
             previous_gradient = gradient.copy()
             Y -= self.learning_rate * (gains * gradient)
             
-            # Centrage des données
+            # Data Centering
             Y = Y - np.mean(Y, axis=0)
             
-            # Calcul de la divergence KL
+            # Calculation of KL divergence
             kl_div = self._compute_kl_divergence(P, Q)
             
-            # Réduction de l'exagération après 100 itérations
+            # Reduction of exaggeration after 100 iterations
             if i == 100:
                 P /= self.early_exaggeration
             
-            # Affichage des informations
+            # Displaying information
             if self.verbose >= 1 and i % 100 == 0:
                 print(f"Iteration {i}: KL divergence = {kl_div:.4f}, Gradient norm = {grad_norm:.4f}")
                 
                 if grad_norm < self.min_grad_norm:
                     if self.verbose:
-                        print(f"Arrêt prématuré à l'itération {i}: norme du gradient trop faible")
+                        print(f"Premature stop at iteration {i}: gradient norm too low")
                     break
         
-        # Sauvegarde des résultats
+        # Saving results
         self.embedding_ = Y
         self.kl_divergence_ = kl_div
         self.n_iter_ = i + 1
@@ -371,17 +371,17 @@ class TSNE:
             np.random.seed(random_state)
         
         if case == 'blobs':
-            # Données groupées en clusters
+            # Clustered data
             centers = np.array([[1, 1, 1], [-1, -1, 1], [1, -1, -1], [-1, 1, -1]])
             X = np.vstack([center + np.random.randn(n_samples//4, 3)*0.3 for center in centers])
             y = np.repeat(np.arange(4), n_samples//4)
         elif case == 'swiss_roll':
-            # Données en forme de rouleau suisse
+            # Swiss roll data
             t = 1.5 * np.pi * (1 + 2 * np.random.rand(n_samples))
             X = np.vstack([t * np.cos(t), 10 * np.random.rand(n_samples), t * np.sin(t)]).T
             y = (t // np.pi).astype(int)
         else:
-            # Données linéairement séparables
+            # Linearly separable data
             X = np.random.randn(n_samples, 3)
             X[:n_samples//2] += 1
             X[n_samples//2:] -= 1
