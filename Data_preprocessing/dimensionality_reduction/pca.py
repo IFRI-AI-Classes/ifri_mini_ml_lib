@@ -55,23 +55,23 @@ class PCA:
             >>> model.fit(data)
         """
 
-        # Centrage et normalisation
+        # Centering and normalization
         self.mean = np.mean(X, axis =  0)
         self.std = np.std(X, axis = 0)
         X = (X - self.mean) / (self.std + 1e-10)
         
-        # Calcul de la matrice de covarience
-        self.cov = np.cov(X, rowvar=False) # rowvar=False pour considérer les colonnes comme variables
+        # Calculation of the covariance matrix
+        self.cov = np.cov(X, rowvar=False) 
 
-        # Decomposition en valeur propre et vecteur propre
+        # Decomposition into eigenvalues ​​and eigenvectors
         self.eigen_values, eigen_vectors = np.linalg.eig(self.cov)
         
-        # Trie des valeurs propres et vecteurs propres par ordre decroissant
+        # Sorts eigenvalues ​​and eigenvectors in descending order
         indices = np.argsort(self.eigen_values)[::-1]
         self.eigen_values = self.eigen_values[indices]
         self.eigen_vectors = eigen_vectors[:, indices]
 
-        # Sélectionner les n premiers vecteurs propres
+        # Select the first n eigenvectors
         self.components = self.eigen_vectors[:, :self.n_component]
 
         return self
