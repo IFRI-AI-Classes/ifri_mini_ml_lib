@@ -5,7 +5,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from clustering.algo.kmeans import KMeans
 
 class HierarchicalClustering:
-      """
+    """
       Description:
       ------------
       HierarchicalClustering performs hierarchical clustering using either the agglomerative (bottom-up)
@@ -340,5 +340,4 @@ class HierarchicalClustering:
         plt.legend()
         plt.grid(True)
         plt.show()
-
 
