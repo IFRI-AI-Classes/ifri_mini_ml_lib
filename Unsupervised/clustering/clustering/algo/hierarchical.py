@@ -35,7 +35,7 @@ class HierarchicalClustering:
       labels = hierarchical.fit_predict(data)
       hierarchical.plot_dendrogram(data)
       hierarchical.plot_clusters(data, labels)
-      """
+    """
 
     def __init__(self, n_clusters=None, linkage='single', method='agglomerative'):
         """
@@ -57,7 +57,7 @@ class HierarchicalClustering:
         Example:
         ---------
         hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
-        """
+       """
         self.n_clusters = n_clusters
         self.linkage = linkage
         self.method = method
