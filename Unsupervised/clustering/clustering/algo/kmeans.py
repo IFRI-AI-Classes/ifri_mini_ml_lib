@@ -7,40 +7,57 @@ from utils.utils import euclidean_distance
 class KMeans:
     """
     KMeans Class: Custom implementation of the K-Means unsupervised clustering algorithm.
-
-    Definition:
+    
+    Description:
     ------------
-    K-Means is an unsupervised learning algorithm that groups data into k clusters by minimizing 
-    intra-cluster distances. It iteratively assigns points to the nearest centroid and updates 
-    the centroids based on the current assignments.
+    Custom implementation of the K-Means unsupervised clustering algorithm.  
+    It partitions data into k clusters by minimizing intra-cluster distances, iteratively assigning points to the nearest centroid and updating centroids accordingly.
 
-    Constructor Arguments:
-    -----------------------
-    - n_clusters (int): Number of clusters (k) to form.
-    - max_iter (int): Maximum number of iterations for the algorithm.
-    - tol (float): Tolerance to declare convergence (based on centroid shifts).
-    - init (str): Initialization method for centroids ('random' or 'k-means++').
-    - random_state (int): Seed value for reproducibility.
+    Arguments:
+    -----------
+    - n_clusters (int): Number of clusters to form.
+    - max_iter (int): Maximum iterations for convergence.
+    - tol (float): Threshold to declare convergence based on centroid movement.
+    - init (str): Centroid initialization method ('random' or 'k-means++').
+    - random_state (int or None): Seed for reproducibility.
 
-    Main Methods:
-    --------------
-    - _initialize_centroids(X): Initializes centroids based on the chosen method.
-    - fit(X): Trains the KMeans model on dataset X.
-    - predict(X): Predicts the cluster index for each sample in X.
-    - fit_predict(X): Combines fit() and predict(), returns cluster labels.
-    - plot_clusters(X): Displays the clusters in 2D space (only if X has 2 features).
+    Functions:
+    -----------
+    - __init__: Initializes the model with parameters.
+    - _initialize_centroids(X): Sets initial centroids based on chosen method.
+    - fit(X): Fits the model to data X by iterating centroid updates.
+    - predict(X): Predicts cluster indices for new samples.
+    - fit_predict(X): Fits the model and returns predicted clusters.
+    - plot_clusters(X): Visualizes clusters in 2D if data has two features.
+
+    Example:
+    ---------
+    kmeans = KMeans(n_clusters=3, max_iter=300, tol=1e-4, init='k-means++', random_state=42)
+    kmeans.fit(X)
+    labels = kmeans.predict(X)
+    kmeans.plot_clusters(X)
     """
     def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, init='random', random_state=None):
         """
-        Initializes the KMeans clustering model with specified parameters.
+        Description:
+        ------------
+        Initializes the KMeans clustering model with the specified parameters.
 
-        Parameters:
-        -------------
+        Arguments:
+        -----------
         - n_clusters (int): Number of clusters to form. Default is 3.
-        - max_iter (int): Maximum number of iterations allowed for convergence. Default is 300.
-        - tol (float): Tolerance value used to check convergence based on centroid movement. Default is 1e-4.
-        - init (str): Method to initialize centroids. Either 'random' or 'k-means++'. Default is 'random'.
-        - random_state (int or None): Seed value for random number generator to ensure reproducibility. Default is None.
+        - max_iter (int): Maximum number of iterations allowed. Default is 300.
+        - tol (float): Convergence tolerance based on centroid movement. Default is 1e-4.
+        - init (str): Method to initialize centroids ('random' or 'k-means++'). Default is 'random'.
+        - random_state (int or None): Seed for random number generator. Default is None.
+
+        Functions:
+        -----------
+        - Stores parameters and initializes centroids and labels attributes.
+
+        Example:
+        ---------
+        kmeans = KMeans(n_clusters=5, init='k-means++', random_state=0)
         """
         self.n_clusters = n_clusters
         self.max_iter = max_iter
@@ -52,20 +69,23 @@ class KMeans:
 
     def _initialize_centroids(self, X):
         """
-        Initializes the centroids for KMeans based on the chosen initialization method.
+        Description:
+        ------------
+        Initializes centroids for KMeans clustering using the specified initialization method.
 
-        Parameters:
-        -------------
-        - X (ndarray): Input data of shape (n_samples, n_features).
+        Arguments:
+        -----------
+        - X (ndarray): Input data array of shape (n_samples, n_features).
 
-        Behavior:
-        ----------
-        - If init == 'random': Randomly selects k samples from X as initial centroids.
-        - If init == 'k-means++': Implements the k-means++ strategy to spread out initial centroids.
-    
-        Raises:
-        -------
-        - ValueError: If the init method is not 'random' or 'k-means++'.
+        Functions:
+        -----------
+        - If 'random', selects k random samples as centroids.
+        - If 'k-means++', selects centroids to spread out initial points.
+        - Raises ValueError if init method is invalid.
+
+        Example:
+        ---------
+        self._initialize_centroids(X)
         """
         if self.random_state is not None:
             np.random.seed(self.random_state)
@@ -90,17 +110,24 @@ class KMeans:
 
     def fit(self, X):
         """
-        Fits the KMeans model to the data X by iteratively updating cluster assignments and centroids.
+        Description:
+        ------------
+        Fits the KMeans model to data X by iteratively assigning points to clusters and updating centroids until convergence or max iterations.
 
-        Parameters:
-        -------------
-        - X (ndarray): Input data of shape (n_samples, n_features).
-
-        Procedure:
+        Arguments:
         -----------
-        - Assigns each point to the nearest centroid.
-        - Updates centroids as the mean of assigned points.
-        - Repeats until centroids converge or max_iter is reached.
+        - X (ndarray): Input data array of shape (n_samples, n_features).
+
+        Functions:
+        -----------
+        - Initializes centroids.
+        - Assigns each point to nearest centroid.
+        - Updates centroids as mean of assigned points.
+        - Stops when centroid shifts are below tolerance or max_iter reached.
+
+        Example:
+        ---------
+        kmeans.fit(X)
         """
         if self.random_state is not None:
             np.random.seed(self.random_state)
@@ -119,17 +146,68 @@ class KMeans:
             self.centroids = new_centroids
 
     def predict(self, X):
-        """Predicts clusters for new data."""
+        """
+        Description:
+        ------------
+        Predicts the nearest cluster index for each sample in X based on trained centroids.
+
+        Arguments:
+        -----------
+        - X (ndarray): New data samples to predict, shape (n_samples, n_features).
+
+        Functions:
+        -----------
+        - Computes distances to centroids.
+        - Returns index of closest centroid for each sample.
+
+        Example:
+        ---------
+        labels = kmeans.predict(X_new)
+        """
         distances = np.array([[euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
         return np.argmin(distances, axis=1)
 
     def fit_predict(self, X):
-        """Apply the fit method then the predict method."""
+        """
+        Description:
+        ------------
+        Convenience method that fits the model to X and returns the cluster labels.
+
+        Arguments:
+        -----------
+        - X (ndarray): Input data array.
+
+        Functions:
+        -----------
+        - Calls fit(X) then predict(X).
+
+        Example:
+        ---------
+        labels = kmeans.fit_predict(X)
+        """
         self.fit(X)
         return self.predict(X)
     
     def plot_clusters(self, X):
-        """Visualizes clusters in 2D space."""
+        """
+        Description:
+        ------------
+        Visualizes the clusters in 2D space if the data has exactly two features.
+
+        Arguments:
+        -----------
+        - X (ndarray): Data array with 2 features.
+
+        Functions:
+        -----------
+        - Plots points colored by cluster assignment.
+        - Marks centroids with a distinct symbol.
+        - Prints warning if data is not 2D.
+
+        Example:
+        ---------
+        kmeans.plot_clusters(X)
+        """
         if X.shape[1] != 2:
             print("Warning: Visualization is only possible in 2D.")
             return
