@@ -3,12 +3,34 @@ from clustering.utils.utils import euclidean_distance
 
 def calculate_silhouette(data, labels):
     """
-    Computes the silhouette score for a clustering model.
+    Description:
+    ------------
+    Computes the average silhouette score for a clustering model. The silhouette score measures
+    how well each data point fits within its assigned cluster compared to other clusters.
+    It ranges from -1 to 1, where higher values indicate better clustering.
 
-   :param data: Input data (numpy array)
-   :param labels: Cluster labels for each point (numpy array)
-   :return: Average silhouette score
-   """
+    Arguments:
+    -----------
+    - data (numpy.ndarray): Input data array, shape (n_samples, n_features).
+    - labels (numpy.ndarray): Cluster labels for each data point, shape (n_samples,).
+
+    Functions:
+    -----------
+    - Calculates the average intra-cluster distance (a) for each data point.
+    - Calculates the average nearest-cluster distance (b) for each data point.
+    - Computes the silhouette score for each data point using (b - a) / max(a, b).
+    - Returns the mean silhouette score across all data points.
+    - Returns 0 if there's only one cluster.
+
+    Returns:
+    --------
+    - float: Average silhouette score.
+
+    Example:
+    ---------
+    silhouette_avg = calculate_silhouette(data, labels)
+    print(f"Silhouette Score: {silhouette_avg}")
+    """
     if len(np.unique(labels)) > 1:
         silhouette_scores = []
         for i in range(len(data)):
