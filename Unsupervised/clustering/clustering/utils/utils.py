@@ -28,6 +28,5 @@ def euclidean_distance(x1, x2):
     ---------
     distance = euclidean_distance(np.array([1, 2]), np.array([4, 6]))
     print(f"Euclidean distance: {distance}")
-    """t: The Euclidean distance between x1 and x2.
     """
     return np.sqrt(np.sum((x1 - x2)**2))
