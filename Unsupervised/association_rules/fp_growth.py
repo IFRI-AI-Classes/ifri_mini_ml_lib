@@ -361,7 +361,7 @@ class FPGrowth:
                                 'antecedent': antecedent,
                                 'consequent': consequent,
                                 'support': item_data['support'],
-                                'confiance': confiance,
+                                'confidence': confiance,
                                 'lift': lift
                             })
     
