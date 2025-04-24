@@ -281,6 +281,8 @@ class BayesianSearchCV:
         self.best_params_ = self._dict_from_vector(self.X_obs[best_idx])
         self.best_score_ = self.y_obs[best_idx]
 
+        return self
+
     def get_best_params(self):
         """
         Description:
