@@ -1,4 +1,8 @@
 import numpy as np
+import sys
+sys.path.append('./clustering')
+from utils.utils import euclidean_distance
+
 
 def calculate_inertia(data, labels, centroids):
     """
@@ -34,10 +38,12 @@ def calculate_inertia(data, labels, centroids):
     for i in range(len(data)):
         centroid_idx = labels[i]
         centroid = centroids[centroid_idx]
-        distance = np.linalg.norm(data[i] - centroid) ** 2
+        distance = euclidean_distance(data[i], centroid)**2
         inertia += distance
     
     return inertia
+
+
 
 
 
