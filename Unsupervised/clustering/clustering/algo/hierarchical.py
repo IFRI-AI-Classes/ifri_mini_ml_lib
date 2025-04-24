@@ -206,7 +206,7 @@ class HierarchicalClustering:
         cluster_data = data[list(cluster)]
 
         # Use k-means to divide the cluster into two
-        kmeans = KMeans(n_clusters=2, random_state=42)  # Vous pouvez ajuster les paramètres de KMeans
+        kmeans = KMeans(n_clusters=2, random_state=42) 
         labels = kmeans.fit_predict(cluster_data)
 
         # Create the two subclusters
