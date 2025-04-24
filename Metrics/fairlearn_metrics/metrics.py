@@ -1,216 +1,213 @@
-import pandas as pd
 import numpy as np
-#from ..evaluation_metrics.Evaluation_metrique import confusion_matrix
+from typing import Any, Dict, Optional, Tuple
 
-
-def selection_rates(df, y_pred, privileged_group, unprivileged_group):
-  """
-  Description: Selection rates is a that is function used to measure the proportion of individuals in a given group who receive a positive decision
-
-  Args:  
-      y_pred (list): predicted labels returned by the classifier
-      df : dataframe containing predictions and groups
-      privileged_group(float) : group with the highest selection rate
-      unprivilegied_group(float) : group with the lowest selection rate and therefore disadvantaged
-
-  Return: 
-        the selection rates of the two groups
-  
-  Example:
-       Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
-       a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call
-
-       Then call on the function :
-       result = selection_rates(df, y_pred, privileged_group, unprivileged_group); 
-       print("Selection Rate:", result)
-       it's going to return the proportion of positive predicitions for each group 
-
-   """
-  prob_privileged = df[df['group'] == privileged_group][y_pred].mean()
-  prob_unprivileged = df[df['group'] == unprivileged_group][y_pred].mean()
-  return prob_privileged, prob_unprivileged
-
-
-def matrix (y_true, y_pred, group_mask):
+def selection_rate(y_true: Optional[np.ndarray], y_pred: np.ndarray, *, pos_label: Any = 1, sample_weight: Optional[np.ndarray] = None) -> float:
     """
-    Description: Matrix is a function thzt is used to establishe the confusion matrix for each group
-    
-    Args: 
-        y_true (list) : truth labels provides to the classifier
-        y_pred (list): predicted labels returned by the classifier
-        group_mask (list) : Boolean mask indicating the elements belonging to the group for which we wish to calculate the confusion matrix
+    Description:
+        Computes the fraction of predicted labels equal to the positive outcome (pos_label).
+        
+    Args:
+        y_true (np.ndarray or None): Not used here but kept for API consistency.
+        y_pred (np.ndarray): Predicted labels.
+        pos_label (Any): The label considered as the positive class. Default is 1.
+        sample_weight (np.ndarray or None): Optional sample weights.
 
-    Return:
-        tn, fp, fn, tp
-        tn : true negative
-        fp : false postive
-        fn : false negative
-        tp : true positive
+    Returns:
+        float: The selection rate (i.e., proportion of positive predictions).
 
-    Example: 
-          Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
-          a list which will be used to calculate the confusion matrix
-
-          And then, call on the function by doing :
-          result = confusion_matrix(y_true_group, y_pred_group, classes=[0, 1])
-          print("Confusion matrix:", result) 
-          It's going to return tn, fp, fn, tp
-
+    Example:
+        selection_rate(None, np.array([1, 0, 1, 1]), pos_label=1)
     """
-    # Appliquer le groupe mask pour obtenir les prédictions et les vraies valeurs pour le groupe
-    y_true_group = [y_true[i] for i in range(len(y_true)) if group_mask[i]]
-    y_pred_group = [y_pred[i] for i in range(len(y_pred)) if group_mask[i]]
+    if not isinstance(y_pred, np.ndarray):
+        y_pred = np.array(y_pred)
+    if sample_weight is not None and not isinstance(sample_weight, np.ndarray):
+        sample_weight = np.array(sample_weight)
 
-    # Calcul de la matrice de confusion pour ce groupe
-    conf_matrix_group = confusion_matrix(y_true_group, y_pred_group, classes=[0, 1])
+    selected = y_pred == pos_label
+    if len(selected) == 0:
+        raise ValueError("Empty predictions are not allowed.")
 
-    # Extraction des valeurs TN, FP, FN, TP
-    tn = conf_matrix_group[0][0]  # Vrais négatifs
-    fp = conf_matrix_group[0][1]  # Faux positifs
-    fn = conf_matrix_group[1][0]  # Faux négatifs
-    tp = conf_matrix_group[1][1]  # Vrais positifs
-
-    return tn, fp, fn, tp
+    s_w = np.ones(len(selected)) if sample_weight is None else sample_weight
+    return np.dot(selected, s_w) / s_w.sum()
 
 
-def group_rate (y_true, y_pred, group_mask):
-  """
-  Description: Group Rate is a function that is used to calculate the true positive and false positive rates for each group
- 
-  Args:
-       y_true (list) : truth labels provides to the classifier
-       y_pred (list): predicted labels returned by the classifier 
-       group_mask (list) : Boolean mask indicating the elements belonging to the group for which we wish to calculate the confusion matrix
+def selection_rate_per_group(
+    y_true: Optional[np.ndarray],
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any,
+    sample_weight: Optional[np.ndarray] = None
+) -> Dict[Any, float]:
+    """
+    Description:
+        Computes selection rate for each group in the sensitive feature.
+        
+    Args:
+        y_true (np.ndarray or None): Not used.
+        y_pred (np.ndarray): Predicted labels.
+        sensitive_features (np.ndarray): Group identifiers for each sample.
+        pos_label (Any): The positive label to count as selected.
+        sample_weight (np.ndarray or None): Optional weights per sample.
 
-  Return : tpr, fpr
-      tpr : true positive rate
-      fpr : false positive rate
+    Returns:
+        Dict[Any, float]: A dictionary with groups as keys and their selection rate as values.
+    """
+    if not isinstance(sensitive_features, np.ndarray):
+        sensitive_features = np.array(sensitive_features)
+    if not isinstance(y_pred, np.ndarray):
+        y_pred = np.array(y_pred)
 
-  Example:
-      Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
-      a list which will be used to calculate the confusion matrix
+    groups = np.unique(sensitive_features)
+    selection_rates = {}
 
-      And then, call on the function by doing :
-          result = group_rate (y_true, y_pred, group_mask)
-          print("Group Rate:", result) 
-          It's going to return tpr, fpr for each group
-  """
-  tn, fp, fn, tp = matrix (y_true, y_pred, group_mask)
-  tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
-  fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+    for group in groups:
+        group_mask = sensitive_features == group
+        y_pred_group = y_pred[group_mask]
+        weight_group = sample_weight[group_mask] if sample_weight is not None else None
+        rate = selection_rate(None, y_pred_group, pos_label=pos_label, sample_weight=weight_group)
+        selection_rates[group] = rate
 
-  return tpr, fpr
-
-
-def demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, group):
-  """
-  Description: This is a function used to calculate the demographic parity ratio between unprivileged and privileged groups
-  This demographic parity is a metric of equity in AI that measures whether a model gives positibe predictions in an equitable 
-  way between different groups
-
-  Args:
-      y_pred (list): predicted labels returned by the classifier 
-      privileged_group(float): group with the highest selection rate
-      unprivilegied_group(float): group with the lowest selection rate and therefore disadvantaged
-      group(list): list of groups
-
-  Return: 
-      demographic parity ratio (float)
-
-  Example:
-      Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
-      a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call 
-
-      And then, call on the function by doing :
-      result = demographic_parity_ratio(y_pred,privileged_group, unprivileged_group, group)
-      print(" demographic parity ratio:", result) 
-      It's going to return the ratio of the prob_unprivileged by the prob_privileged
-
-  """
-  # Conversion to data frame
-  dict = {'y_pred': y_pred, 'group' : group}
-  df = pd.DataFrame(dict)
-  # Calculate the selection rate for each group
-  prob_privileged, prob_unprivileged = selection_rates(df, y_pred)
-  
-  return prob_unprivileged / prob_privileged if prob_privileged != 0 else 0
+    return selection_rates
 
 
+def demographic_parity_ratio(
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any = 1,
+    sample_weight: Optional[np.ndarray] = None
+) -> Tuple[float, Dict[Any, float]]:
+    """
+    Description:
+        Computes the demographic parity ratio (min rate / max rate).
 
-def demographic_parity_difference(y_pred,priviligied_group, unpriviligied_group, group):
-  """
-  Description: This is a function used to calculate the demographic parity difference between unprivileged and privileged groups
-  This demographic parity difference is a metric of equity in AI that measures whether a model gives positibe predictions in an equitable 
-  way between different groups. And this by making the absolute difference between this different groups.
+    Args:
+        y_pred (np.ndarray): Predicted labels.
+        sensitive_features (np.ndarray): Group identifiers.
+        pos_label (Any): Positive label to use.
+        sample_weight (np.ndarray or None): Optional weights.
 
-  Args:
-      y_pred (list): predicted labels returned by the classifier
-      privileged_group : group with the highest selection rate
-      unprivilegied_group : group with the lowest selection rate and therefore disadvantaged
-      group : list of groups
+    Returns:
+        Tuple[float, Dict[Any, float]]: Ratio and rates per group.
 
-  Return: 
-      demographic parity difference (float)
-
-  Example: 
-      Assuming that you have a DataFrame 'df' with a 'group' column which indicates group membership, 
-      a list of predicted labels 'y_pred' = [0,1,1,0,1,...] that you can call 
-
-      And then, call on the function by doing :
-      result = demographic_parity_difference(y_pred,privileged_group, unprivileged_group, group)
-      print(" demographic parity diffence:", result) 
-      It's going to return the absolute difference between the prob_unprivileged and the prob_privileged
-
-  """
-  # Conversion to data frame
-  dict = {'y_pred': y_pred, 'group' : group}
-  df = pd.DataFrame(dict)
-  # Calculate the selection rate for each group
-  prob_privileged, prob_unprivileged = selection_rates(df, y_pred)
-  # Calculate the demographic parity difference
-
-  return abs(prob_unprivileged - prob_privileged)
+    Example:
+        demographic_parity_ratio(np.array([1, 0, 1]), np.array(['A', 'B', 'A']))
+    """
+    rates = selection_rate_per_group(None, y_pred, sensitive_features, pos_label, sample_weight)
+    max_rate = max(rates.values())
+    min_rate = min(rates.values())
+    ratio = min_rate / max_rate if max_rate != 0 else 0
+    return ratio, rates
 
 
-def equalized_odds(y_true, y_pred, privileged_group, unprivileged_group,sensitive_features):
-  """
-  Description: This is a function used to compare the rates of False Positives and True Positives between groups
-  Equalized odd is an algorithmic equity metric that assesses whether a binary classification model treats different groups fairly
+def demographic_parity_difference(
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any = 1,
+    sample_weight: Optional[np.ndarray] = None
+) -> Tuple[float, Dict[Any, float]]:
+    """
+    Description:
+        Computes the demographic parity difference (|max - min| selection rates).
 
-  Args:
-      y_pred (list): predicted labels returned by the classifier
-      privileged_group(float) : group with the highest selection rate
-      unprivilegied_group(float) : group with the lowest selection rate and therefore disadvantage
-      sensitive_features(list) : list of the sensitive features over which equal opportunity should be assessed
+    Args:
+        y_pred (np.ndarray): Predicted labels.
+        sensitive_features (np.ndarray): Group identifiers.
+        pos_label (Any): Positive class label.
+        sample_weight (np.ndarray or None): Optional sample weights.
 
-  Return: 
-      the equalized odds ratio (float)
-
-  Example: 
-    Assuming that you have a list of truth labels 'y_true' and a list of predicted labels 'y_pred' that you'll applied group_mask on to obtain
-    a list which will be used to calculate the confusion matrix for each group
-
-    And then, call on the function group_rate (y_true, y_pred, group_mask) to obtain the tpr and the fpr of each group
-    
-  """
-  # Convert data to NumPy arrays
-  y_true = np.array(y_true)
-  y_pred = np.array(y_pred)
-  sensitive_features = np.array(sensitive_features)
-
-  # Create the confusion matrices for each group
-  group_0_mask = np.isin(sensitive_features, [unprivileged_group])
-  group_1_mask = np.isin(sensitive_features, [privileged_group])
-
-  # Calculate tpr and fpr of group_0
-  tpr_0 , fpr_0 = group_rate(y_true, y_pred, group_0_mask )
-
-  # Calculate tpr and fpr of group_1
-  tpr_1 , fpr_1 = group_rate(y_true, y_pred, group_1_mask )
-
-  tpr_ratio = tpr_1 / tpr_0 if tpr_0 > 0 else 0
-  fpr_ratio = fpr_1 / fpr_0 if fpr_0 > 0 else 0
-
-  return tpr_ratio, fpr_ratio
+    Returns:
+        Tuple[float, Dict[Any, float]]: Difference and selection rates per group.
+    """
+    rates = selection_rate_per_group(None, y_pred, sensitive_features, pos_label, sample_weight)
+    max_rate = max(rates.values())
+    min_rate = min(rates.values())
+    return abs(min_rate - max_rate), rates
 
 
+def tpr_fpr_by_group(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any = 1
+) -> Tuple[Dict[Any, float], Dict[Any, float]]:
+    """
+    Description:
+        Computes True Positive Rate (TPR) and False Positive Rate (FPR) for each group.
+
+    Args:
+        y_true (np.ndarray): Ground truth labels.
+        y_pred (np.ndarray): Predicted labels.
+        sensitive_features (np.ndarray): Group identifiers.
+        pos_label (Any): Label considered as positive class.
+
+    Returns:
+        Tuple[Dict[Any, float], Dict[Any, float]]: TPR and FPR per group.
+    """
+    tpr_dict, fpr_dict = {}, {}
+    groups = np.unique(sensitive_features)
+
+    for group in groups:
+        mask = np.array(sensitive_features) == group
+        y_true_g = y_true[mask]
+        y_pred_g = y_pred[mask]
+
+        positives = y_true_g == pos_label
+        negatives = y_true_g != pos_label
+
+        tpr = np.sum((y_pred_g == pos_label) & positives) / positives.sum() if positives.sum() > 0 else 0.0
+        fpr = np.sum((y_pred_g == pos_label) & negatives) / negatives.sum() if negatives.sum() > 0 else 0.0
+
+        tpr_dict[group] = tpr
+        fpr_dict[group] = fpr
+
+    return tpr_dict, fpr_dict
+
+
+def equalized_odds_ratio(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any = 1
+) -> Tuple[float, Dict[Any, float], Dict[Any, float]]:
+    """
+    Description:
+        Computes the Equalized Odds Ratio (min/max of TPR and FPR between groups).
+
+    Args:
+        y_true (np.ndarray): Ground truth labels.
+        y_pred (np.ndarray): Predicted labels.
+        sensitive_features (np.ndarray): Group identifiers.
+        pos_label (Any): Positive class.
+
+    Returns:
+        Tuple[float, Dict[Any, float], Dict[Any, float]]: EOR, TPR per group, FPR per group.
+    """
+    tpr_dict, fpr_dict = tpr_fpr_by_group(y_true, y_pred, sensitive_features, pos_label)
+    tpr_ratio = min(tpr_dict.values()) / max(tpr_dict.values()) if max(tpr_dict.values()) > 0 else 0
+    fpr_ratio = min(fpr_dict.values()) / max(fpr_dict.values()) if max(fpr_dict.values()) > 0 else 0
+    return min(tpr_ratio, fpr_ratio), tpr_dict, fpr_dict
+
+
+def equalized_odds_difference(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    sensitive_features: np.ndarray,
+    pos_label: Any = 1
+) -> Tuple[float, Dict[Any, float], Dict[Any, float]]:
+    """
+    Description:
+        Computes the maximum difference of TPR and FPR between groups.
+
+    Args:
+        y_true (np.ndarray): Ground truth.
+        y_pred (np.ndarray): Predictions.
+        sensitive_features (np.ndarray): Group labels.
+        pos_label (Any): Positive label.
+
+    Returns:
+        Tuple[float, Dict[Any, float], Dict[Any, float]]: Difference, TPR per group, FPR per group.
+    """
+    tpr_dict, fpr_dict = tpr_fpr_by_group(y_true, y_pred, sensitive_features, pos_label)
+    tpr_diff = max(tpr_dict.values()) - min(tpr_dict.values())
+    fpr_diff = max(fpr_dict.values()) - min(fpr_dict.values())
+    return max(tpr_diff, fpr_diff), tpr_dict, fpr_dict
