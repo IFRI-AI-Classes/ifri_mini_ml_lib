@@ -198,4 +198,6 @@ class BaggingClassifier:
         for i, model in enumerate(self.models):
             predictions[i] = model.predict(X)
 
-        return np.array([np.argmax(np.bincount(predictions[:, i].astype(int))) for i in range(X.shape[0])])
+        #return np.array([np.argmax(np.bincount(predictions[:, i].astype(int))) for i in range(X.shape[0])])
+        from scipy.stats import mode
+        return mode(predictions, axis=0)[0].ravel()

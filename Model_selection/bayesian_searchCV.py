@@ -124,7 +124,7 @@ class BayesianSearchCV:
     Uses a Gaussian process to model the objective function and Expected Improvement for acquisition.
     """
 
-    def __init__(self, estimator, param_bounds, scoring, stratified=None, n_iter=20, init_points=5, cv=5):
+    def __init__(self, estimator, param_bounds, scoring, stratified=None, n_iter=20, init_points=5, cv=5, param_types=None):
         """
         Description:
             Initialize the Bayesian search optimization.
@@ -138,6 +138,7 @@ class BayesianSearchCV:
             n_iter: Number of optimization iterations after initialization (default: 20)
             init_points: Number of random points for initialization (default: 5)
             cv: Number of cross-validation folds (default: 5)
+            param_types: Types of parameters for casting (default: None)
             
         Returns:
             None
@@ -156,6 +157,7 @@ class BayesianSearchCV:
         self.cv = cv
         self.scoring = scoring
         self.stratified = stratified
+        self.param_types= param_types or {}
         self.X_obs = []  # list of tested hyperparameter vectors
         self.y_obs = []  # corresponding scores
         self.gp = GaussianProcess()
@@ -192,6 +194,17 @@ class BayesianSearchCV:
         """
         return dict(zip(self.param_bounds.keys(), x_vector))
 
+    def _cast_parameters(self, params):
+        casted_params = params.copy()
+        for param_name, param_type in self.param_types.items():
+            if param_name in casted_params:
+                if param_type == "int":
+                    casted_params[param_name] = int(round(casted_params[param_name]))
+                elif param_type == "float":
+                    casted_params[param_name] = float(casted_params[param_name])
+                # (optionnel) Ajout d'autres types ici plus tard
+        return casted_params
+
 
     def _evaluate(self, X, y, x):
         """
@@ -209,9 +222,7 @@ class BayesianSearchCV:
         Example:
             >>> score = bo._evaluate(X_train, y_train, {'C': 10, 'gamma': 0.1})
         """
-        if not isinstance(x, dict):
-            x = self._dict_from_vector(x)
-
+       
         # Special handling for integer parameters
         if "n_neighbors" in x:
             x["n_neighbors"] = int(round(x["n_neighbors"]))
@@ -219,8 +230,12 @@ class BayesianSearchCV:
                 raise ValueError("n_neighbors must be a positive integer")
 
         # Apply parameters to model
+        if isinstance(x, np.ndarray):
+            x = {key: value for key, value in zip(self.param_bounds.keys(), x)}
+        x = self._cast_parameters(x)
         self.estimator.set_params(**x)
         mean_score, _ = k_fold_cross_validation(self.estimator, X, y, self.scoring, self.stratified, k=self.cv)
+        print(x)
         return mean_score
 
     def _suggest(self, n_candidates=100):
@@ -278,7 +293,7 @@ class BayesianSearchCV:
 
         # Get best parameters
         best_idx = np.argmin(self.y_obs)  # minimization if score is an error
-        self.best_params_ = self._dict_from_vector(self.X_obs[best_idx])
+        self.best_params_ = self._cast_parameters(self._dict_from_vector(self.X_obs[best_idx]))
         self.best_score_ = self.y_obs[best_idx]
 
         return self

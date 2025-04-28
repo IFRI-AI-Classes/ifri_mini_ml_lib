@@ -3,7 +3,7 @@ from utils import clone
 from itertools import product
 from cross_validation import k_fold_cross_validation
 
-class GridSearchCV:
+class GridSearchCV_Scratch:
     """
     Grid search implementation with cross-validation for hyperparameter optimization.
     
