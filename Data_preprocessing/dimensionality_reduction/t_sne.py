@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
+from sklearn.decomposition import PCA
+
 class TSNE:
 
     """
@@ -21,7 +23,7 @@ class TSNE:
     """
 
     def __init__(self, n_components=2, perplexity=30.0, early_exaggeration=12.0, 
-                 learning_rate=200.0, n_iter=1000, min_grad_norm=1e-7, random_state=None, verbose=0):
+                 learning_rate=200.0, n_iter=1000, init = 'pca', min_grad_norm=1e-7, random_state=None, verbose=0):
 
         """
         Description:
@@ -32,6 +34,7 @@ class TSNE:
             perplexity (float): Perplexity (default: 30.0)
             early_exaggeration (float): Initial exaggeration factor (default: 12.0)
             learning_rate (float): Learning rate (default: 200.0)
+            init (str): Initialization method ('pca' or 'random') (default: 'pca')
             n_iter (int): Maximum number of iterations (default: 1000)
             min_grad_norm (float): Gradient norm stopping threshold (default: 1e-7)
             random_state (int): Reproducibility seed (default: None)
@@ -46,6 +49,7 @@ class TSNE:
         self.early_exaggeration = early_exaggeration
         self.learning_rate = learning_rate
         self.n_iter = n_iter
+        self.init = init
         self.min_grad_norm = min_grad_norm
         self.random_state = random_state
         self.verbose = verbose
@@ -55,8 +59,7 @@ class TSNE:
         self.kl_divergence_ = None
         self.n_iter_ = None
         
-        if random_state is not None:
-            np.random.seed(random_state)
+        self.rng = np.random.RandomState(random_state)  # Random state for reproducibility
     
 
     def _euclidean_distance(self, X: np.ndarray) -> np.ndarray:
@@ -163,6 +166,7 @@ class TSNE:
         
         # Symmetrization and normalization
         P = (P + P.T) / (2.0 * P.shape[0])
+        P /= np.sum(P)
         P = np.maximum(P, 1e-12)
         
         return P
@@ -209,18 +213,10 @@ class TSNE:
             >>> grad = self._compute_gradient(p_matrix, q_matrix, current_embedding)
         """
 
-        n = Y.shape[0]
-        gradient = np.zeros_like(Y)
+        diff = Y[:, None, :] - Y[None, :, :]  # Shape: (n_samples, n_samples, n_components)
+        pq_diff = (P - Q)[..., None] * (1.0 / (1.0 + np.clip(self._euclidean_distance(Y), 1e-8, None)))[..., None] 
         
-        # Calculation of terms (p_ij - q_ij) * (1 + ||y_i - y_j||²)^-1
-        dist = 1.0 / (1.0 + self._euclidean_distance(Y))
-        pq_diff = (P - Q) * dist
-        
-        # Gradient calculation
-        for i in range(n):
-            gradient[i] = 4.0 * np.sum((Y[i] - Y) * pq_diff[:, i][:, np.newaxis], axis=0)
-        
-        return gradient
+        return 4 * (pq_diff * diff).sum(axis=1)  # Shape: (n_samples, n_components)
     
 
     def _compute_kl_divergence(self, P: np.ndarray, Q: np.ndarray) -> float:
@@ -273,13 +269,20 @@ class TSNE:
         
         # Calculation of P in high dimension
         P = self._compute_joint_probabilities(X, self.perplexity)
-        P *= self.early_exaggeration
+        P_early = P * self.early_exaggeration
         
-        # Random initialization of Y
-        Y = 1e-4 * np.random.randn(n_samples, self.n_components).astype(np.float32)
+        if self.init == 'random':
+            # Random initialization of Y
+            Y = 1e-4 * np.random.randn(n_samples, self.n_components).astype(np.float32)
+        else:
+            # Initialization of Y by pca
+            Y = PCA(n_components=self.n_components).fit_transform(X)
+            Y = Y / np.std(Y, axis=0) * 1e-4  
         
+        exaggeration_end_iter = 250
+
         # Variables for optimization
-        previous_gradient = np.zeros_like(Y)
+        velocity = np.zeros_like(Y)      # Initialization of momentum
         gains = np.ones_like(Y)
         
         if self.verbose:
@@ -291,38 +294,50 @@ class TSNE:
             Q = self._compute_low_dimensional_probabilities(Y)
             
             # Gradient calculation
-            gradient = self._compute_gradient(P, Q, Y)
+            gradient = self._compute_gradient(P_early if i < exaggeration_end_iter else P , Q, Y)
             grad_norm = np.linalg.norm(gradient)
             
             # Update with momentum
-            gains = (gains + 0.2) * ((gradient > 0) != (previous_gradient > 0)) + \
-                    (gains * 0.8) * ((gradient > 0) == (previous_gradient > 0))
+            momentum = 0.5 if i < exaggeration_end_iter else 0.8
+
+            # Update of gains
+            gains = (gains + 0.2) * ((gradient > 0) != (velocity > 0)) + \
+                    (gains * 0.8) * ((gradient > 0) == (velocity > 0))
             gains = np.clip(gains, 0.01, np.inf)
+
+            # velocity's update with momentum
+            velocity = momentum * velocity - self.learning_rate * (gains * gradient)
             
-            previous_gradient = gradient.copy()
-            Y -= self.learning_rate * (gains * gradient)
-            
+            # Update of embedding
+            Y += velocity
+
             # Data Centering
-            Y = Y - np.mean(Y, axis=0)
+            Y -= Y.mean(axis=0)
+            #Y /= np.std(Y, axis=0)  # Normalization
+
+            # Dynamic learning rate update
+            if i == exaggeration_end_iter:
+                self.learning_rate *= 0.8
+            
+            # Reinitialization of P after early exaggeration
+            if i == exaggeration_end_iter:
+                P = self._compute_joint_probabilities(X, self.perplexity)
             
             # Calculation of KL divergence
-            kl_div = self._compute_kl_divergence(P, Q)
-            
-            # Reduction of exaggeration after 100 iterations
-            if i == 100:
-                P /= self.early_exaggeration
+            kl_div = self._compute_kl_divergence(P_early if i < exaggeration_end_iter else P, Q)
             
             # Displaying information
             if self.verbose >= 1 and i % 100 == 0:
-                print(f"Iteration {i}: KL divergence = {kl_div:.4f}, Gradient norm = {grad_norm:.4f}")
+                print(f"Iteration {i}: KL divergence = {kl_div:.4f}, Gradient norm = {grad_norm:.4f}, LR={self.learning_rate:.1f}")
                 
-                if grad_norm < self.min_grad_norm:
-                    if self.verbose:
-                        print(f"Premature stop at iteration {i}: gradient norm too low")
-                    break
+            if grad_norm < self.min_grad_norm:
+                if self.verbose:
+                    print(f"Premature stop at iteration {i}: gradient norm too low")
+                break
         
         # Saving results
-        self.embedding_ = Y
+        self.embedding_ = Y.copy()
+        #self.embedding_ = (Y - np.mean(Y, axis=0)) / np.std(Y, axis=0)  # Normalization
         self.kl_divergence_ = kl_div
         self.n_iter_ = i + 1
         
@@ -345,6 +360,7 @@ class TSNE:
         """
 
         self.fit(X)
+        assert self.embedding_.shape[1] == self.n_components, "Embedding shape mismatch"
         return self.embedding_
 
 
@@ -423,8 +439,6 @@ class TSNE:
             ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=y, cmap='viridis', alpha=0.7)
         ax.set_title(title)
         ax.grid(True)
-
-
 
 
         
