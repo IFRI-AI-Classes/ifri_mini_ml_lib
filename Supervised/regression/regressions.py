@@ -1,362 +1,151 @@
-import numpy as np;
+import numpy as np
+import pandas as pd
 
 class LinearRegression:
-    """
-    Linear regression model supporting least squares and gradient descent methods.
-
-    Args:
-        df (optional): Optional dataset (not used internally).
-        method (str): Training method: 'least_squares' or 'gradient_descent'. Default is 'least_squares'.
-        learning_rate (float): Learning rate for gradient descent. Default is 0.01.
-        epochs (int): Number of training iterations for gradient descent. Default is 1000.
-
-    Example:
-        model = LinearRegression(method="gradient_descent", learning_rate=0.01, epochs=1000)
-    """
-
     def __init__(self, df=None, method="least_squares", learning_rate=0.01, epochs=1000):
+        """
+        Initialise la régression linéaire.
+        method : "least_squares" pour les moindres carrés, "gradient_descent" pour la descente de gradient.
+        learning_rate : Taux d'apprentissage pour la descente de gradient.
+        epochs : Nombre d'itérations pour la descente de gradient.
+        """
         self.method = method
         self.learning_rate = learning_rate
         self.epochs = epochs
-        self.w = []  # Weights
-        self.b = 0   # Bias
+        self.w = None  # Poids (coefficients)
+        self.b = None  # Biais (intercept)
 
-    def fit(self, X=None, y=None):
-        """
-        Fit the linear regression model.
+    def fit(self, X, y):
+        """ Entraîne le modèle en utilisant la méthode choisie. """
+        # Conversion en numpy array
+        X_arr = np.array(X)
+        y_arr = np.array(y)
+        # Reshape y en 1D si nécessaire
+        if y_arr.ndim == 2 and y_arr.shape[1] == 1:
+            y_arr = y_arr.flatten()
 
-        Args:
-            X (list): Input features.
-            y (list): Target values.
+        # Vérifications d'entrée
+        if X_arr.size == 0 or y_arr.size == 0:
+            raise ValueError("Les données X et y ne peuvent pas être vides.")
+        if X_arr.shape[0] != y_arr.shape[0]:
+            raise ValueError("Les longueurs de X et y doivent être identiques.")
 
-        Returns:
-            None
-
-        Example:
-            model.fit([[1], [2], [3]], [2, 4, 6])
-        """
-        if X is not None and y is not None and len(X) == len(y):
-            self.train_X = X
-            self.train_y = y
-        elif hasattr(self, 'train_X') and hasattr(self, 'train_y'):
-            X = self.train_X
-            y = self.train_y
-        else:
-            raise ValueError("Aucune donnée d'entraînement fournie")
-
-        if isinstance(X, np.ndarray):
-            X = X.tolist()
-
-        if not isinstance(X[0], list):
-            return self._fit_simple(X, y)
-        else:
-            return self._fit_multiple(X, y)
+        # Choix de la méthode
+        if X_arr.ndim == 2 and X_arr.shape[1] > 1:
+            return self._fit_multiple(X_arr, y_arr)
+        X_flat = X_arr.flatten()
+        return self._fit_simple(X_flat, y_arr)
 
     def _fit_simple(self, X, y):
-        """
-        Internal method for fitting simple linear regression.
-
-        Args:
-            X (list): Input features.
-            y (list): Target values.
-
-        Returns:
-            None
-        """
+        """ Entraîne une régression linéaire simple. """
         m = len(X)
         if m == 0:
             raise ValueError("Les données d'entrée sont vides")
 
+        X_mean = np.mean(X)
+        y_mean = np.mean(y)
+
         if self.method == "least_squares":
-            X_mean = sum(X) / m
-            y_mean = sum(y) / m
-
-            num = sum((X[i] - X_mean) * (y[i] - y_mean) for i in range(m))
-            den = sum((X[i] - X_mean) ** 2 for i in range(m))
-
-            if abs(den) < 1e-10:
+            num = np.sum((X - X_mean) * (y - y_mean))
+            den = np.sum((X - X_mean) ** 2)
+            if abs(float(den)) < 1e-10:
                 raise ValueError("Division par zéro détectée dans les moindres carrés")
-
             self.w = num / den
             self.b = y_mean - self.w * X_mean
 
         elif self.method == "gradient_descent":
-            self.w = 0
-            self.b = 0
+            self.w = 0.0
+            self.b = 0.0
             for _ in range(self.epochs):
-                dw = (-2 / m) * sum((y[i] - (self.w * X[i] + self.b)) * X[i] for i in range(m))
-                db = (-2 / m) * sum((y[i] - (self.w * X[i] + self.b)) for i in range(m))
+                y_pred = self.w * X + self.b
+                dw = (-2 / m) * np.sum((y - y_pred) * X)
+                db = (-2 / m) * np.sum(y - y_pred)
                 self.w -= self.learning_rate * dw
                 self.b -= self.learning_rate * db
-        print(self.b, self.w)
+        else:
+            raise ValueError(f"Méthode inconnue: {self.method}")
+        return self
 
     def _fit_multiple(self, X, y):
-        """
-        Internal method for fitting multiple linear regression.
-
-        Args:
-            X (list of lists): Input features.
-            y (list): Target values.
-
-        Returns:
-            None
-        """
-        m, n = len(X), len(X[0])
-        if m == 0 or n == 0:
-            raise ValueError("Les données d'entrée sont vides ou mal formées")
-
-        self.w = [0] * n
-
+        """ Entraîne une régression linéaire multiple. """
+        m, n = X.shape
+        X_b = np.hstack([np.ones((m, 1)), X])
         if self.method == "least_squares":
-            try:
-                X_with_ones = np.array([[1] + row for row in X])
-                X_T = np.transpose(X_with_ones)
-                X_T_X = X_T @ X_with_ones
-                X_T_X_inv = np.linalg.inv(X_T_X)
-                X_T_y = X_T @ [[yi] for yi in y]
-                theta = X_T_X_inv @ X_T_y
-
-                self.b = theta[0][0]
-                self.w = [theta[i][0] for i in range(1, len(theta))]
-            except Exception as e:
-                raise ValueError(f"Erreur lors du calcul des moindres carrés: {e}")
-
+            theta = np.linalg.pinv(X_b.T @ X_b) @ X_b.T @ y.reshape(-1, 1)
+            self.b = float(theta[0])
+            self.w = theta[1:].flatten()
         elif self.method == "gradient_descent":
-            self.w = [0] * n
-            self.b = 0
+            self.w = np.zeros(n)
+            self.b = 0.0
             for _ in range(self.epochs):
-                dw = [0] * n
-                db = 0
-                for i in range(m):
-                    error = y[i] - (sum(self.w[j] * X[i][j] for j in range(n)) + self.b)
-                    for j in range(n):
-                        dw[j] += (-2 / m) * error * X[i][j]
-                    db += (-2 / m) * error
-                for j in range(n):
-                    self.w[j] -= self.learning_rate * dw[j]
+                y_pred = X @ self.w + self.b
+                error = y - y_pred
+                dw = (-2 / m) * (X.T @ error)
+                db = (-2 / m) * np.sum(error)
+                self.w -= self.learning_rate * dw
                 self.b -= self.learning_rate * db
-        print(self.b, self.w)
+        else:
+            raise ValueError(f"Méthode inconnue: {self.method}")
+        return self
 
     def predict(self, X):
-        """
-        Predict target values based on input features.
-
-        Args:
-            X (list): Input features to predict on.
-
-        Returns:
-            list: Predicted values.
-
-        Example:
-            predictions = model.predict([[1], [2], [3]])
-        """
-        if not X:
+        """ Prédit sur de nouvelles données. """
+        if X is None or len(X) == 0:
             raise ValueError("Les données d'entrée pour la prédiction sont vides")
-
-        if isinstance(X, np.ndarray):
-            X = X.tolist()
-
-        if not isinstance(X[0], list):
-            return [self.b + self.w * x for x in X]
-
-        if len(self.w) != len(X[0]):
-            raise ValueError(f"Le nombre de features ({len(X[0])}) ne correspond pas au nombre de poids ({len(self.w)})")
-
-        return [self.b + sum(self.w[i] * x[i] for i in range(len(self.w))) for x in X]
-
+        X_arr = np.array(X)
+        if X_arr.ndim == 1 or (X_arr.ndim == 2 and X_arr.shape[1] == 1):
+            X_flat = X_arr.flatten()
+            return [self.w * x + self.b for x in X_flat]
+        return [float(self.b + np.dot(self.w, x)) for x in X_arr]
 
 class PolynomialRegression:
-    """
-    Polynomial regression model supporting least squares and gradient descent methods.
-
-    Args:
-        df (optional): Optional dataset (not used internally).
-        degree (int): Degree of the polynomial. Default is 2.
-        method (str): Training method: 'least_squares' or 'gradient_descent'. Default is 'least_squares'.
-        learning_rate (float): Learning rate for gradient descent. Default is 0.01.
-        epochs (int): Number of training iterations for gradient descent. Default is 1000.
-    
-    Example:
-        model = PolynomialRegression(degree=3, method="gradient_descent")
-    """
-
     def __init__(self, df=None, degree=2, method="least_squares", learning_rate=0.01, epochs=1000):
+        """
+        Initialise la régression polynomiale.
+        degree : Degré du polynôme.
+        method : "least_squares" ou "gradient_descent".
+        """
         self.degree = degree
         self.method = method
         self.learning_rate = learning_rate
         self.epochs = epochs
-        self.w = []  # Weights
-        self.b = 0   # Bias
+        self.w = None
+        self.b = None
 
     def _polynomial_features(self, X):
-        """
-        Generate polynomial features from input data.
-
-        Args:
-            X (list or numpy array): Input data.
-
-        Returns:
-            list: Transformed input with polynomial features.
-
-        Example:
-            _polynomial_features([[2]]) -> [[2, 4]]
-        """
         poly_features = []
+        # S’assurer d’avoir une liste de listes
         if not isinstance(X[0], list) and not isinstance(X[0], np.ndarray):
             X = [[x] for x in X]
-        
+
         for row in X:
             features = []
             for feature in row:
-                for power in range(1, self.degree + 1):
-                    features.append(feature ** power)
+                for p in range(1, self.degree + 1):
+                    features.append(feature ** p)
             poly_features.append(features)
-        return poly_features
+        # conversion en array pour la suite
+        return np.array(poly_features)
 
-    def fit(self, X=None, y=None):
-        """
-        Fit the polynomial regression model.
 
-        Args:
-            X (list): Input features.
-            y (list): Target values.
-
-        Returns:
-            None
-
-        Example:
-            model.fit([[1], [2], [3]], [2, 4, 6])
-        """
-        if X is not None and y is not None and len(X) == len(y):
-            self.train_X = X
-            self.train_y = y
-        elif hasattr(self, 'train_X') and hasattr(self, 'train_y'):
-            X = self.train_X
-            y = self.train_y
-        else:
-            raise ValueError("Aucune donnée d'entraînement fournie")
-        
-        if isinstance(X, np.ndarray):
-            X = X.tolist()
-        
-        X_poly = self._polynomial_features(X)
-        
-        if not isinstance(X[0], list):
-            return self._fit_simple(X, y)
-        else:
-            return self._fit_multiple(X_poly, y)
-
-    def _fit_simple(self, X, y):
-        """
-        Internal method for fitting simple polynomial regression.
-
-        Args:
-            X (list): Input features.
-            y (list): Target values.
-
-        Returns:
-            None
-        """
-        m = len(X)
-        if m == 0:
-            raise ValueError("Les données d'entrée sont vides")
-
-        if self.method == "least_squares":
-            X_mean = sum(X) / m
-            y_mean = sum(y) / m
-
-            num = sum((X[i] - X_mean) * (y[i] - y_mean) for i in range(m))
-            den = sum((X[i] - X_mean) ** 2 for i in range(m))
-
-            if abs(den) < 1e-10:
-                raise ValueError("Division par zéro détectée dans les moindres carrés")
-
-            self.w = num / den
-            self.b = y_mean - self.w * X_mean
-
-        elif self.method == "gradient_descent":
-            self.w = 0
-            self.b = 0
-            for _ in range(self.epochs):
-                dw = (-2 / m) * sum((y[i] - (self.w * X[i] + self.b)) * X[i] for i in range(m))
-                db = (-2 / m) * sum((y[i] - (self.w * X[i] + self.b)) for i in range(m))
-                self.w -= self.learning_rate * dw
-                self.b -= self.learning_rate * db
-        print(self.b, self.w)
-
-    def _fit_multiple(self, X, y):
-        """
-        Internal method for fitting multiple polynomial regression.
-
-        Args:
-            X (list of lists): Input polynomial features.
-            y (list): Target values.
-
-        Returns:
-            None
-        """
-        m, n = len(X), len(X[0])
-        if m == 0 or n == 0:
-            raise ValueError("Les données d'entrée sont vides ou mal formées")
-
-        self.w = [0] * n
-
-        if self.method == "least_squares":
-            try:
-                X_with_ones = np.array([[1] + row for row in X])
-                X_T = np.transpose(X_with_ones)
-                X_T_X = X_T @ X_with_ones
-                X_T_X_inv = np.linalg.inv(X_T_X)
-                X_T_y = X_T @ [[yi] for yi in y]
-                theta = X_T_X_inv @ X_T_y
-
-                self.b = theta[0][0]
-                self.w = [theta[i][0] for i in range(1, len(theta))]
-            except Exception as e:
-                raise ValueError(f"Erreur lors du calcul des moindres carrés: {e}")
-
-        elif self.method == "gradient_descent":
-            self.w = [0] * n
-            self.b = 0
-            for _ in range(self.epochs):
-                dw = [0] * n
-                db = 0
-                for i in range(m):
-                    error = y[i] - (sum(self.w[j] * X[i][j] for j in range(n)) + self.b)
-                    for j in range(n):
-                        dw[j] += (-2 / m) * error * X[i][j]
-                    db += (-2 / m) * error
-                for j in range(n):
-                    self.w[j] -= self.learning_rate * dw[j]
-                self.b -= self.learning_rate * db
-                self.b -= self.learning_rate * db
-        print(self.b, self.w)
+    def fit(self, X, y):
+        X_arr = np.array(X)
+        y_arr = np.array(y).flatten()
+        if X_arr.size == 0 or y_arr.size == 0:
+            raise ValueError("Les données d'entraînement sont vides")
+        if X_arr.shape[0] != y_arr.shape[0]:
+            raise ValueError("Les longueurs de X et y doivent être identiques.")
+        X_poly = self._polynomial_features(X_arr)
+        lr = LinearRegression(method=self.method, learning_rate=self.learning_rate, epochs=self.epochs)
+        lr.fit(X_poly, y_arr)
+        self.w = lr.w
+        self.b = lr.b
+        return self
 
     def predict(self, X):
-        """
-        Predict target values based on input features.
+        if X is None or len(X) == 0:
+            raise ValueError("Les données pour la prédiction sont vides")
+        X_arr = np.array(X)
+        X_poly = self._polynomial_features(X_arr)
+        return [float(self.b + np.dot(self.w, x)) for x in X_poly]
 
-        Args:
-            X (list): Input features to predict on.
-
-        Returns:
-            list: Predicted values.
-
-        Example:
-            predictions = model.predict([[1], [2], [3]])
-        """
-        if not X:
-            raise ValueError("Les données d'entrée pour la prédiction sont vides")
-
-        if isinstance(X, np.ndarray):
-            X = X.tolist()
-
-        if not isinstance(X[0], list) and not isinstance(X[0], np.ndarray):
-            X = [[x] for x in X]
-
-        X_poly = self._polynomial_features(X)
-
-        if len(self.w) != len(X_poly[0]):
-            raise ValueError(f"Le nombre de features ({len(X_poly[0])}) ne correspond pas au nombre de poids ({len(self.w)})")
-
-        return [self.b + sum(self.w[i] * x[i] for i in range(len(self.w))) for x in X_poly]
