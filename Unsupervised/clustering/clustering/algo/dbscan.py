@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+sys.path.append('../clustering')
 from utils.utils import euclidean_distance  # Import function euclidean_distance
 import matplotlib.pyplot as plt
 
@@ -153,53 +155,95 @@ class DBSCAN:
                 new_neighbors = self._region_query(data, neighbor_index)
                 if len(new_neighbors) >= self.min_samples:
                     # Adds new neighbors to the list of neighbors to visit
-                    neighbors += new_neighbors
+                    neighbors += set(new_neighbors)
             i += 1
             
     def plot_clusters(self, data):
         """
         Description:
         ------------
-        Plots the resulting clusters after calling fit_predict().  Supports only 2D data.
+        Plots the resulting clusters after calling fit_predict().
+        Supports 1D, 2D and 3D data natively. For data with more than 3 features, applies PCA reduction to 3D.
 
         Arguments:
         -----------
-        - data (numpy.ndarray): Input data (n_samples, 2 features).
+        - data (numpy.ndarray): Input data (n_samples, n_features >= 1).
 
         Functions:
         -----------
         - Generates a scatter plot of the data points, colored by cluster ID.
         - Noise points are plotted in black.
         - Adds a legend and labels to the plot.
-        - Raises a ValueError if the input data has more than 2 features.
+        - Applies PCA if data has more than 3 features.
 
         Example:
         ---------
         dbscan.plot_clusters(data)
         """
-        if data.shape[1] > 2:
-            raise ValueError("plot_clusters supports only 2D data.")
+        max_dimensions = 3
+        n_features = data.shape[1]
+
+        # PCA reduction if > 3D
+        if n_features > max_dimensions:
+            from sklearn.decomposition import PCA
+            reducer = PCA(n_components=max_dimensions)
+            data = reducer.fit_transform(data)
+            print(f"Warning: PCA reduction applied from {n_features}D to {max_dimensions}D")
+            n_features = max_dimensions  # Update after PCA
 
         unique_labels = set(self.labels)
         colors = plt.cm.get_cmap('tab10', len(unique_labels))
+        fig = plt.figure(figsize=(10, 7))
 
-        for label in unique_labels:
-            if label == -1:
-                # Noise points
-                color = 'k'
-                label_name = 'Noise'
-            else:
-                color = colors(label)
-                label_name = f'Cluster {label}'
+        # Case 1D
+        if n_features == 1:
+            ax = fig.add_subplot(111)
+            for label in unique_labels:
+                if label == -1:
+                    color = 'k'
+                    label_name = 'Noise'
+                else:
+                    color = colors(label)
+                    label_name = f'Cluster {label}'
+                cluster_points = data[self.labels == label]
+                ax.scatter(cluster_points[:, 0], np.zeros_like(cluster_points[:, 0]), c=[color], label=label_name)
+            ax.set_yticks([])
+            ax.set_xlabel("Feature 1")
+            ax.set_title("DBSCAN Clustering Result (1D)" )
 
-            cluster_points = data[self.labels == label]
-            plt.scatter(cluster_points[:, 0], cluster_points[:, 1], c=[color], label=label_name)
+        # Case 2D
+        elif n_features == 2:
+            ax = fig.add_subplot(111)
+            for label in unique_labels:
+                if label == -1:
+                    color = 'k'
+                    label_name = 'Noise'
+                else:
+                    color = colors(label)
+                    label_name = f'Cluster {label}'
+                cluster_points = data[self.labels == label]
+                ax.scatter(cluster_points[:, 0], cluster_points[:, 1], c=[color], label=label_name)
+            ax.set_xlabel("Feature 1")
+            ax.set_ylabel("Feature 2")
+            ax.set_title("DBSCAN Clustering Result (2D)" if n_features <= max_dimensions else f"DBSCAN Clustering Result (PCA reduced from {n_features}D to 2D)")
 
-        plt.title("DBSCAN Clustering Result")
-        plt.xlabel("Feature 1")
-        plt.ylabel("Feature 2")
+        # Case 3D
+        elif n_features == 3:
+            ax = fig.add_subplot(111, projection='3d')
+            for label in unique_labels:
+                if label == -1:
+                    color = 'k'
+                    label_name = 'Noise'
+                else:
+                    color = colors(label)
+                    label_name = f'Cluster {label}'
+                cluster_points = data[self.labels == label]
+                ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2], c=[color], label=label_name, s=30)
+            ax.set_xlabel("Feature 1")
+            ax.set_ylabel("Feature 2")
+            ax.set_zlabel("Feature 3")
+            ax.set_title("DBSCAN Clustering Result (3D)" if n_features <= max_dimensions else f"DBSCAN Clustering Result (PCA reduced from {n_features}D to 3D)")
+
         plt.legend()
         plt.grid(True)
         plt.show()
-
-        
