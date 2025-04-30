@@ -57,7 +57,7 @@ class HierarchicalClustering:
         Example:
         ---------
         hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
-       """
+        """
         self.n_clusters = n_clusters
         self.linkage = linkage
         self.method = method
@@ -206,7 +206,7 @@ class HierarchicalClustering:
         cluster_data = data[list(cluster)]
 
         # Use k-means to divide the cluster into two
-        kmeans = KMeans(n_clusters=2, random_state=42) 
+        kmeans = KMeans(n_clusters=2, random_state=42)  # Vous pouvez ajuster les paramètres de KMeans
         labels = kmeans.fit_predict(cluster_data)
 
         # Create the two subclusters
@@ -310,34 +310,75 @@ class HierarchicalClustering:
             print("Dendrogram not supported for the divisive method.")
             return
         
-    def plot_clusters(self, data, labels):
+    def plot_clusters(self, data):
         """
         Description:
         ------------
-        Plots a scatter plot of the data points colored by their cluster labels.
+        Plots a scatter plot of the data points colored by their cluster labels,
+        supporting 1D, 2D, and 3D data. For higher dimensions, PCA is applied to reduce to 3D.
 
         Arguments:
         -----------
-        - data (numpy.ndarray): 2D data array (n_samples, 2).
-        - labels (numpy.ndarray): Cluster labels for each data point.
+        - data (numpy.ndarray): Data array.
+
+        Functions:
+        -----------
+        - Generates a scatter plot of the data points, colored by cluster ID.
+        - Noise points are plotted in black.
+        - Adds a legend and labels to the plot.
+        - Uses PCA for dimensionality reduction to 3D if the input data has more than 3 features.
+
+        Example:
+        ---------
+        hierarchical.plot_clusters(data)
         """
-        if data.shape[1] != 2:
-            print("Warning: The visualization is only possible on 2D.")
-            return
-            
-        plt.figure(figsize=(8, 6))
+        n_features = data.shape[1]
+        labels = self.fit_predict(data)
+        if n_features > 3:
+            from sklearn.decomposition import PCA
+            pca = PCA(n_components=3)
+            data = pca.fit_transform(data)
+            n_features = 3
+            print("Warning: Data reduced to 3D using PCA for visualization.")
+
         unique_labels = np.unique(labels)
         colors = plt.cm.get_cmap("tab10", len(unique_labels))
+        fig = plt.figure(figsize=(8, 6))
 
-        for i, label in enumerate(unique_labels):
-            cluster_points = data[labels == label]
-            plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
+        # Case 1D
+        if n_features == 1:
+            ax = fig.add_subplot(111)
+            for i, label in enumerate(unique_labels):
+                cluster_points = data[labels == label]
+                ax.scatter(cluster_points[:, 0], np.zeros_like(cluster_points[:, 0]),
                         label=f"Cluster {label}", color=colors(i), s=50)
+            ax.set_yticks([])
+            ax.set_xlabel("Feature 1")
+            ax.set_title("Hierarchical Clustering Result (1D)")
 
-        plt.title("Hierarchical Clustering Result")
-        plt.xlabel("Feature 1")
-        plt.ylabel("Feature 2")
+        # Case 2D
+        elif n_features == 2:
+            ax = fig.add_subplot(111)
+            for i, label in enumerate(unique_labels):
+                cluster_points = data[labels == label]
+                ax.scatter(cluster_points[:, 0], cluster_points[:, 1],
+                        label=f"Cluster {label}", color=colors(i), s=50)
+            ax.set_xlabel("Feature 1")
+            ax.set_ylabel("Feature 2")
+            ax.set_title("Hierarchical Clustering Result (2D)")
+
+        # Case 3D
+        elif n_features == 3:
+            ax = fig.add_subplot(111, projection='3d')
+            for i, label in enumerate(unique_labels):
+                cluster_points = data[labels == label]
+                ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2],
+                           label=f"Cluster {label}", color=colors(i), s=50)
+            ax.set_xlabel("Feature 1")
+            ax.set_ylabel("Feature 2")
+            ax.set_zlabel("Feature 3")
+            ax.set_title("Hierarchical Clustering Result (3D)")
+
         plt.legend()
         plt.grid(True)
         plt.show()
-
