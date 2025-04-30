@@ -1,0 +1,44 @@
+# Fichiers Python
+*.pyc
+*.pyo
+__pycache__/
+
+# Fichiers de données
+*.csv
+
+# Fichiers de l'environnement virtuel
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Fichiers temporaires
+*.tmp
+*~
+\#*
+*.swp
+
+# Fichiers de l'IDE
+.idea/
+.vscode/
+
+# Fichiers de distribution
+dist/
+build/
+*.egg
+
+# Fichiers spécifiques au système d'exploitation
+.DS_Store
+Thumbs.db
+
+# Fichiers journaux
+*.log
+
+# Fichiers de tests
+/tests/__pycache__/
+/tests/*.pyc
+
+# Autres fichiers à ignorer
+*.zip
+*.tar.gz
