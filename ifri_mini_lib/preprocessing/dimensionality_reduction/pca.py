@@ -31,7 +31,6 @@ class PCA:
 
         self.n_component = n_component
         self.mean = None
-        self.std = None
         self.cov = None
         self.eigen_values = None
         self.eigen_vectors = None
@@ -57,7 +56,6 @@ class PCA:
 
         # Centering and normalization
         self.mean = np.mean(X, axis =  0)
-        self.std = np.std(X, axis = 0)
         
         # Calculation of the covariance matrix
         self.cov = np.cov(X, rowvar=False) 
@@ -67,11 +65,14 @@ class PCA:
         
         # Sorts eigenvalues ​​and eigenvectors in descending order
         indices = np.argsort(self.eigen_values)[::-1]
-        self.eigen_values = self.eigen_values[indices]
-        self.eigen_vectors = eigen_vectors[:, indices]
+        self.eigen_values = self.eigen_values[indices][:self.n_component]
+        self.eigen_vectors = eigen_vectors[:, indices][:, :self.n_component]
 
         # Select the first n eigenvectors
-        self.components = self.eigen_vectors[:, :self.n_component]
+        self.components = self.eigen_vectors[:, :self.n_component].T
+
+        if self.components[0, 0] < 0:
+            self.components = -self.components
 
         return self
     
@@ -94,8 +95,8 @@ class PCA:
             (3, 2)
         """
 
-        X = (X - self.mean) / (self.std + 1e-10)
-        return np.dot(X, self.components)
+        X = (X - self.mean) 
+        return np.dot(X, self.components.T)
     
     
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
