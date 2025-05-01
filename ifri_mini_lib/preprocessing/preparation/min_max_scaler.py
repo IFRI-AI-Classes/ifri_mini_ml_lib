@@ -31,6 +31,7 @@ class MinMaxScaler:
         self.min_ = None
         self.max_ = None
         self.range_min, self.range_max = feature_range
+        self.columns = None 
 
     def fit(self, X):
         """
@@ -71,13 +72,14 @@ class MinMaxScaler:
             >>> scaled_data = scaler.transform(new_data)
             >>> scaler.transform([[1, 2], [3, 4]])  # With list input
         """
+        X_original = X  
         X = self._convert_to_array(X)
 
         if self.min_ is None or self.max_ is None:
-            raise ValueError("This scaler has not been fitted yet. Call 'fit' first.")
+            raise ValueError("Le scaler n'a pas été ajusté. Appelez 'fit' avant 'transform'.")
 
         X_scaled = (X - self.min_) / (self.max_ - self.min_)
-        return self._convert_back(X_scaled, X)
+        return self._convert_back(X_scaled, X_original)
 
     def fit_transform(self, X):
         """
@@ -111,14 +113,15 @@ class MinMaxScaler:
         Example:
             >>> original_data = scaler.inverse_transform(scaled_data)
         """
+        X_original = X_scaled 
         X_scaled = self._convert_to_array(X_scaled)
 
         if self.min_ is None or self.max_ is None:
-            raise ValueError("This scaler has not been fitted yet. Call 'fit' first.")
+            raise ValueError("Le scaler n'a pas été ajusté. Appelez 'fit' avant 'inverse_transform'.")
 
-        X_original = self.min_ + X_scaled * (self.max_ - self.min_)
+        X_original_values = self.min_ + X_scaled * (self.max_ - self.min_)
         np.set_printoptions(suppress=True)
-        return self._convert_back(X_original, X_scaled)
+        return self._convert_back(X_original_values, X_original) 
 
     def _convert_to_array(self, X):
         """
@@ -133,8 +136,13 @@ class MinMaxScaler:
         Note:
             Internal method not intended for direct use
         """
-        if isinstance(X, pd.DataFrame) or isinstance(X, pd.Series):
+        if isinstance(X, pd.DataFrame):
+            self.columns = X.columns  # Stocke les colonnes
             return X.values
+        if isinstance(X, pd.Series):
+            self.columns = [X.name]  # Stocke le nom de la colonne (liste à 1 élément)
+            return X.values
+        self.columns = None
         return np.array(X)
 
     def _convert_back(self, X, original):
@@ -151,8 +159,8 @@ class MinMaxScaler:
         Note:
             Internal method not intended for direct use
         """
-        if isinstance(original, pd.DataFrame):
-            return pd.DataFrame(X, columns=original.columns)
-        if isinstance(original, pd.Series):
-            return pd.Series(X)
-        return pd.DataFrame(X) 
+        if isinstance(original, pd.DataFrame) and self.columns is not None:
+            return pd.DataFrame(X, columns=self.columns)
+        if isinstance(original, pd.Series) and self.columns:
+            return pd.Series(X, name=self.columns[0])
+        return X
