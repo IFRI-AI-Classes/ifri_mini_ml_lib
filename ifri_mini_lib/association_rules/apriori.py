@@ -1,5 +1,5 @@
-from utils import DataAdapter
-from metrics import support, confidence, lift
+from .utils import DataAdapter
+from .metrics import support, confidence, lift
 from itertools import chain, combinations
 from collections import defaultdict
 import time
