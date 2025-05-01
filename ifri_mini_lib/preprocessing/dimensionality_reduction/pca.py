@@ -58,7 +58,6 @@ class PCA:
         # Centering and normalization
         self.mean = np.mean(X, axis =  0)
         self.std = np.std(X, axis = 0)
-        X = (X - self.mean) / (self.std + 1e-10)
         
         # Calculation of the covariance matrix
         self.cov = np.cov(X, rowvar=False) 
