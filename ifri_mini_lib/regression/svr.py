@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+from typing import Optional, Callable, Union
 import numpy as np
 import cvxpy as cp
 import pandas as pd
@@ -23,7 +23,7 @@ class SVR:
 
     kerlist = ["lin", "poly", "rbf", "sig"]
 
-    def __init__(self, C_reg, epsilon, kernel, c=1, d=3, gamma=1, alpha=0.01, test_size=0.2):
+    def __init__(self, C_reg: float, epsilon: float, kernel: str, c: int = 1, d: int = 3, gamma: float = 1, alpha: float = 0.01, test_size: float = 0.2) -> None:
         self._c_reg = C_reg
         self.eps = epsilon
         self._ker = kernel if kernel in self.kerlist else "lin"
@@ -80,7 +80,7 @@ class SVR:
             raise ValueError(f"The kernel {value} is not allowed, please choose from {self.kerlist}")
         self._ker = value
 
-    def linear_kernel(self, X, Y=None):
+    def linear_kernel(self, X: np.ndarray, Y: Optional[np.ndarray] = None) -> np.ndarray:
         """
         Computes the linear kernel.
 
@@ -135,7 +135,7 @@ class SVR:
         """
         return np.tanh(self._alpha * np.dot(X, Y.T) + self._c) if Y is not None else np.tanh(self._alpha * np.dot(X, X.T) + self._c)
 
-    def get_kernel(self):
+    def get_kernel(self) -> Optional[Callable]:
         """
         Returns the kernel function based on current settings.
 
@@ -150,7 +150,7 @@ class SVR:
         }
         return kernels.get(self._ker)
 
-    def fit(self, X, Y):
+    def fit(self, X: np.ndarray, Y: np.ndarray) -> None:
         """
         Trains the SVR model using convex optimization.
 
@@ -209,7 +209,7 @@ class SVR:
             self.b = np.mean(self.train_y - predictions)
             print("Warning: No support vectors found. Using all points for bias calculation.")
 
-    def predict(self, X_test):
+    def predict(self, X_test: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
         Predicts target values for new data.
 
