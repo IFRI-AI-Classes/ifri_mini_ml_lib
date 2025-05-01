@@ -1,45 +1,74 @@
 import numpy as np
+from typing import Union, Optional, List
 
 class LinearRegression:
-    def __init__(self, df=None, method="least_squares", learning_rate=0.01, epochs=1000):
-        """
-        Initialise la régression linéaire.
-        method : "least_squares" pour les moindres carrés, "gradient_descent" pour la descente de gradient.
-        learning_rate : Taux d'apprentissage pour la descente de gradient.
-        epochs : Nombre d'itérations pour la descente de gradient.
-        """
+    """
+    Linear regression implementation.
+    
+    Args:
+        method (str): Optimization method ('least_squares' or 'gradient_descent').
+        learning_rate (float): Learning rate for gradient descent (default: 0.01).
+        epochs (int): Number of iterations for gradient descent (default: 1000).
+    """
+    def __init__(self, method: str = "least_squares", learning_rate: float = 0.01, epochs: int = 1000) -> None:
         self.method = method
         self.learning_rate = learning_rate
         self.epochs = epochs
-        self.w = None  # Poids (coefficients)
-        self.b = None  # Biais (intercept)
+        self.w = None  # coefficients
+        self.b = None  # intercept
 
-    def fit(self, X, y):
-        """ Entraîne le modèle en utilisant la méthode choisie. """
-        # Conversion en numpy array
+    def fit(self, X: Union[List, np.ndarray], y: Union[List, np.ndarray]) -> 'LinearRegression':
+        """
+        Train the linear regression model.
+        
+        Args:
+            X (np.ndarray): Training data (shape: [n_samples, n_features]).
+            y (np.ndarray): Target values (shape: [n_samples]).
+            
+        Example:
+            >>> model = LinearRegression(method="least_squares")
+            >>> model.fit([[1], [2], [3]], [2, 4, 6])
+        """
+        # Conversion in numpy array
         X_arr = np.array(X)
         y_arr = np.array(y)
-        # Reshape y en 1D si nécessaire
+        # Reshape y in 1D if requiered
         if y_arr.ndim == 2 and y_arr.shape[1] == 1:
             y_arr = y_arr.flatten()
 
-        # Vérifications d'entrée
+        # inputs verification 
         if X_arr.size == 0 or y_arr.size == 0:
-            raise ValueError("Les données X et y ne peuvent pas être vides.")
+            raise ValueError("X and y can't be empty.")
         if X_arr.shape[0] != y_arr.shape[0]:
-            raise ValueError("Les longueurs de X et y doivent être identiques.")
+            raise ValueError("X and y have to have the same lengths.")
 
-        # Choix de la méthode
+        # method choosing
         if X_arr.ndim == 2 and X_arr.shape[1] > 1:
             return self._fit_multiple(X_arr, y_arr)
         X_flat = X_arr.flatten()
         return self._fit_simple(X_flat, y_arr)
 
-    def _fit_simple(self, X, y):
-        """ Entraîne une régression linéaire simple. """
+    def _fit_simple(self, X: np.ndarray, y: np.ndarray) -> 'LinearRegression':
+        """
+        Internal method to train simple linear regression model.
+        
+        Args:
+            X (np.ndarray): 1D array of shape [n_samples]
+            y (np.ndarray): 1D array of shape [n_samples]
+
+        Returns:
+            self: Trained model instance
+
+        Raises:
+            ValueError: If division by zero occurs in least squares
+
+        Example:
+            >>> model = LinearRegression()
+            >>> model._fit_simple(np.array([1,2,3]), np.array([2,4,6]))
+        """
         m = len(X)
         if m == 0:
-            raise ValueError("Les données d'entrée sont vides")
+            raise ValueError("Input datas are empties")
 
         X_mean = np.mean(X)
         y_mean = np.mean(y)
@@ -65,13 +94,26 @@ class LinearRegression:
             raise ValueError(f"Méthode inconnue: {self.method}")
         return self
 
-    def _fit_multiple(self, X, y):
-        """ Entraîne une régression linéaire multiple. """
+    def _fit_multiple(self, X: np.ndarray, y: np.ndarray) -> 'LinearRegression':
+        """
+        Internal method to train multiple linear regression model.
+        
+        Args:
+            X (np.ndarray): 2D array of shape [n_samples, n_features]
+            y (np.ndarray): 1D array of shape [n_samples]
+
+        Returns:
+            self: Trained model instance
+
+        Example:
+            >>> model = LinearRegression()
+            >>> model._fit_multiple(np.array([[1],[2],[3]]), np.array([1,2,3]))
+        """
         m, n = X.shape
         X_b = np.hstack([np.ones((m, 1)), X])
         if self.method == "least_squares":
             theta = np.linalg.pinv(X_b.T @ X_b) @ X_b.T @ y.reshape(-1, 1)
-            self.b = float(theta[0])
+            self.b = float(theta[0].item())
             self.w = theta[1:].flatten()
         elif self.method == "gradient_descent":
             self.w = np.zeros(n)
@@ -87,10 +129,22 @@ class LinearRegression:
             raise ValueError(f"Méthode inconnue: {self.method}")
         return self
 
-    def predict(self, X):
-        """ Prédit sur de nouvelles données. """
+    def predict(self, X: Union[List, np.ndarray]) -> List[float]:
+        """
+        Generate predictions.
+        
+        Args:
+            X (np.ndarray): Input data (shape: [n_samples, n_features]).
+            
+        Returns:
+            list: Predicted values (shape: [n_samples]).
+            
+        Example:
+            >>> model.predict([[4]])
+            [8.0]
+        """
         if X is None or len(X) == 0:
-            raise ValueError("Les données d'entrée pour la prédiction sont vides")
+            raise ValueError("Input datas for prediction are empties")
         X_arr = np.array(X)
         if X_arr.ndim == 1 or (X_arr.ndim == 2 and X_arr.shape[1] == 1):
             X_flat = X_arr.flatten()
