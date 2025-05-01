@@ -259,8 +259,25 @@ class SVR:
         Example:
             model.set_params(C_reg=2.0, gamma=0.5)
         """
+        param_mapping = {
+            'C_reg': '_c_reg',
+            'c_reg': '_c_reg',
+            'gamma': '_gamma',
+            'epsilon': 'eps',
+            'kernel': '_ker',
+            'c': '_c',
+            'd': '_deg',
+            'alpha': '_alpha',
+            'test_size': '_test_size',
+            'deg': '_deg'
+        }
+        
         for key, value in kwargs.items():
-            if hasattr(self, f"_{key}"):
+            # Essayer de trouver l'attribut correspondant
+            if key in param_mapping:
+                attr_name = param_mapping[key]
+                setattr(self, attr_name, value)
+            elif hasattr(self, f"_{key}"):
                 setattr(self, f"_{key}", value)
             else:
                 print(f"Warning: Unknown parameter {key}")
