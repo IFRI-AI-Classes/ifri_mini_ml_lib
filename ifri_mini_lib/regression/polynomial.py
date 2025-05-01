@@ -76,6 +76,19 @@ class PolynomialRegression:
         return self
 
     def predict(self, X: Union[List, np.ndarray]) -> List[float]:
+        """
+        Generate polynomial predictions.
+        
+        Args:
+            X (np.ndarray): Input data (shape: [n_samples, n_features]).
+            
+        Returns:
+            list: Predicted values (shape: [n_samples]).
+            
+        Example:
+            >>> model.predict([[4]])
+            [16.0]
+        """
         if X is None or len(X) == 0:
             raise ValueError("Input datas for prediction are empties")
         X_arr = np.array(X)
