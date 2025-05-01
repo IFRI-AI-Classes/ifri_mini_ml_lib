@@ -1,7 +1,12 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 """Handling missing values in datasets using different strategies."""
 
 import numpy as np
 import pandas as pd
+from knn import KNN
+from regression import LinearRegression
 
 class MissingValueHandler:
     """
@@ -94,7 +99,7 @@ class MissingValueHandler:
         df = self._convert_to_dataframe(X)
         return df.fillna(value)
 
-    def impute_knn(self, X, k=3):
+    def impute_knn(self, X, k=3, task='regression'):
         """
         Description:
             Imputes missing values using k-nearest neighbors.
@@ -109,29 +114,27 @@ class MissingValueHandler:
         Example:
             >>> handler.impute_knn(df, k=5)
         """
-        from scipy.spatial.distance import cdist
 
         df = self._convert_to_dataframe(X)
 
         for col in df.columns:
             if df[col].isnull().sum() > 0:
-                non_missing = df[df[col].notnull()]
-                missing = df[df[col].isnull()]
-
-                if len(non_missing) == 0:
+                known = df[df[col].notnull()].fillna(0)
+                unknown = df[df[col].isnull()].fillna(0)
+                
+                if known.empty:
                     continue
+                
+                X_train = known.drop(col, axis=1).values
+                y_train = known[col].values
+                X_test = unknown.drop(col, axis=1).values
+                
+                knn = KNN(k=k, task=task)
+                knn.fit(X_train, y_train)
+                predictions = knn.predict(X_test)
+                
+                df.loc[unknown.index, col] = predictions
 
-                distances = cdist(
-                    missing.drop(col, axis=1).fillna(0),
-                    non_missing.drop(col, axis=1).fillna(0),
-                    metric='euclidean'
-                )
-
-                nearest_indices = np.argsort(distances, axis=1)[:, :k]
-                knn_values = non_missing.iloc[nearest_indices.flatten()][col].values.reshape(-1, k)
-                imputed_values = np.nanmean(knn_values, axis=1)
-
-                df.loc[df[col].isnull(), col] = imputed_values
         return df
 
     def impute_regression(self, X, target_col):
@@ -153,12 +156,10 @@ class MissingValueHandler:
         Example:
             >>> handler.impute_regression(df, target_col='Age')
         """
-        from sklearn.linear_model import LinearRegression
-
         df = self._convert_to_dataframe(X)
 
         if target_col not in df.columns:
-            raise ValueError(f"Column '{target_col}' doesn't exist in X.")
+            raise ValueError(f"La colonne '{target_col}' n'existe pas dans X.")
 
         known = df[df[target_col].notnull()]
         unknown = df[df[target_col].isnull()]
@@ -166,9 +167,10 @@ class MissingValueHandler:
         if len(unknown) == 0:
             return df
 
+        # On forme le modèle avec ta classe LinearRegression
         model = LinearRegression()
-        model.fit(known.drop(target_col, axis=1), known[target_col])
-        predicted_values = model.predict(unknown.drop(target_col, axis=1))
+        model.fit(known.drop(target_col, axis=1).values, known[target_col].values)
+        predicted_values = model.predict(unknown.drop(target_col, axis=1).values)
 
         df.loc[df[target_col].isnull(), target_col] = predicted_values
         return df
