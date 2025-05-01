@@ -22,34 +22,50 @@ class PolynomialRegression:
 
     def _polynomial_features(self, X: np.ndarray) -> np.ndarray:
         """
-        Generate polynomial features from input data.
+        Generate polynomial features from input data including cross-terms.
         
         Args:
             X (np.ndarray): Input data of shape [n_samples, n_features]
 
         Returns:
-            np.ndarray: Polynomial features matrix of shape [n_samples, degree*n_features]
-
-        Example:
-            >>> pr = PolynomialRegression(degree=2)
-            >>> pr._polynomial_features(np.array([[2]]))
-            array([[2, 4]])
-        """
-        poly_features = []
+            np.ndarray: Polynomial features matrix including all terms up to the specified degree
         
-        if not isinstance(X[0], list) and not isinstance(X[0], np.ndarray):
+        Example: degree=2 et X=[[a, b]] :
+        Output : [a, b, a², ab, b²]
+        """
+        # Ensure X is properly formatted as a 2D array
+        if not isinstance(X[0], (list, np.ndarray)):
             X = [[x] for x in X]
-
-        for row in X:
-            features = []
-            for feature in row:
-                for p in range(1, self.degree + 1):
-                    features.append(feature ** p)
-            poly_features.append(features)
+        
+        X_array = np.array(X)
+        n_samples, n_features = X_array.shape
+        
+        # For a single feature, just compute powers
+        if n_features == 1:
+            poly_features = []
+            for row in X_array:
+                features = [row[0] ** p for p in range(1, self.degree + 1)]
+                poly_features.append(features)
+            return np.array(poly_features)
+        
+        # For multiple features, we need to include cross-terms
+        from itertools import combinations_with_replacement
+        
+        poly_features = []
+        for sample in X_array:
+            sample_features = []
+            # Generate all combinations of features up to the degree
+            for d in range(1, self.degree + 1):
+                for combination in combinations_with_replacement(range(n_features), d):
+                    # Compute the term (product of features raised to powers)
+                    term = 1
+                    for feature_idx in combination:
+                        term *= sample[feature_idx]
+                    sample_features.append(term)
+            poly_features.append(sample_features)
         
         return np.array(poly_features)
-
-
+    
     def fit(self, X: Union[List, np.ndarray], y: Union[List, np.ndarray]) -> 'PolynomialRegression':
         """
         Train the polynomial regression model.
