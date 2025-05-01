@@ -3,37 +3,49 @@ from collections import Counter
 
 class DecisionTree:
     """
-    Implémentation simple d'un arbre de décision pour la classification binaire ou multi-classe.
+    Simple implementation of a decision tree for binary or multi-class classification.
 
-    :param max_depth: Profondeur maximale de l'arbre (None pour illimité)
+    :param max_depth: Maximum depth of the tree (None for unlimited depth)
     :type max_depth: int or None
     """
 
     def __init__(self, max_depth=None):
+        """
+        Initialize the decision tree with a specified maximum depth.
+
+        :param max_depth: Maximum depth of the tree (None for unlimited depth)
+        :type max_depth: int or None
+        """
         self.max_depth = max_depth
         self.tree = None
 
     def fit(self, X, y, depth=0):
         """
-        Entraîne l'arbre de décision sur les données.
+        Train the decision tree on the provided data.
 
-        :param X: Données d'entrée de forme (n_samples, n_features)
+        :param X: Input features of shape (n_samples, n_features)
         :type X: np.ndarray
-        :param y: Étiquettes associées de forme (n_samples,)
+        :param y: Corresponding labels of shape (n_samples,)
         :type y: np.ndarray
-        :param depth: Profondeur actuelle (utilisée en récursivité)
+        :param depth: Current depth (used for recursion)
         :type depth: int
-        :return: Structure récursive de l'arbre (dictionnaire ou classe majoritaire)
+        :return: Recursive tree structure (dictionary or majority class)
         :rtype: dict or int
+        
+        Example:
+            tree = DecisionTree(max_depth=3)
+            tree.fit(X_train, y_train)
         """
         n_samples, n_features = X.shape
         n_classes = len(np.unique(y))
 
+        # Stop if max depth is reached or all samples belong to the same class
         if (self.max_depth is not None and depth == self.max_depth) or (n_classes == 1):
             return self._most_common_label(y)
 
         best_feature, best_threshold = self._best_split(X, y)
 
+        # If no valid split is found
         if best_feature is None:
             return self._most_common_label(y)
 
@@ -60,14 +72,17 @@ class DecisionTree:
 
     def _best_split(self, X, y):
         """
-        Trouve la meilleure séparation (feature, seuil) qui maximise le gain d'information.
+        Find the best feature and threshold to split on that maximizes information gain.
 
-        :param X: Données d'entrée
+        :param X: Input features
         :type X: np.ndarray
-        :param y: Étiquettes
+        :param y: Labels
         :type y: np.ndarray
-        :return: Index de la feature et seuil optimal
+        :return: Index of the best feature and optimal threshold
         :rtype: tuple(int, float)
+        
+        Example:
+            feature_index, threshold = tree._best_split(X_train, y_train)
         """
         best_gain = -1
         best_feature = None
@@ -89,24 +104,28 @@ class DecisionTree:
 
     def _information_gain(self, X, y, feature_index, threshold):
         """
-        Calcule le gain d'information pour une séparation donnée.
+        Calculate the information gain for a given split.
 
-        :param X: Données d'entrée
+        :param X: Input features
         :type X: np.ndarray
-        :param y: Étiquettes
+        :param y: Labels
         :type y: np.ndarray
-        :param feature_index: Index de la feature testée
+        :param feature_index: Index of the feature to split on
         :type feature_index: int
-        :param threshold: Seuil utilisé pour la séparation
+        :param threshold: Threshold value to split the feature
         :type threshold: float
-        :return: Gain d'information
+        :return: Information gain value
         :rtype: float
+        
+        Example:
+            gain = tree._information_gain(X_train, y_train, feature_index, threshold)
         """
         parent_entropy = self._entropy(y)
 
         left_indices = X[:, feature_index] < threshold
         right_indices = X[:, feature_index] >= threshold
 
+        # Avoid division by zero or invalid splits
         if sum(left_indices) == 0 or sum(right_indices) == 0:
             return 0
 
@@ -120,12 +139,15 @@ class DecisionTree:
 
     def _entropy(self, y):
         """
-        Calcule l'entropie d'un ensemble d'étiquettes.
+        Compute Shannon entropy for a label set.
 
-        :param y: Étiquettes
+        :param y: Labels
         :type y: np.ndarray
-        :return: Entropie de Shannon
+        :return: Entropy value
         :rtype: float
+        
+        Example:
+            entropy = tree._entropy(y_train)
         """
         counts = np.bincount(y)
         probabilities = counts / len(y)
@@ -133,37 +155,46 @@ class DecisionTree:
 
     def _most_common_label(self, y):
         """
-        Retourne la classe la plus fréquente dans un ensemble.
+        Return the most frequent label in a set.
 
-        :param y: Étiquettes
+        :param y: Labels
         :type y: np.ndarray
-        :return: Classe majoritaire
+        :return: Most common class label
         :rtype: int
+        
+        Example:
+            most_common = tree._most_common_label(y_train)
         """
         counter = Counter(y)
         return counter.most_common(1)[0][0]
 
     def predict(self, X):
         """
-        Prédit les classes pour un ensemble d'exemples.
+        Predict class labels for given input samples.
 
-        :param X: Données d'entrée (n_samples, n_features)
+        :param X: Input features (n_samples, n_features)
         :type X: np.ndarray
-        :return: Prédictions pour chaque exemple
+        :return: Predicted class labels
         :rtype: np.ndarray
+        
+        Example:
+            predictions = tree.predict(X_test)
         """
         return np.array([self._predict_single(x, self.tree) for x in X])
 
     def _predict_single(self, x, tree):
         """
-        Prédit la classe pour un seul exemple.
+        Predict the class label for a single sample.
 
-        :param x: Exemple unique (1D)
+        :param x: Single input example (1D array)
         :type x: np.ndarray
-        :param tree: Arbre de décision (sous-forme de dictionnaire récursif)
+        :param tree: Decision tree (recursively structured dict)
         :type tree: dict or int
-        :return: Classe prédite
+        :return: Predicted class
         :rtype: int
+        
+        Example:
+            prediction = tree._predict_single(X_test[0], tree)
         """
         if not isinstance(tree, dict):
             return tree
@@ -178,21 +209,24 @@ class DecisionTree:
 
     def print_tree(self, tree=None, indent=" "):
         """
-        Affiche l'arbre de manière textuelle simple.
+        Print a simple textual representation of the tree.
 
-        :param tree: Arbre à afficher (par défaut, l'arbre principal)
+        :param tree: Tree to print (default is the main tree)
         :type tree: dict or int
-        :param indent: Indentation visuelle
+        :param indent: Visual indentation string
         :type indent: str
+        
+        Example:
+            tree.print_tree()
         """
         if tree is None:
             tree = self.tree
 
         if not isinstance(tree, dict):
-            print(indent + "Classe:", tree)
+            print(indent + "Class:", tree)
             return
 
-        print(indent + "Feature", tree["feature_index"], "<", tree["threshold"])
+        print(indent + f"Feature {tree['feature_index']} < {tree['threshold']}")
         print(indent + "--> True:")
         self.print_tree(tree["left"], indent + "  ")
         print(indent + "--> False:")
@@ -200,20 +234,23 @@ class DecisionTree:
 
     def print_visual_tree(self, tree=None, indent="", last='updown'):
         """
-        Affiche l'arbre de décision de manière visuelle avec indentation.
+        Visually print the tree structure with indentation and branches.
 
-        :param tree: Arbre à afficher
+        :param tree: Tree to print
         :type tree: dict or int
-        :param indent: Indentation visuelle
+        :param indent: Indentation for formatting
         :type indent: str
-        :param last: Position dans l'arbre ('left', 'right', 'updown')
+        :param last: Tree position indicator ('left', 'right', 'updown')
         :type last: str
+        
+        Example:
+            tree.print_visual_tree()
         """
         if tree is None:
             tree = self.tree
         
         if not isinstance(tree, dict):
-            print(indent + "+-- " + f"Classe: {tree}")
+            print(indent + "+-- " + f"Class: {tree}")
             return
 
         print(indent + "+-- " + f"Feature {tree['feature_index']} < {tree['threshold']}?")
