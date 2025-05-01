@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from pca import PCA
 
-
-from sklearn.decomposition import PCA
 
 class TSNE:
 
@@ -276,7 +275,7 @@ class TSNE:
             Y = 1e-4 * np.random.randn(n_samples, self.n_components).astype(np.float32)
         else:
             # Initialization of Y by pca
-            Y = PCA(n_components=self.n_components).fit_transform(X)
+            Y = PCA(n_component=self.n_components).fit_transform(X)
             Y = Y / np.std(Y, axis=0) * 1e-4  
         
         exaggeration_end_iter = 250
@@ -313,7 +312,6 @@ class TSNE:
 
             # Data Centering
             Y -= Y.mean(axis=0)
-            #Y /= np.std(Y, axis=0)  # Normalization
 
             # Dynamic learning rate update
             if i == exaggeration_end_iter:
