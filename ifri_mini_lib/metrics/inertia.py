@@ -1,7 +1,5 @@
 import numpy as np
-import sys
-sys.path.append('./clustering')
-from utils.utils import euclidean_distance
+from clustering.utils import euclidean_distance
 
 
 def calculate_inertia(data, labels, centroids):
