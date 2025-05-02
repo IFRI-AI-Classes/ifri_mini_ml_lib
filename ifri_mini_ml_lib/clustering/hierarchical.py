@@ -1,8 +1,6 @@
 import numpy as np
-from utils.utils import euclidean_distance  # Import function euclidean_distance
-import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import dendrogram, linkage
-from clustering.algo.kmeans import KMeans
+from .utils import euclidean_distance  # Import function euclidean_distance
+from .kmeans import KMeans
 
 class HierarchicalClustering:
     """
@@ -26,14 +24,11 @@ class HierarchicalClustering:
       - _bisect_cluster(self, data, cluster, kmeans): Splits a cluster into two using KMeans.
       - _compute_distance_matrix(self, data): Computes the pairwise distance matrix.
       - _compute_linkage_distance(self, cluster1, cluster2, distances, linkage): Computes inter-cluster distance.
-      - plot_dendrogram(self, data, **kwargs): Plots a dendrogram for agglomerative clustering.
-      - plot_clusters(self, data, labels): Plots a scatter plot of the data points colored by their cluster labels
-
+      
       Example:
       ---------
       hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
       labels = hierarchical.fit_predict(data)
-      hierarchical.plot_dendrogram(data)
       hierarchical.plot_clusters(data, labels)
     """
 
@@ -280,105 +275,3 @@ class HierarchicalClustering:
             return total_distance / (len(cluster1) * len(cluster2))
         else:
             raise ValueError("Critère de linkage non reconnu. Choisissez 'single', 'complete' ou 'average'.")
-
-    def plot_dendrogram(self, data, **kwargs):
-        """
-        Description:
-        ------------
-        Generates and displays the dendrogram.
-
-        Arguments:
-        -----------
-        - data (numpy.ndarray): The data used for clustering.
-        - **kwargs: Additional arguments to pass to SciPy's dendrogram function.
-        """
-        # Calculate the linkage matrix
-        if self.method == 'agglomerative':
-            # Agglomerative hierarchical clustering
-            self.linked_matrix = linkage(data, method=self.linkage)
-
-            # Do dendrogramme
-            plt.figure(figsize=(12, 6))
-            dendrogram(self.linked_matrix, orientation='top', **kwargs)
-            plt.title('Dendrogram Hierarchical Clustering')
-            plt.xlabel('Samples')
-            plt.ylabel('Distance')
-            plt.show()
-
-        elif self.method == 'divisive':
-            # Divisive hierarchical clustering
-            print("Dendrogram not supported for the divisive method.")
-            return
-        
-    def plot_clusters(self, data):
-        """
-        Description:
-        ------------
-        Plots a scatter plot of the data points colored by their cluster labels,
-        supporting 1D, 2D, and 3D data. For higher dimensions, PCA is applied to reduce to 3D.
-
-        Arguments:
-        -----------
-        - data (numpy.ndarray): Data array.
-
-        Functions:
-        -----------
-        - Generates a scatter plot of the data points, colored by cluster ID.
-        - Noise points are plotted in black.
-        - Adds a legend and labels to the plot.
-        - Uses PCA for dimensionality reduction to 3D if the input data has more than 3 features.
-
-        Example:
-        ---------
-        hierarchical.plot_clusters(data)
-        """
-        n_features = data.shape[1]
-        labels = self.fit_predict(data)
-        if n_features > 3:
-            from sklearn.decomposition import PCA
-            pca = PCA(n_components=3)
-            data = pca.fit_transform(data)
-            n_features = 3
-            print("Warning: Data reduced to 3D using PCA for visualization.")
-
-        unique_labels = np.unique(labels)
-        colors = plt.colormaps.get_cmap('tab10')
-        fig = plt.figure(figsize=(8, 6))
-
-        # Case 1D
-        if n_features == 1:
-            ax = fig.add_subplot(111)
-            for i, label in enumerate(unique_labels):
-                cluster_points = data[labels == label]
-                ax.scatter(cluster_points[:, 0], np.zeros_like(cluster_points[:, 0]),
-                        label=f"Cluster {label}", color=colors(i), s=50)
-            ax.set_yticks([])
-            ax.set_xlabel("Feature 1")
-            ax.set_title("Hierarchical Clustering Result (1D)")
-
-        # Case 2D
-        elif n_features == 2:
-            ax = fig.add_subplot(111)
-            for i, label in enumerate(unique_labels):
-                cluster_points = data[labels == label]
-                ax.scatter(cluster_points[:, 0], cluster_points[:, 1],
-                        label=f"Cluster {label}", color=colors(i), s=50)
-            ax.set_xlabel("Feature 1")
-            ax.set_ylabel("Feature 2")
-            ax.set_title("Hierarchical Clustering Result (2D)")
-
-        # Case 3D
-        elif n_features == 3:
-            ax = fig.add_subplot(111, projection='3d')
-            for i, label in enumerate(unique_labels):
-                cluster_points = data[labels == label]
-                ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2],
-                           label=f"Cluster {label}", color=colors(i), s=50)
-            ax.set_xlabel("Feature 1")
-            ax.set_ylabel("Feature 2")
-            ax.set_zlabel("Feature 3")
-            ax.set_title("Hierarchical Clustering Result (3D)")
-
-        plt.legend()
-        plt.grid(True)
-        plt.show()

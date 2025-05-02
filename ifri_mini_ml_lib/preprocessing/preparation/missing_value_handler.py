@@ -1,12 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-"""Handling missing values in datasets using different strategies."""
-
 import numpy as np
 import pandas as pd
-from knn import KNN
-from regression import LinearRegression
+from ifri_mini_ml_lib.classification.knn import KNN
+from ifri_mini_ml_lib.regression import LinearRegression
 
 class MissingValueHandler:
     """

@@ -1,7 +1,5 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt 
-from utils import euclidean_distance
+from .utils import euclidean_distance
 
 class KMeans:
     """
@@ -186,71 +184,3 @@ class KMeans:
         """
         self.fit(X)
         return self.predict(X)
-    
-    def plot_clusters(self, X):
-        """
-        Description:
-        ------------
-        Visualizes the clusters for KMeans, supporting 1D, 2D, and 3D data.
-        For higher dimensions, PCA is applied to reduce to 3D.
-
-        Arguments:
-        -----------
-        - X (ndarray): Data array.
-
-        Functions:
-        -----------
-        - Plots points colored by cluster assignment.
-        - Marks centroids with a distinct symbol ('x').
-        - Uses PCA for dimensionality reduction if > 3D.
-
-        Exemple: 
-        - kmeans.plot_clusters(data)
-        """
-        n_features = X.shape[1]
-
-        if n_features > 3:
-            from sklearn.decomposition import PCA
-            pca = PCA(n_components=3)
-            X = pca.fit_transform(X)
-            n_features = 3
-            print("Warning: Data reduced to 3D using PCA for visualization.")
-
-        fig = plt.figure(figsize=(8, 6))
-
-        # case 1
-        if n_features == 1:
-            ax = fig.add_subplot(111)
-            for i in range(self.n_clusters):
-                cluster_data = X[self.labels == i]
-                ax.scatter(cluster_data[:, 0], np.zeros_like(cluster_data[:, 0]), label=f'Cluster {i}')
-            ax.scatter(self.centroids[:, 0], np.zeros_like(self.centroids[:, 0]), marker='x', s=200, color='black', label='Centroids')
-            ax.set_yticks([])
-            ax.set_xlabel('Feature 1')
-            ax.set_title('KMeans Clusters (1D)')
-
-        # case 2D
-        elif n_features == 2:
-            ax = fig.add_subplot(111)
-            for i in range(self.n_clusters):
-                cluster_data = X[self.labels == i]
-                ax.scatter(cluster_data[:, 0], cluster_data[:, 1], label=f'Cluster {i}')
-            ax.scatter(self.centroids[:, 0], self.centroids[:, 1], marker='x', s=200, color='black', label='Centroids')
-            ax.set_xlabel('Feature 1')
-            ax.set_ylabel('Feature 2')
-            ax.set_title('KMeans Clusters (2D)')
-            
-        # Case 3D
-        elif n_features == 3:
-            ax = fig.add_subplot(111, projection='3d')
-            for i in range(self.n_clusters):
-                cluster_data = X[self.labels == i]
-                ax.scatter(cluster_data[:, 0], cluster_data[:, 1], cluster_data[:, 2], label=f'Cluster {i}')
-            ax.scatter(self.centroids[:, 0], self.centroids[:, 1], self.centroids[:, 2], marker='x', s=200, color='black', label='Centroids')
-            ax.set_xlabel('Feature 1')
-            ax.set_ylabel('Feature 2')
-            ax.set_zlabel('Feature 3')
-            ax.set_title('KMeans Clusters (3D)')
-
-        plt.legend()
-        plt.show()

@@ -1,5 +1,5 @@
 import numpy as np
-from ..clustering import euclidean_distance
+from ifri_mini_ml_lib.clustering.utils import euclidean_distance
 
 def evaluate_model(y_true, y_pred):
     """
