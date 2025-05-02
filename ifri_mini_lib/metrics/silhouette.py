@@ -1,5 +1,5 @@
 import numpy as np
-from clustering.utils.utils import euclidean_distance
+from clustering.utils import euclidean_distance
 
 def calculate_silhouette(data, labels):
     """
