@@ -1,7 +1,7 @@
 import numpy as np
 from .utils import clone
 from itertools import product
-from cross_validation import k_fold_cross_validation
+from .cross_validation import k_fold_cross_validation
 
 class GridSearchCV:
     """
