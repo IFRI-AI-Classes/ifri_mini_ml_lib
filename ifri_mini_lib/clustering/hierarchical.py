@@ -342,7 +342,7 @@ class HierarchicalClustering:
             print("Warning: Data reduced to 3D using PCA for visualization.")
 
         unique_labels = np.unique(labels)
-        colors = plt.cm.get_cmap("tab10", len(unique_labels))
+        colors = plt.colormaps.get_cmap('tab10')
         fig = plt.figure(figsize=(8, 6))
 
         # Case 1D
