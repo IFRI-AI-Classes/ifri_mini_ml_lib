@@ -192,7 +192,7 @@ class DBSCAN:
             n_features = max_dimensions  # Update after PCA
 
         unique_labels = set(self.labels)
-        colors = plt.cm.get_cmap('tab10', len(unique_labels))
+        colors = plt.colormaps.get_cmap('tab10')
         fig = plt.figure(figsize=(10, 7))
 
         # Case 1D
