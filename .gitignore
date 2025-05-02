@@ -1,2 +1,6 @@
 # test file
 index.py
+
+# build
+dist/
+ifri_mini_ml_lib.egg-info/
