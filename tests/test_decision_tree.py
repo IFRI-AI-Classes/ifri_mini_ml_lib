@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_lib.classification.decision_tree import DecisionTree
+from ifri_mini_ml_lib.classification.decision_tree import DecisionTree
 
 @pytest.fixture
 def binary_data():

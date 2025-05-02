@@ -3,10 +3,10 @@ from ..clustering import euclidean_distance
 
 def evaluate_model(y_true, y_pred):
     """
-    Calcule les métriques : MSE, RMSE, MAE, MAPE, R²
+    Compute : MSE, RMSE, MAE, MAPE, R²
     """
     if len(y_true) != len(y_pred):
-        raise ValueError("Les longueurs de y_true et y_pred ne correspondent pas")
+        raise ValueError("y_true and y_pred have not the length")
 
     errors = [yt - yp for yt, yp in zip(y_true, y_pred)]
     abs_errors = [abs(e) for e in errors]

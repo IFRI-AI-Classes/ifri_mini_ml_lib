@@ -3,7 +3,7 @@ import pytest
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.metrics import mean_squared_error, accuracy_score
 from sklearn.datasets import make_regression, make_classification
-from ifri_mini_lib.model_selection import BaggingRegressor, BaggingClassifier 
+from ifri_mini_ml_lib.model_selection import BaggingRegressor, BaggingClassifier 
 
 def test_bagging_regressor_training_and_prediction():
     # Générer des données de régression

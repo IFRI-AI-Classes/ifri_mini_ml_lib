@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from ifri_mini_lib.clustering.hierarchical import HierarchicalClustering
-from ifri_mini_lib.clustering.kmeans import KMeans
+from ifri_mini_ml_lib.clustering.hierarchical import HierarchicalClustering
+from ifri_mini_ml_lib.clustering.kmeans import KMeans
 
 @pytest.fixture
 def sample_data():

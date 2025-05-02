@@ -3,7 +3,7 @@ import pytest
 from sklearn.linear_model import Ridge
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, mean_squared_error
-from ifri_mini_lib.model_selection import RandomSearchCV  
+from ifri_mini_ml_lib.model_selection import RandomSearchCV  
 
 # Mock classifier
 class MockClassifier(BaseEstimator):

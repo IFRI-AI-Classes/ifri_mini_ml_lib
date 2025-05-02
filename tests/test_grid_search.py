@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
-from ifri_mini_lib.model_selection import GridSearchCV
+from ifri_mini_ml_lib.model_selection import GridSearchCV
 
 # Mock Model pour les tests
 class MockClassifier(BaseEstimator):

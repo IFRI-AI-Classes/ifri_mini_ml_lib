@@ -3,8 +3,8 @@ from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score, mean_squared_error
-from ifri_mini_lib.model_selection import BayesianSearchCV
-from ifri_mini_lib.model_selection.bayesian_searchCV import GaussianProcess, expected_improvement
+from ifri_mini_ml_lib.model_selection import BayesianSearchCV
+from ifri_mini_ml_lib.model_selection.bayesian_searchCV import GaussianProcess, expected_improvement
 
 def testbay():
     X, y = load_iris(return_X_y=True)

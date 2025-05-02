@@ -1,5 +1,5 @@
 import pytest
-from ifri_mini_lib.association_rules import Apriori
+from ifri_mini_ml_lib.association_rules import Apriori
 
 def test_apriori_basic():
     transactions = [

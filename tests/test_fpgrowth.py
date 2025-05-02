@@ -1,5 +1,5 @@
 import pytest
-from ifri_mini_lib.association_rules import FPGrowth
+from ifri_mini_ml_lib.association_rules import FPGrowth
 
 def test_fpgrowth_basic():
     transactions = [

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_lib.classification.knn import KNN
+from ifri_mini_ml_lib.classification.knn import KNN
 
 @pytest.fixture
 def binary_data():

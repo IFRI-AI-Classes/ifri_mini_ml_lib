@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_lib.clustering.dbscan import DBSCAN
+from ifri_mini_ml_lib.clustering.dbscan import DBSCAN
 
 @pytest.fixture
 def sample_data():

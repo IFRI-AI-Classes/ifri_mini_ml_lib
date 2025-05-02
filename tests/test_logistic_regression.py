@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_lib.classification.logistic_regression import LogisticRegression
+from ifri_mini_ml_lib.classification.logistic_regression import LogisticRegression
 
 @pytest.fixture
 def binary_data():
