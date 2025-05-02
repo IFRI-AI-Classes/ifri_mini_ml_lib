@@ -82,10 +82,10 @@ def k_fold_cross_validation (model, X, y, metric, stratified, k = 5):
             X_train, X_test = X[train_indices], X[test_indices]
             y_train, y_test = y[train_indices], y[test_indices]
 
-            model.fit(X_train, y_train)
-            y_predict = model.predict(X_test)
             if not (hasattr(model, "fit") and hasattr(model, "predict")):
                 raise ValueError("The model must implement both .fit() et .predict() methods")
+            model.fit(X_train, y_train)
+            y_predict = model.predict(X_test)
 
             scores.append(metric(y_test, y_predict))
 

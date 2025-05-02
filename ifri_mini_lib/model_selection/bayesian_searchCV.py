@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
-from cross_validation import k_fold_cross_validation
+from .cross_validation import k_fold_cross_validation
 
 class GaussianProcess:
     """

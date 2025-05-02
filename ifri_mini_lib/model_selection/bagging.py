@@ -1,5 +1,5 @@
 import numpy as np 
-from utils import clone
+from .utils import clone
 
 class BaggingRegressor:
     """
@@ -19,7 +19,7 @@ class BaggingRegressor:
 
     Example:
         Case 1 - base model which need fitting
-        >>> model = BaggingRegressor(base_model=DecisionTreeClassifier(), n_estimators=5, random_state=123)
+        >>> model = BaggingRegressor(base_model=DecisionTreeRegressor(), n_estimators=5, random_state=123)
         >>> model.fit(X_train, y_train)
         >>> y_pred = model.predict(X_test)
 
@@ -176,6 +176,7 @@ class BaggingClassifier:
             y_sample = y[indices]
 
             model = clone(self.base_model)
+            
             model.fit(X_sample, y_sample)
             self.models.append(model)
 
