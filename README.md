@@ -28,7 +28,7 @@ pip install ifri-mini-ml-lib
 Alternatively, you can install from source:
 
 ```bash
-git clone https://github.com/your-username/ifri_mini_ml_lib.git
+git clone https://github.com/IFRI-AI-Classes/ifri_mini_ml_lib.git
 cd ifri_mini_ml_lib
 pip install -e .
 ```
