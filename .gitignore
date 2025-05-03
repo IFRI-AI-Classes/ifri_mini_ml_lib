@@ -1,6 +1,9 @@
 # test file
 index.py
 
-# build
+# requirements files
+requirements.txt
+
+# distribution/ packaging
 dist/
 ifri_mini_ml_lib.egg-info/

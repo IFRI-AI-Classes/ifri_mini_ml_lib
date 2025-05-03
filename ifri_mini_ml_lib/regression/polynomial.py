@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Union, List
-from linear import LinearRegression
+from .linear import LinearRegression
 
 class PolynomialRegression:
     """
