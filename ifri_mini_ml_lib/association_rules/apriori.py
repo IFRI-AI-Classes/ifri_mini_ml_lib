@@ -12,7 +12,7 @@ class Apriori:
 
     Args:
         min_support(float): Minimum support threshold for considering an itemset
-        min_confiance(float): Minimum confidence threshold for a rule
+        min_confidence(float): Minimum confidence threshold for a rule
         
     Examples:
 
@@ -24,7 +24,7 @@ class Apriori:
     ...     {'bread', 'jam', 'milk'}
     ... ]
     >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Apriori
-    >>> apriori = Apriori(min_support=0.4, min_confiance=0.6)
+    >>> apriori = Apriori(min_support=0.4, min_confidence=0.6)
     >>> apriori.fit(transactions) # Frequents itemsets + Rules generation
     <ifri_mini_ml_lib.Unsupervised.association_rules.apriori.Apriori object>
     >>> frequent_itemsets = apriori.get_frequent_itemsets()
@@ -43,15 +43,15 @@ class Apriori:
     {'milk'} -> {'bread'}, Support: 0.60, Confidence: 0.75
     {'bread'} -> {'milk'}, Support: 0.60, Confidence: 0.75
     """
-    def __init__(self, min_support: float, min_confiance: float):
+    def __init__(self, min_support: float, min_confidence: float):
         
         if not 0 <= min_support <= 1:
             raise ValueError("Minimum support must be between 0 and 1")
-        if not 0 <= min_confiance <= 1:
+        if not 0 <= min_confidence <= 1:
             raise ValueError("Minimum confidence must be between 0 and 1")
         
         self.min_support = min_support
-        self.min_confiance = min_confiance
+        self.min_confidence = min_confidence
         self.frequent_itemsets_ = None
         self.rules_ = None
 
@@ -75,7 +75,7 @@ class Apriori:
         
         print(f"\nApplying Apriori algorithm with:")
         print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
-        print(f"- Minimum confidence: {self.min_confiance} ({self.min_confiance*100}%)")
+        print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
 
         print(f"Number of valid transactions: {len(transactions_list)}")
         if transactions_list:
@@ -223,7 +223,7 @@ class Apriori:
                     # Calculate metrics
                     conf = confidence(antecedent, consequent, transactions)
                     
-                    if conf >= self.min_confiance:
+                    if conf >= self.min_confidence:
                         rule_support = support(itemset, transactions)
                         rule_lift = lift(antecedent, consequent, transactions)
                         self.rules_.append({

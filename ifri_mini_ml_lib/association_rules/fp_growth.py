@@ -35,7 +35,7 @@ class FPGrowth:
     
     Args:
         min_support (float): Minimum support threshold (between 0 and 1) for frequent itemsets.
-        min_confiance (float): Minimum confidence threshold (between 0 and 1) for association rules.
+        min_confidence (float): Minimum confidence threshold (between 0 and 1) for association rules.
 
     Examples:
 
@@ -47,7 +47,7 @@ class FPGrowth:
         ...     {'bread', 'jam', 'milk'}
         ... ]
         >>> from ifri_mini_ml_lib.Unsupervised.association_rules import FPGrowth
-        >>> fp_growth = FPGrowth(min_support=0.4, min_confiance=0.6)
+        >>> fp_growth = FPGrowth(min_support=0.4, min_confidence=0.6)
         >>> fp_growth.fit(transactions) # Frequents itemsets + Rules generation
         <ifri_mini_ml_lib.Unsupervised.association_rules.fp_growth.FPGrowth object>
         >>> frequent_itemsets = fp_growth.get_frequent_itemsets()
@@ -61,20 +61,20 @@ class FPGrowth:
         >>> if rules:
         ...     for rule in rules[:2]:
         ...         print(f"{set(rule['antecedent'])} -> {set(rule['consequent'])}, "
-        ...               f"Confidence: {rule['confiance']:.2f}, Lift: {rule['lift']:.2f}")
+        ...               f"Confidence: {rule['confidence']:.2f}, Lift: {rule['lift']:.2f}")
         {'milk'} -> {'bread'}, Confidence: 0.75, Lift: 0.94
         {'bread'} -> {'milk'}, Confidence: 0.75, Lift: 0.94
 
     """
-    def __init__(self, min_support: float, min_confiance: float):
+    def __init__(self, min_support: float, min_confidence: float):
         
         if not 0 <= min_support <= 1:
             raise ValueError("Minimum support must be between 0 and 1")
-        if not 0 <= min_confiance <= 1:
+        if not 0 <= min_confidence <= 1:
             raise ValueError("Minimum confidence must be between 0 and 1")
         
         self.min_support = min_support
-        self.min_confiance = min_confiance
+        self.min_confidence = min_confidence
         self.frequent_itemsets_dict = {}
         self.rules_ = None
         self.header_table = {}
@@ -101,7 +101,7 @@ class FPGrowth:
         print(f"\nApplying FP-Growth algorithm with:")
         print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
         print(f"- Minimum support count: {self.min_support_count}")
-        print(f"- Minimum confidence: {self.min_confiance} ({self.min_confiance*100}%)")
+        print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
         print(f"Number of valid transactions: {self.n_transactions}")
         
         # Step 1: Count the frequency of individual items
@@ -353,15 +353,15 @@ class FPGrowth:
                     
                     if antecedent in self.frequent_itemsets_dict and consequent in self.frequent_itemsets_dict:
                         # Calculate confidence and lift
-                        confiance = item_data['support'] / self.frequent_itemsets_dict[antecedent]['support']
-                        lift = confiance / self.frequent_itemsets_dict[consequent]['support']
+                        confidence = item_data['support'] / self.frequent_itemsets_dict[antecedent]['support']
+                        lift = confidence / self.frequent_itemsets_dict[consequent]['support']
                         
-                        if confiance >= self.min_confiance:
+                        if confidence >= self.min_confidence:
                             self.rules_.append({
                                 'antecedent': antecedent,
                                 'consequent': consequent,
                                 'support': item_data['support'],
-                                'confidence': confiance,
+                                'confidence': confidence,
                                 'lift': lift
                             })
     

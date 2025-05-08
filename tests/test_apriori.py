@@ -9,7 +9,7 @@ def test_apriori_basic():
         {'bread', 'milk', 'butter', 'cheese'},
         {'bread', 'jam', 'milk'}
     ]
-    model = Apriori(min_support=0.4, min_confiance=0.6)
+    model = Apriori(min_support=0.4, min_confidence=0.6)
     model.fit(transactions)
     frequent_itemsets = model.get_frequent_itemsets()
     rules = model.get_rules()
