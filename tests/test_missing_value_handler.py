@@ -17,9 +17,10 @@ def sample_df():
     })
 
 # remove_missing
+# remove_missing
 def test_remove_missing_rows(handler, sample_df):
     result = handler.remove_missing(sample_df, threshold=0.75, axis=0)
-    assert result.shape[0] == 2  # Une ligne devrait être supprimée
+    assert result.shape[0] == 2  # Deux lignes devraient être supprimées
 
 def test_remove_missing_columns(handler):
     df = pd.DataFrame({
@@ -42,7 +43,6 @@ def test_impute_statistical_mode(handler):
     })
     result = handler.impute_statistical(df, strategy="mode")
     assert result.loc[2, 'A'] == 1
-
 # impute_default
 def test_impute_default(handler, sample_df):
     result = handler.impute_default(sample_df, value=-1)
