@@ -1,7 +1,12 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+"""Handling missing values in datasets using different strategies."""
+
 import numpy as np
 import pandas as pd
-from ifri_mini_ml_lib.classification.knn import KNN
-from ifri_mini_ml_lib.regression import LinearRegression
+from knn import KNN
+from regression import LinearRegression
 
 class MissingValueHandler:
     """
@@ -66,14 +71,17 @@ class MissingValueHandler:
             >>> handler.impute_statistical(df, strategy="median")
         """
         df = self._convert_to_dataframe(X)
+        df = df.copy()
+    
         for col in df.columns:
             if df[col].isnull().sum() > 0:
                 if strategy == "mean":
-                    df[col].fillna(df[col].mean(), inplace=True)
+                    df[col] = df[col].fillna(df[col].mean())
                 elif strategy == "median":
-                    df[col].fillna(df[col].median(), inplace=True)
+                    df[col] = df[col].fillna(df[col].median())
                 elif strategy == "mode":
-                    df[col].fillna(df[col].mode()[0], inplace=True)
+                    df[col] = df[col].fillna(df[col].mode()[0])
+        
         return df
 
     def impute_default(self, X, value=0):
