@@ -170,7 +170,7 @@ class MissingValueHandler:
         if len(unknown) == 0:
             return df
 
-        # On forme le modèle avec ta classe LinearRegression
+
         model = LinearRegression()
         model.fit(known.drop(target_col, axis=1).values, known[target_col].values)
         predicted_values = model.predict(unknown.drop(target_col, axis=1).values)
