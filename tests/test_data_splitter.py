@@ -74,19 +74,34 @@ def test_temporal_split(temporal_data):
     splitter = DataSplitter()
     X_train, X_test, y_train, y_test = splitter.temporal_train_test_split(X, y)
     
-    # Vérifie que les premières données sont dans le test set
-    assert X.index[0] in X_test.index
-    assert X.index[-1] in X_train.index
+    # Vérifications
+    assert len(X_train) + len(X_test) == len(X)
     assert len(X_test) == 20  # 20% de 100
+    
+    # Vérifie l'ordre temporel
+    last_train_date = X_train.index[-1]
+    first_test_date = X_test.index[0]
+    assert last_train_date < first_test_date  # Les dates train sont avant test
+    
+    # Vérifie que les données les plus récentes sont bien dans test
+    assert X.index[-1] in X_test.index
 
 def test_temporal_split_with_val(temporal_data):
     X, y = temporal_data
     splitter = DataSplitter()
-    result = splitter.temporal_train_test_split(X, y, val_set=True)
+    X_train, X_val, X_test, y_train, y_val, y_test = splitter.temporal_train_test_split(
+        X, y, val_set=True
+    )
     
-    assert len(result) == 6
-    X_train, X_val, X_test, y_train, y_val, y_test = result
+    # Vérifications de taille
     assert len(X_train) + len(X_val) + len(X_test) == len(X)
+    
+    # Vérifie l'ordre temporel: train < val < test
+    assert X_train.index[-1] < X_val.index[0]
+    assert X_val.index[-1] < X_test.index[0]
+    
+    # Vérifie que les plus récentes sont dans test
+    assert X.index[-1] in X_test.index
 
 def test_k_fold_split(sample_data):
     X, y = sample_data
