@@ -76,7 +76,7 @@ class FPGrowth:
         self.min_support = min_support
         self.min_confidence = min_confidence
         self.frequent_itemsets_dict = {}
-        self.rules_ = None
+        self.rules_ = []
         self.header_table = {}
         self.n_transactions = 0
         
@@ -103,6 +103,9 @@ class FPGrowth:
         print(f"- Minimum support count: {self.min_support_count}")
         print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
         print(f"Number of valid transactions: {self.n_transactions}")
+
+        if len(transactions) == 0:
+            return self
         
         # Step 1: Count the frequency of individual items
         item_counter = defaultdict(int)
@@ -338,7 +341,6 @@ class FPGrowth:
         Returns:
             List of association rules
         """
-        self.rules_ = []
         
         # Examine all itemsets of size > 1
         for itemset, item_data in self.frequent_itemsets_dict.items():

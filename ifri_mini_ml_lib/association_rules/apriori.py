@@ -52,8 +52,8 @@ class Apriori:
         
         self.min_support = min_support
         self.min_confidence = min_confidence
-        self.frequent_itemsets_ = None
-        self.rules_ = None
+        self.frequent_itemsets_ = {}
+        self.rules_ = []
 
     def fit(self, transactions: list):
         """
@@ -80,6 +80,8 @@ class Apriori:
         print(f"Number of valid transactions: {len(transactions_list)}")
         if transactions_list:
             print(f"Example transaction: {list(transactions_list[0])[:5]}...")
+        else:
+            return self
 
         # Generate frequent itemsets
         self._fit_apriori(transactions_list)
@@ -207,8 +209,7 @@ class Apriori:
         Args:
             transactions: List of transactions
         """
-        self.rules_ = []
-        
+
         # Go through frequent itemsets ignoring those of size 1
         for itemset in chain(*(self.frequent_itemsets_.values())):
             if len(itemset) < 2:
