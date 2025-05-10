@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from knn import KNN  # Assure-toi que ton fichier s'appelle knn.py ou modifie l'import
+from ifri_mini_ml_lib.classification.knn import KNN  
 
 def test_knn_classification_simple():
     X = [[0], [1], [2], [3]]
@@ -23,7 +23,7 @@ def test_knn_k_greater_than_data_length():
     knn = KNN(k=5, task='classification')
     knn.fit(X, y)
     result = knn.predict([[0.5]])
-    assert result[0] in ['A', 'B']  # Pas d'erreur levée
+    assert result[0] in ['A', 'B']  
 
 def test_knn_not_fitted_raises_error():
     knn = KNN()
