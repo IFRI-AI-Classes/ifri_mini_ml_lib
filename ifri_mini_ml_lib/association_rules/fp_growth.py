@@ -46,10 +46,10 @@ class FPGrowth:
         ...     {'bread', 'milk', 'butter', 'cheese'},
         ...     {'bread', 'jam', 'milk'}
         ... ]
-        >>> from ifri_mini_ml_lib.Unsupervised.association_rules import FPGrowth
+        >>> from ifri_mini_ml_lib.association_rules import FPGrowth
         >>> fp_growth = FPGrowth(min_support=0.4, min_confidence=0.6)
         >>> fp_growth.fit(transactions) # Frequents itemsets + Rules generation
-        <ifri_mini_ml_lib.Unsupervised.association_rules.fp_growth.FPGrowth object>
+        <ifri_mini_ml_lib.association_rules.fp_growth.FPGrowth object>
         >>> frequent_itemsets = fp_growth.get_frequent_itemsets()
         >>> for itemset_data in frequent_itemsets[:3]:
         ...     print(f"Itemset: {set(itemset_data['itemset'])}, Support: {itemset_data['support']:.2f}")
@@ -379,7 +379,7 @@ class FPGrowth:
             List: List of frequent itemsets with their supports
         """
         # Convert dictionary to list for compatibility
-        result = [{'itemset': itemset, **item_data} for itemset, item_data in self.frequent_itemsets_dict.items()]
+        result = [{'itemset': list(itemset), **item_data} for itemset, item_data in self.frequent_itemsets_dict.items()]
         return result
 
     def get_rules(self):

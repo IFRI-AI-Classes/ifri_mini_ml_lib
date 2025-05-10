@@ -23,10 +23,10 @@ class Apriori:
     ...     {'bread', 'milk', 'butter', 'cheese'},
     ...     {'bread', 'jam', 'milk'}
     ... ]
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Apriori
+    >>> from ifri_mini_ml_lib.association_rules import Apriori
     >>> apriori = Apriori(min_support=0.4, min_confidence=0.6)
     >>> apriori.fit(transactions) # Frequents itemsets + Rules generation
-    <ifri_mini_ml_lib.Unsupervised.association_rules.apriori.Apriori object>
+    <ifri_mini_ml_lib.association_rules.apriori.Apriori object>
     >>> frequent_itemsets = apriori.get_frequent_itemsets()
     >>> # Displaying frequent itemsets of size 1
     >>> for item in frequent_itemsets[1]:

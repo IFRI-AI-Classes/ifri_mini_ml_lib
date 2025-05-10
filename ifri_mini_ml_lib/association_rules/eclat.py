@@ -27,10 +27,10 @@ class Eclat:
     ...     {'bread', 'milk', 'butter', 'cheese'},
     ...     {'bread', 'jam', 'milk'}
     ... ]
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Eclat
+    >>> from ifri_mini_ml_lib.association_rules import Eclat
     >>> eclat = Eclat(min_support=0.4, min_confidence=0.6)
     >>> eclat.fit(transactions) # Frequents itemsets + Rules generation
-    <ifri_mini_ml_lib.Unsupervised.association_rules.eclat.Eclat object>
+    <ifri_mini_ml_lib.association_rules.eclat.Eclat object>
     >>> frequent_itemsets = eclat.get_frequent_itemsets()
     >>> # Displaying frequent itemsets of size 1
     >>> for itemset, tidset in frequent_itemsets[1].items():

@@ -13,3 +13,9 @@ tests/data
 
 # pytest cache
 .pytest_cache
+
+# presentation
+main.py
+data/
+frequent_itemsets.json
+rules.txt
