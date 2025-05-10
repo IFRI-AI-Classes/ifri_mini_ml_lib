@@ -7,3 +7,9 @@ requirements.txt
 # distribution/ packaging
 dist/
 ifri_mini_ml_lib.egg-info/
+
+# data use for association rules tests
+tests/data
+
+# pytest cache
+.pytest_cache
