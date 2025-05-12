@@ -71,7 +71,7 @@ class MissingValueHandler:
             >>> handler.impute_statistical(df, strategy="median")
         """
         df = self._convert_to_dataframe(X)
-        df = df.copy()
+        df = df.copy()  # Create a copy to avoid modifying the original DataFrame in-place
     
         for col in df.columns:
             if df[col].isnull().sum() > 0:
