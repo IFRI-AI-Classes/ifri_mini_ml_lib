@@ -1,11 +1,11 @@
 import pytest
 import numpy as np
+from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
 from ifri_mini_ml_lib.model_selection.cross_validation import k_fold_cross_validation
-from sklearn.base import BaseEstimator
-from sklearn.metrics import accuracy_score
+from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
 
 # Mock model for testing
-class MockModel(BaseEstimator):
+class MockModel(BaseEstimatorMinimal):
     def __init__(self, predict_value=1):
         self.predict_value = predict_value
         
@@ -23,7 +23,7 @@ def test_k_fold_validation_basic_functionality():
     """Test basic functionality with non-stratified k-fold"""
     model = MockModel(predict_value=1)
     mean_score, std_score = k_fold_cross_validation(
-        model, X, y, accuracy_score, stratified=False, k=5
+        model, X, y, accuracy, stratified=False, k=5
     )
     
     # Since model always predicts 1 and we have 60% class 1
@@ -35,7 +35,7 @@ def test_stratified_k_fold():
     """Test that stratified k-fold preserves class distribution"""
     model = MockModel(predict_value=1)
     mean_score, std_score = k_fold_cross_validation(
-        model, X, y, accuracy_score, stratified=True, k=5
+        model, X, y, accuracy, stratified=True, k=5
     )
     
     # Stratified should give more consistent results across folds
@@ -47,10 +47,10 @@ def test_invalid_k_values():
     model = MockModel()
     
     with pytest.raises(ValueError, match="Number of folds must be between"):
-        k_fold_cross_validation(model, X, y, accuracy_score, stratified=False, k=1)
+        k_fold_cross_validation(model, X, y, accuracy, stratified=False, k=1)
         
     with pytest.raises(ValueError, match="Number of folds must be between"):
-        k_fold_cross_validation(model, X[:1], y[:1], accuracy_score, stratified=False, k=2)
+        k_fold_cross_validation(model, X[:1], y[:1], accuracy, stratified=False, k=2)
 
 def test_model_validation():
     """Test that invalid models are detected"""
@@ -60,7 +60,7 @@ def test_model_validation():
     bad_model = BadModel()
     
     with pytest.raises(ValueError, match="The model must implement both"):
-        k_fold_cross_validation(bad_model, X, y, accuracy_score, stratified=False)
+        k_fold_cross_validation(bad_model, X, y, accuracy, stratified=False)
 
 def test_fold_size_handling():
     """Teste la gestion des folds quand n_samples n'est pas divisible par k"""
@@ -72,7 +72,7 @@ def test_fold_size_handling():
 
     # Exécution
     mean_score, std_score = k_fold_cross_validation(
-        model, small_X, small_y, accuracy_score, stratified=False, k=k
+        model, small_X, small_y, accuracy, stratified=False, k=k
     )
 
     # Vérifications
@@ -96,7 +96,7 @@ def test_metric_calculation():
     model = MockModel(predict_value=0)  # Predict all 0s
     
     mean_score, _ = k_fold_cross_validation(
-        model, X, y, accuracy_score, stratified=True, k=5
+        model, X, y, accuracy, stratified=True, k=5
     )
     
     # Should get 40% accuracy (proportion of class 0)
@@ -106,8 +106,8 @@ def test_deterministic_with_random_state():
     """Test that results are deterministic with fixed random state"""
     model = MockModel()
     
-    scores1 = k_fold_cross_validation(model, X, y, accuracy_score, stratified=False, k=5)
-    scores2 = k_fold_cross_validation(model, X, y, accuracy_score, stratified=False, k=5)
+    scores1 = k_fold_cross_validation(model, X, y, accuracy, stratified=False, k=5)
+    scores2 = k_fold_cross_validation(model, X, y, accuracy, stratified=False, k=5)
     
     assert scores1 == scores2
 
@@ -115,5 +115,5 @@ def test_stratified_distribution():
     """Test that stratified sampling maintains class distribution in each fold"""
     model = MockModel()
     k = 5
-    _, _ = k_fold_cross_validation(model, X, y, accuracy_score, stratified=True, k=k)
+    _, _ = k_fold_cross_validation(model, X, y, accuracy, stratified=True, k=k)
     
