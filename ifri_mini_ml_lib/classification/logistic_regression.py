@@ -18,15 +18,16 @@ class LogisticRegression:
         loss_history (list): Records loss values during training.
         
     Examples:
-        >>> model = LogisticRegression(learning_rate=0.01, max_iter=1000)
-        >>> model.fit(X_train, y_train)
-        >>> predictions = model.predict(X_test)
+         # Basic usage
+         model = LogisticRegression(learning_rate=0.01, max_iter=1000)
+         model.fit(X_train, y_train)
+         predictions = model.predict(X_test)
         
-        >>> # With probability outputs
-        >>> probabilities = model.predict_proba(X_test)
+         # With probability outputs
+         probabilities = model.predict_proba(X_test)
     """
 
-    def __init__(self, learning_rate=0.01, max_iter=1000, tol=1e-4):
+    def __init__(self, learning_rate=0.01, max_iter=1000, tol=1e-4, momentum=0.9):
         """
         Initializes the logistic regression model with training parameters.
         
@@ -38,6 +39,7 @@ class LogisticRegression:
                                  Default is 1e-4.
         """
         self.learning_rate = learning_rate
+        self.momentum = momentum
         self.max_iter = max_iter
         self.tol = tol
         self.weights = None
@@ -122,7 +124,7 @@ class LogisticRegression:
         learning_rate = self.learning_rate
         prev_update_w = 0  # For momentum
         prev_update_b = 0
-        momentum = 0.9  # Momentum coefficient
+        momentum = self.momentum  # Momentum coefficient
         
         # Special case for unnormalized data
         if X.shape[1] == 1 and np.max(np.abs(X)) > 100:
