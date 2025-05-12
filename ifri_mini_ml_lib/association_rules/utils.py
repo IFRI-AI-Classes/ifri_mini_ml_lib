@@ -11,7 +11,7 @@ class DataAdapter:
     
     >>> # Converting from a pandas DataFrame
     >>> import pandas as pd
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.utils import DataAdapter
+    >>> from ifri_mini_ml_lib.association_rules.utils import DataAdapter
     >>> # Create a sample DataFrame
     >>> df = pd.DataFrame({
     ...     'item1': [1, 0, 1, 1, 0],

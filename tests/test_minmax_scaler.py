@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from min_max_scaler import MinMaxScaler  # Assure-toi que le fichier de ta classe est dans le bon dossier
+from ifri_mini_ml_lib.preprocessing.preparation import MinMaxScaler  # Assure-toi que le fichier de ta classe est dans le bon dossier
 
 # Exemple de données pour les tests
 data = np.array([[1, 2], [2, 4], [3, 6]])

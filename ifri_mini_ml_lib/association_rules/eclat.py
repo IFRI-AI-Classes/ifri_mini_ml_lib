@@ -27,10 +27,10 @@ class Eclat:
     ...     {'bread', 'milk', 'butter', 'cheese'},
     ...     {'bread', 'jam', 'milk'}
     ... ]
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules import Eclat
+    >>> from ifri_mini_ml_lib.association_rules import Eclat
     >>> eclat = Eclat(min_support=0.4, min_confidence=0.6)
     >>> eclat.fit(transactions) # Frequents itemsets + Rules generation
-    <ifri_mini_ml_lib.Unsupervised.association_rules.eclat.Eclat object>
+    <ifri_mini_ml_lib.association_rules.eclat.Eclat object>
     >>> frequent_itemsets = eclat.get_frequent_itemsets()
     >>> # Displaying frequent itemsets of size 1
     >>> for itemset, tidset in frequent_itemsets[1].items():
@@ -60,7 +60,7 @@ class Eclat:
         self.min_confidence = min_confidence
         self.frequent_itemsets = {}
         self.frequent_TIDsets = {}
-        self.rules_ = None
+        self.rules_ = []
         self.n_transactions = 0
 
     def fit(self, transactions):
@@ -86,8 +86,10 @@ class Eclat:
         print(f"\nApplying Eclat algorithm with:")
         print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
         print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
-
-        print(f"Number of valid transactions: {self.n_transactions}")
+        if transactions_list:
+            print(f"Number of valid transactions: {self.n_transactions}")
+        else:
+            return self
 
         # Find frequent itemsets
         self._fit_eclat(transactions_list)
@@ -181,7 +183,6 @@ class Eclat:
         """
         Generate association rules from frequent itemsets.
         """
-        self.rules_ = []
         
         # Go through all frequent itemsets of size > 1
         for k in range(2, len(self.frequent_itemsets) + 1):
