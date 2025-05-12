@@ -9,44 +9,26 @@ class DBSCAN:
     DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that identifies clusters based on the density of points. It groups nearby points (defined by epsilon and min_samples) and labels outliers as noise.
 
     Arguments:
-    -----------
-    - eps (float): The maximum radius to consider two points as neighbors.
-    - min_samples (int): The minimum number of points to form a cluster.
-
-    Functions:
-    -----------
-    - __init__(self, eps=0.5, min_samples=5): Initializes DBSCAN with epsilon and min_samples.
-    - fit_predict(self, data): Performs DBSCAN clustering on the data.
-    - _region_query(self, data, point_index): Finds neighbors within a given radius.
-    - _expand_cluster(self, data, point_index, cluster_id, neighbors): Extends a cluster from a center point.
-    - plot_clusters(self, data): Plots the resulting clusters (for 2D data).
+        eps (float): The maximum radius to consider two points as neighbors.
+        min_samples (int): The minimum number of points to form a cluster.
 
     Example:
-    ---------
-    dbscan = DBSCAN(eps=0.5, min_samples=5)
-    labels = dbscan.fit_predict(data)
-    dbscan.plot_clusters(data)
+    >>> from ifri_mini_ml_lib.clustering import DBSCAN
+    >>> dbscan = DBSCAN(eps=0.5, min_samples=5)
+    >>> labels = dbscan.fit_predict(data)
+    >>> dbscan.plot_clusters(data)
     """
 
     def __init__(self, eps=0.5, min_samples=5):
         """
-        Description:
-        ------------
         Initializes the DBSCAN parameters.
 
         Arguments:
-        -----------
-        - eps (float): The maximum radius to consider two points as neighbors.
-        - min_samples (int): The minimum number of points to form a cluster.
-
-        Functions:
-        -----------
-        - Sets the epsilon (eps) and minimum samples (min_samples) parameters.
-        - Initializes cluster labels to None.
+            eps (float): The maximum radius to consider two points as neighbors.
+            min_samples (int): The minimum number of points to form a cluster.
 
         Example:
-        ---------
-        dbscan = DBSCAN(eps=0.5, min_samples=5)
+        >>> dbscan = DBSCAN(eps=0.5, min_samples=5)
         """
         self.eps = eps
         self.min_samples = min_samples
@@ -54,23 +36,13 @@ class DBSCAN:
 
     def fit_predict(self, data):
         """
-        Description:
-        ------------
         Performs DBSCAN clustering on the provided data.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The data to cluster (n_samples, n_features).
-
-        Functions:
-        -----------
-        - Initializes all points as noise (label -1).
-        - Iterates through each point to find core points and expand clusters.
-        - Returns the cluster labels for each point.
+            data (numpy.ndarray): The data to cluster (n_samples, n_features).
 
         Example:
-        ---------
-        labels = dbscan.fit_predict(data)
+        >>> labels = dbscan.fit_predict(data)
         """
         self.labels = np.full(len(data), -1)  # Initialize all points as noise
         cluster_id = 0
@@ -94,23 +66,14 @@ class DBSCAN:
 
     def _region_query(self, data, point_index):
         """
-        Description:
-        ------------
         Finds the neighbors of a point within a given radius.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The data.
-        - point_index (int): The point index.
-
-        Functions:
-        -----------
-        - Calculates the Euclidean distance between the point and all other points.
-        - Returns a list of indices of neighboring points within the epsilon radius.
+            data (numpy.ndarray): The data.
+            point_index (int): The point index.
 
         Example:
-        ---------
-        neighbors = self._region_query(data, 5)
+        >>> neighbors = self._region_query(data, 5)
         """
         neighbors = []
         for i in range(len(data)):
@@ -120,26 +83,16 @@ class DBSCAN:
         
     def _expand_cluster(self, data, point_index, cluster_id, neighbors):
         """
-        Description:
-        ------------
         Extends a cluster from a core point.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The data.
-        - point_index (int): The index of the core point.
-        - cluster_id (int): The ID of the current cluster.
-        - neighbors (list): The indices of the core point's neighbors.
-
-        Functions:
-        -----------
-        - Assigns the cluster ID to the core point.
-        - Iteratively expands the cluster by finding neighbors of neighbors.
-        - Assigns the cluster ID to all reachable points.
+            data (numpy.ndarray): The data.
+            point_index (int): The index of the core point.
+            cluster_id (int): The ID of the current cluster.
+            neighbors (list): The indices of the core point's neighbors.
 
         Example:
-        ---------
-        self._expand_cluster(data, 10, 0, neighbors)
+        >>> self._expand_cluster(data, 10, 0, neighbors)
         """
         self.labels[point_index] = cluster_id
         i = 0
@@ -158,25 +111,14 @@ class DBSCAN:
 
     def plot_clusters(self, data):
         """
-        Description:
-        ------------
         Plots the resulting clusters after calling fit_predict().
         Supports 1D, 2D and 3D data natively. For data with more than 3 features, applies PCA reduction to 3D.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): Input data (n_samples, n_features >= 1).
-
-        Functions:
-        -----------
-        - Generates a scatter plot of the data points, colored by cluster ID.
-        - Noise points are plotted in black.
-        - Adds a legend and labels to the plot.
-        - Applies PCA if data has more than 3 features.
+            data (numpy.ndarray): Input data (n_samples, n_features >= 1).
 
         Example:
-        ---------
-        dbscan.plot_clusters(data)
+        >>> dbscan.plot_clusters(data)
         """
         max_dimensions = 3
         n_features = data.shape[1]

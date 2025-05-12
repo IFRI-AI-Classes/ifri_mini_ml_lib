@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_ml_lib.metrics.inertia import calculate_inertia
+from ifri_mini_ml_lib.metrics.evaluation_metrics import calculate_inertia
 
 @pytest.fixture
 def sample_data():

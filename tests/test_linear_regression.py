@@ -6,7 +6,7 @@ import numpy as np
 # Ajout explicite du chemin courant
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from linear import LinearRegression
+from ifri_mini_ml_lib.regression import LinearRegression
 
 # ================================
 # Tests pour LinearRegression

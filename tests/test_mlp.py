@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from mlp import MLP  
+from ifri_mini_ml_lib.neural_networks import MLPClassifier as MLP  
 
 class TestMLP:
     def setup_method(self):

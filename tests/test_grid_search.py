@@ -73,7 +73,7 @@ def test_param_combinations(monkeypatch):
     
     # Apply mock
     monkeypatch.setattr(
-        'ifri_mini_lib.model_selection.grid_searchCV.k_fold_cross_validation',
+        'ifri_mini_ml_lib.model_selection.grid_searchCV.k_fold_cross_validation',
         mock_cv
     )
     

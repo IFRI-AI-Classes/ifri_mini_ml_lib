@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from polynomial import PolynomialRegression
+from ifri_mini_ml_lib.regression import PolynomialRegression
 
 # ================================
 # Tests pour PolynomialRegression

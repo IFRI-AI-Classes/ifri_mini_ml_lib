@@ -1,16 +1,25 @@
 import pytest
 import numpy as np
-from sklearn.datasets import make_blobs
-from sklearn.manifold import TSNE as skTSNE
-
 
 # Votre classe TSNE doit être importée ici
-from t_sne import TSNE
+from ifri_mini_ml_lib.preprocessing.dimensionality_reduction import TSNE
 
 @pytest.fixture
 def test_data():
-    """Génère des données de test pour tous les tests"""
-    X, y = make_blobs(n_samples=100, centers=3, n_features=5, random_state=42)
+    """Génère des données de test manuellement"""
+    np.random.seed(42)
+    
+    # Création de 3 clusters manuellement
+    cluster1 = np.random.normal(loc=5.0, scale=1.0, size=(34, 5))
+    cluster2 = np.random.normal(loc=0.0, scale=1.0, size=(33, 5))
+    cluster3 = np.random.normal(loc=-5.0, scale=1.0, size=(33, 5))
+    
+    X = np.vstack([cluster1, cluster2, cluster3])
+    np.random.shuffle(X)
+    
+    # Création d'étiquettes factices (non utilisées dans les tests)
+    y = np.array([0]*34 + [1]*33 + [2]*33)
+    
     return X, y
 
 def test_initialization():
@@ -78,38 +87,6 @@ def test_early_exaggeration_effect(test_data):
     # Vérifie que les résultats sont significativement différents
     assert not np.allclose(tsne1.embedding_, tsne2.embedding_, atol=0.1)
 
-def test_compare_with_sklearn_basic(test_data):
-    """Comparaison de base avec l'implémentation sklearn"""
-    X, y = test_data
-    
-    # Votre implémentation
-    custom_tsne = TSNE(n_components=2, random_state=42, n_iter=500)
-    custom_emb = custom_tsne.fit_transform(X)
-    
-    # Implémentation sklearn
-    sklearn_tsne = skTSNE(n_components=2, random_state=42, n_iter=500)
-    sklearn_emb = sklearn_tsne.fit_transform(X)
-    
-    # Vérifications de base
-    assert custom_emb.shape == sklearn_emb.shape
-    
-    # Les variances doivent être du même ordre de grandeur
-    assert np.var(custom_emb) == pytest.approx(np.var(sklearn_emb), rel=0.5)
-    
-    # Vérifie que les clusters sont séparés (pour les données de blobs)
-    from sklearn.metrics import adjusted_rand_score, silhouette_score
-    
-    custom_score = adjusted_rand_score(y, custom_emb.argmax(axis=1))
-    sklearn_score = adjusted_rand_score(y, sklearn_emb.argmax(axis=1))
-    assert abs(custom_score - sklearn_score) < 0.2
-    """
-    custom_score = silhouette_score(custom_emb, y)
-    sklearn_score = silhouette_score(sklearn_emb, y)
-    
-    assert custom_score > 0.6  # Doit avoir une bonne séparation
-    assert abs(custom_score - sklearn_score) < 0.2 """
-
-
 def test_gradient_computation():
     """Test avec des entrées non-symétriques réalistes"""
     Y = np.array([[0.1, 0.2], [1.1, 0.8], [-0.5, -0.3]])
@@ -124,11 +101,11 @@ def test_gradient_computation():
 
 def test_probability_calculations():
     """Teste les calculs de probabilités P et Q"""
-    X = np.random.randn(10, 5)
+    X = np.random.normal(size=(10, 5))
     tsne = TSNE(perplexity=5)
     
     P = tsne._compute_joint_probabilities(X, 5)
-    Q = tsne._compute_low_dimensional_probabilities(np.random.randn(10, 2))
+    Q = tsne._compute_low_dimensional_probabilities(np.random.normal(size=(10, 2)))
     
     # Vérifications de base
     assert P.shape == (10, 10)
