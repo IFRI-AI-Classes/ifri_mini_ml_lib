@@ -46,7 +46,7 @@ data = [[0, 0], [1, 1], [0, 1], [1, 0]]
 labels = [0, 1, 1, 0]
 
 # Initialize and fit the model
-knn = KNN(n_neighbors=3)
+knn = KNN(k=3)
 knn.fit(data, labels)
 
 # Predict
