@@ -9,7 +9,7 @@ from ifri_mini_ml_lib.preprocessing.preparation.data_splitter import DataSplitte
 @pytest.fixture
 def breast_data():
     # Load the dataset as a DataFrame
-    data = pd.read_csv("breast-cancer.csv", sep=",")
+    data = pd.read_csv("tests/breast-cancer.csv", sep=",")
     data.drop(columns="id", inplace=True)
     data["diagnosis"] = data["diagnosis"].map({"M": 1, "B": 0})
     X = data.drop(columns="diagnosis")
