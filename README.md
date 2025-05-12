@@ -1,31 +1,32 @@
 # ifri_mini_ml_lib
 
-ifri_mini_ml_lib is a reimplementation of the scikit-learn Python library from scratch.  
-This project is developed by IFRI AI students as part of the Concepts & Applications of Machine Learning course.
+[![PyPI version](https://img.shields.io/pypi/v/ifri-mini-ml-lib.svg)](https://pypi.org/project/ifri-mini-ml-lib/) ![Coverage](https://img.shields.io/badge/coverage-dynamic-lightgrey?style=flat&logo=codecov)
+
+A lightweight, educational machine learning library reimplementing core algorithms from scratch, inspired by scikit-learn. Developed by IFRI AI students for the Concepts & Applications of Machine Learning course.
+
+---
 
 ## Features
 
-- Implementation of core machine learning algorithms.
-- Focus on understanding the inner workings of ML models.
-- Lightweight and easy to use.
-- Includes implementations for:
+- Core machine learning algorithms for:
   - Classification (Decision Trees, KNN, Logistic Regression)
   - Regression (Linear, Polynomial, SVR)
   - Clustering (K-means, DBSCAN, Hierarchical)
   - Association Rules (Apriori, Eclat, FP-Growth)
   - Neural Networks (MLP)
-  - Model Selection tools (Cross-validation, Grid Search, etc.)
-  - Preprocessing utilities
+- Model selection tools (Cross-validation, Grid Search, etc.)
+- Preprocessing utilities (scalers, encoders, missing value handlers, etc.)
+- Focus on transparency and understanding of ML model internals
 
 ## Installation
 
-You can install ifri_mini_ml_lib directly from PyPi:
+Install from PyPI:
 
 ```bash
 pip install ifri-mini-ml-lib
 ```
 
-Alternatively, you can install from source:
+Or install from source:
 
 ```bash
 git clone https://github.com/IFRI-AI-Classes/ifri_mini_ml_lib.git
@@ -33,20 +34,37 @@ cd ifri_mini_ml_lib
 pip install -e .
 ```
 
+## Quick Start
+
+Here's a simple example using the KNN classifier:
+
+```python
+from ifri_mini_ml_lib.classification import KNN
+
+# Example data
+data = [[0, 0], [1, 1], [0, 1], [1, 0]]
+labels = [0, 1, 1, 0]
+
+# Initialize and fit the model
+knn = KNN(n_neighbors=3)
+knn.fit(data, labels)
+
+# Predict
+prediction = knn.predict([[0.9, 0.8]])
+print(prediction)
+```
+
 ## Documentation
 
-For detailed documentation on the available modules and classes, please visit our [documentation site](https://your-documentation-site.com).
+Full documentation is available at: [Documentation Site](https://your-documentation-site.com)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please open an issue or submit a pull request.
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-![Coverage](https://img.shields.io/badge/coverage-dynamic-lightgrey?style=flat&logo=codecov)
-
 
 ## Acknowledgments
 
