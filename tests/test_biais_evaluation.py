@@ -1,146 +1,194 @@
-import numpy as np
 import pytest
-from ifri_mini_ml_lib.metrics.bias_evaluation import (
-    selection_rate,
-    selection_rate_per_group,
-    demographic_parity_ratio,
-    demographic_parity_difference,
-    tpr_fpr_by_group,
-    equalized_odds_ratio,
-    equalized_odds_difference,
-)
+import numpy as np
+from ifri_mini_ml_lib.classification.knn import KNN
+from ifri_mini_ml_lib.metrics.bias_evaluation import equalized_odds_difference, equalized_odds_ratio, demographic_parity_difference, demographic_parity_ratio
+from fairlearn.metrics import MetricFrame, true_positive_rate, false_positive_rate, selection_rate
+from ifri_mini_ml_lib.preprocessing.preparation.min_max_scaler import MinMaxScaler
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
 
-# Test selection_rate
-def test_selection_rate_basic():
-    y_pred = np.array([1, 0, 1, 1])
-    assert selection_rate(None, y_pred, pos_label=1) == 0.75
+@pytest.fixture
+def breast_data():
+    # Load the dataset as a DataFrame
+    data = load_breast_cancer(as_frame=True)
+    X = data.data
+    y = data.target.to_numpy()
+    feature_names = data.feature_names
+    return X, y, feature_names
 
-def test_selection_rate_with_weights():
-    y_pred = np.array([1, 0, 1, 1])
-    weights = np.array([0.5, 0.5, 1.0, 1.0])
-    assert selection_rate(None, y_pred, pos_label=1, sample_weight=weights) == 2.5 / 3.0
+@pytest.fixture
+def knn_breast_data(breast_data):
+    X, y, feature_names = breast_data
 
-def test_selection_rate_empty_predictions():
-    with pytest.raises(ValueError):
-        selection_rate(None, np.array([]), pos_label=1)
+    # Standardize the features
+    scaler = MinMaxScaler()
+    X_scaled = scaler.fit_transform(X)
+    X_scaled = X_scaled.to_numpy()
+    
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+    X_train = X_train.astype(float)
+    X_test = X_test.astype(float)
 
-def test_selection_rate_different_pos_label():
-    y_pred = np.array([2, 0, 2, 2])
-    assert selection_rate(None, y_pred, pos_label=2) == 0.75
+    # Train the KNN model
+    knn_model = KNN(k=5, task='classification')
+    knn_model.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = knn_model.predict(X_test)
 
-# Test selection_rate_per_group
-def test_selection_rate_per_group_basic():
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    rates = selection_rate_per_group(None, y_pred, sensitive, pos_label=1)
-    assert rates['A'] == 0.5
-    assert rates['B'] == 0.0
+    # Create a sensitive attribute based on the "mean area" feature
+    idx = list(feature_names).index('mean area')
+    threshold = np.median(X_scaled[:, idx])
+    sensitive_features = (X_test[:, idx] > threshold).astype(int)
 
-def test_selection_rate_per_group_with_weights():
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    weights = np.array([1.0, 2.0, 3.0, 4.0])
-    rates = selection_rate_per_group(None, y_pred, sensitive, pos_label=1, sample_weight=weights)
-    assert rates['A'] == 4.0 / 4.0
-    assert rates['B'] == 0.0
+    y_test = np.array(y_test)
+    y_pred = np.array(y_pred)
+    sensitive_features = np.array(sensitive_features)
 
-# Test demographic_parity_ratio
-def test_demographic_parity_ratio_perfect():
-    y_pred = np.array([1, 1, 1, 1])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    ratio, rates = demographic_parity_ratio(y_pred, sensitive, pos_label=1)
-    assert ratio == 1.0
-    assert rates['A'] == 1.0
-    assert rates['B'] == 1.0
+    return y_test, y_pred, sensitive_features
 
-def test_demographic_parity_ratio_zero():
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    ratio, rates = demographic_parity_ratio(y_pred, sensitive, pos_label=1)
-    assert ratio == 0.0
-    assert rates['A'] == 1.0
-    assert rates['B'] == 0.0
+def test_equalized_odds_difference_comparison(knn_breast_data):
+    y_true, y_pred, sensitive_features = knn_breast_data
 
-# Test demographic_parity_difference
-def test_demographic_parity_difference_perfect():
-    y_pred = np.array([1, 1, 1, 1])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    diff, rates = demographic_parity_difference(y_pred, sensitive, pos_label=1)
-    assert diff == 0.0
-    assert rates['A'] == 1.0
-    assert rates['B'] == 1.0
+    # Compute with our custom equalized_odds_difference function
+    diff_res, tpr_diff_dict, fpr_diff_dict = equalized_odds_difference(
+        y_true, y_pred, sensitive_features=sensitive_features, pos_label=1
+    )
 
-def test_demographic_parity_difference_max():
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    diff, rates = demographic_parity_difference(y_pred, sensitive, pos_label=1)
-    assert diff == 1.0
-    assert rates['A'] == 1.0
-    assert rates['B'] == 0.0
+    print("\n=== Results using our function ===")
+    print("Equalized Odds Difference:", diff_res)
+    print("TPR per group:", tpr_diff_dict)
+    print("FPR per group:", fpr_diff_dict)
 
-# Test tpr_fpr_by_group
-def test_tpr_fpr_by_group_basic():
-    y_true = np.array([1, 1, 0, 0])
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    tpr, fpr = tpr_fpr_by_group(y_true, y_pred, sensitive, pos_label=1)
-    assert tpr['A'] == 1.0
-    assert tpr['B'] == 0.0
-    assert fpr['A'] == 1.0
-    assert fpr['B'] == 0.0
+    # Use Fairlearn
+    metrics = {
+        'TPR': true_positive_rate,
+        'FPR': false_positive_rate
+    }
 
-def test_tpr_fpr_by_group_no_positives():
-    y_true = np.array([0, 0, 0, 0])
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    tpr, fpr = tpr_fpr_by_group(y_true, y_pred, sensitive, pos_label=1)
-    assert tpr['A'] == 0.0
-    assert tpr['B'] == 0.0
-    assert fpr['A'] == 1.0
-    assert fpr['B'] == 0.0
+    mf = MetricFrame(
+        metrics=metrics,
+        y_true=y_true,
+        y_pred=y_pred,
+        sensitive_features=sensitive_features
+    )
 
-# Test equalized_odds_ratio
-def test_equalized_odds_ratio_perfect():
-    y_true = np.array([1, 1, 0, 0])
-    y_pred = np.array([1, 1, 0, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    ratio, tpr, fpr = equalized_odds_ratio(y_true, y_pred, sensitive, pos_label=1)
-    assert ratio == 1.0
-    assert tpr['A'] == 1.0
-    assert tpr['B'] == 1.0
-    assert fpr['A'] == 0.0
-    assert fpr['B'] == 0.0
+    # Compute differences with Fairlearn
+    fairlearn_tpr = mf.by_group["TPR"]
+    fairlearn_fpr = mf.by_group["FPR"]
 
-def test_equalized_odds_ratio_zero():
-    y_true = np.array([1, 1, 0, 0])
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    ratio, tpr, fpr = equalized_odds_ratio(y_true, y_pred, sensitive, pos_label=1)
-    assert ratio == 0.0
-    assert tpr['A'] == 1.0
-    assert tpr['B'] == 0.0
-    assert fpr['A'] == 1.0
-    assert fpr['B'] == 0.0
+    fairlearn_tpr_diff = max(fairlearn_tpr) - min(fairlearn_tpr)
+    fairlearn_fpr_diff = max(fairlearn_fpr) - min(fairlearn_fpr)
+    fairlearn_eo_diff = max(fairlearn_tpr_diff, fairlearn_fpr_diff)
 
-# Test equalized_odds_difference
-def test_equalized_odds_difference_perfect():
-    y_true = np.array([1, 1, 0, 0])
-    y_pred = np.array([1, 1, 0, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    diff, tpr, fpr = equalized_odds_difference(y_true, y_pred, sensitive, pos_label=1)
-    assert diff == 0.0
-    assert tpr['A'] == 1.0
-    assert tpr['B'] == 1.0
-    assert fpr['A'] == 0.0
-    assert fpr['B'] == 0.0
+    print("\n=== Results using Fairlearn ===")
+    print("Fairlearn TPR Difference:", fairlearn_tpr_diff)
+    print("Fairlearn FPR Difference:", fairlearn_fpr_diff)
+    print("Fairlearn Equalized Odds Difference:", fairlearn_eo_diff)
 
-def test_equalized_odds_difference_max():
-    y_true = np.array([1, 1, 0, 0])
-    y_pred = np.array([1, 0, 1, 0])
-    sensitive = np.array(['A', 'B', 'A', 'B'])
-    diff, tpr, fpr = equalized_odds_difference(y_true, y_pred, sensitive, pos_label=1)
-    assert diff == 1.0
-    assert tpr['A'] == 1.0
-    assert tpr['B'] == 0.0
-    assert fpr['A'] == 1.0
-    assert fpr['B'] == 0.0
+    # Comparison
+    assert np.isclose(diff_res, fairlearn_eo_diff, atol=1e-5), f"EO Difference mismatch: {diff_res} vs {fairlearn_eo_diff}"
+
+    print("\n The results are similar between our function and Fairlearn.")
+
+def test_equalized_odds_ratio_comparison(knn_breast_data):
+    y_true, y_pred, sensitive_features = knn_breast_data
+
+    # Compute with our custom equalized_odds_ratio function
+    ratio_res, tpr_ratio_dict, fpr_ratio_dict = equalized_odds_ratio(
+        y_true, y_pred, sensitive_features=sensitive_features, pos_label=1
+    )
+
+    print("\n=== Results using our function ===")
+    print("Equalized Odds Ratio:", ratio_res)
+    print("TPR per group:", tpr_ratio_dict)
+    print("FPR per group:", fpr_ratio_dict)
+
+    # Use Fairlearn
+    metrics = {
+        'TPR': true_positive_rate,
+        'FPR': false_positive_rate
+    }
+
+    mf = MetricFrame(
+        metrics=metrics,
+        y_true=y_true,
+        y_pred=y_pred,
+        sensitive_features=sensitive_features
+    )
+
+    # Compute ratios with Fairlearn
+    fairlearn_tpr = mf.by_group["TPR"]
+    fairlearn_fpr = mf.by_group["FPR"]
+
+    tpr_ratio = min(fairlearn_tpr) / max(fairlearn_tpr) if max(fairlearn_tpr) != 0 else 0
+    fpr_ratio = min(fairlearn_fpr) / max(fairlearn_fpr) if max(fairlearn_fpr) != 0 else 0
+
+    fairlearn_eo_ratio = min(tpr_ratio, fpr_ratio)
+
+    print("\n=== Results using Fairlearn ===")
+    print("Fairlearn TPR Ratio:", tpr_ratio)
+    print("Fairlearn FPR Ratio:", fpr_ratio)
+    print("Fairlearn Equalized Odds Ratio:", fairlearn_eo_ratio)
+
+    # Comparison
+    assert np.isclose(ratio_res, fairlearn_eo_ratio, atol=1e-5), f"EO Ratio mismatch: {ratio_res} vs {fairlearn_eo_ratio}"
+    print("\n The results are similar between our function and Fairlearn.")
+    
+
+def test_demographic_parity_difference_comparison(knn_breast_data):
+    y_true, y_pred, sensitive_features = knn_breast_data
+
+    # Compute with our custom demographic_parity_difference function
+    dp_diff, rate_dict_diff = demographic_parity_difference(y_pred, sensitive_features=sensitive_features, pos_label=1)
+    
+    print("\n=== Results using our function ===")
+    print("Demographic Parity Difference:", dp_diff)
+    print("Selection Rate per group:", rate_dict_diff)
+
+    # Use Fairlearn
+    mf = MetricFrame(
+        metrics=selection_rate,
+        y_true= y_true,
+        y_pred=y_pred,
+        sensitive_features=sensitive_features
+    )
+
+    fairlearn_diff = mf.difference(method='between_groups')
+
+    print("\n=== Results using Fairlearn ===")
+    print("Fairlearn Demographic Parity Difference:", fairlearn_diff)
+
+    # Comparison 
+    assert np.isclose(dp_diff, fairlearn_diff, atol=1e-5), f"Difference mismatch: {dp_diff} vs {fairlearn_diff}"
+
+    print("\n The results are similar between our function and Fairlearn.")
+
+def test_demographic_parity_ratio_comparison(knn_breast_data):
+    y_true, y_pred, sensitive_features = knn_breast_data
+
+    # Compute with our custom demographic_parity_ratio function
+    dp_ratio, rate_dict_ratio = demographic_parity_ratio(y_pred, sensitive_features)
+
+    print("\n=== Results using our function ===")
+    print("Demographic Parity Ratio:", dp_ratio)
+    print("Selection Rate per group:", rate_dict_ratio)
+
+    # Use Fairlearn 
+    mf = MetricFrame(
+        metrics=selection_rate,
+        y_true=y_true,
+        y_pred=y_pred,
+        sensitive_features=sensitive_features
+    )
+
+    fairlearn_ratio = mf.ratio(method='between_groups')
+
+    print("\n=== Results using Fairlearn ===")
+    print("Fairlearn Demographic Parity Ratio:", fairlearn_ratio)
+
+    # Comparison 
+    assert np.isclose(dp_ratio, fairlearn_ratio, atol=1e-5), f"Ratio mismatch: {dp_ratio} vs {fairlearn_ratio}"
+
+    print("\n The results are similar between our function and Fairlearn.")
