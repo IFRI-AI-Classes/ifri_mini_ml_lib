@@ -45,6 +45,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the [MIT License](LICENSE).
 
+![Coverage](https://img.shields.io/badge/coverage-dynamic-lightgrey?style=flat&logo=codecov)
+
+
 ## Acknowledgments
 
 Thanks to the IFRI AI students and faculty who contributed to this project.
