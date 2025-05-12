@@ -3,257 +3,202 @@ from collections import Counter
 
 class DecisionTree:
     """
-    Simple implementation of a decision tree for binary or multi-class classification.
-
-    :param max_depth: Maximum depth of the tree (None for unlimited depth)
-    :type max_depth: int or None
+    A decision tree classifier with regularization parameters to prevent overfitting.
+    
+    Description:
+    This implementation supports both classification tasks using information gain
+    (entropy) as the splitting criterion. It includes several regularization
+    techniques like max depth, minimum samples per split, and minimum samples per leaf.
+    
+    Args:
+        max_depth (int, optional): Maximum depth of the tree. Defaults to None (no limit).
+        min_samples_split (int): Minimum number of samples required to split a node. Defaults to 2.
+        min_samples_leaf (int): Minimum number of samples required at each leaf node. Defaults to 1.
+        min_impurity_decrease (float): Minimum impurity decrease required for a split. Defaults to 0.0.
     """
-
-    def __init__(self, max_depth=None):
-        """
-        Initialize the decision tree with a specified maximum depth.
-
-        :param max_depth: Maximum depth of the tree (None for unlimited depth)
-        :type max_depth: int or None
-        """
+    def __init__(self, max_depth=None, min_samples_split=2, min_samples_leaf=1, min_impurity_decrease=0.0):
         self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_impurity_decrease = min_impurity_decrease
         self.tree = None
 
     def fit(self, X, y, depth=0):
         """
-        Train the decision tree on the provided data.
-
-        :param X: Input features of shape (n_samples, n_features)
-        :type X: np.ndarray
-        :param y: Corresponding labels of shape (n_samples,)
-        :type y: np.ndarray
-        :param depth: Current depth (used for recursion)
-        :type depth: int
-        :return: Recursive tree structure (dictionary or majority class)
-        :rtype: dict or int
+        Builds the decision tree from the training data (X, y).
         
-        Example:
-            tree = DecisionTree(max_depth=3)
-            tree.fit(X_train, y_train)
+        Description:
+        Recursively builds the decision tree by finding the best splits according to 
+        information gain while respecting the regularization constraints.
+        
+        Args:
+            X (ndarray): Training data of shape (n_samples, n_features)
+            y (ndarray): Target values of shape (n_samples,)
+            depth (int): Current depth of the tree (used internally during recursion)
+            
+        Returns:
+            dict: The constructed decision tree node (either a decision node or a leaf value)
         """
-        n_samples, n_features = X.shape
-        n_classes = len(np.unique(y))
+        n_samples = X.shape[0] if len(X.shape) > 1 else 1
+        
+        # Check stopping conditions
+        if (n_samples < self.min_samples_split or 
+            (self.max_depth is not None and depth >= self.max_depth) or
+            len(np.unique(y)) == 1):
+            self.tree = self._most_common_label(y)
+            return self.tree
 
-        # Stop if max depth is reached or all samples belong to the same class
-        if (self.max_depth is not None and depth == self.max_depth) or (n_classes == 1):
-            return self._most_common_label(y)
+        # Find best split
+        best_feature, best_threshold, best_gain = self._best_split(X, y)
+        
+        if best_feature is None or best_gain < self.min_impurity_decrease:
+            self.tree = self._most_common_label(y)
+            return self.tree
 
-        best_feature, best_threshold = self._best_split(X, y)
+        # Split data
+        left_mask = X[:, best_feature] < best_threshold
+        right_mask = ~left_mask
+        
+        # Check leaf constraints
+        if (np.sum(left_mask) < self.min_samples_leaf or 
+            np.sum(right_mask) < self.min_samples_leaf):
+            self.tree = self._most_common_label(y)
+            return self.tree
 
-        # If no valid split is found
-        if best_feature is None:
-            return self._most_common_label(y)
-
-        left_indices = X[:, best_feature] < best_threshold
-        right_indices = X[:, best_feature] >= best_threshold
-
-        left_subtree = self.fit(X[left_indices], y[left_indices], depth + 1)
-        right_subtree = self.fit(X[right_indices], y[right_indices], depth + 1)
-
-        if depth == 0:
-            self.tree = {
-                "feature_index": best_feature,
-                "threshold": best_threshold,
-                "left": left_subtree,
-                "right": right_subtree
-            }
-
-        return {
+        # Recursively build the tree
+        self.tree = {
             "feature_index": best_feature,
             "threshold": best_threshold,
-            "left": left_subtree,
-            "right": right_subtree
+            "left": self.fit(X[left_mask], y[left_mask], depth + 1),
+            "right": self.fit(X[right_mask], y[right_mask], depth + 1)
         }
+        
+        return self.tree
 
     def _best_split(self, X, y):
         """
-        Find the best feature and threshold to split on that maximizes information gain.
-
-        :param X: Input features
-        :type X: np.ndarray
-        :param y: Labels
-        :type y: np.ndarray
-        :return: Index of the best feature and optimal threshold
-        :rtype: tuple(int, float)
+        Finds the best feature and threshold to split on.
         
-        Example:
-            feature_index, threshold = tree._best_split(X_train, y_train)
+        Description:
+        Evaluates all possible splits for each feature and returns the one that
+        provides the highest information gain.
+        
+        Args:
+            X (ndarray): Input features of shape (n_samples, n_features)
+            y (ndarray): Target values of shape (n_samples,)
+            
+        Returns:
+            tuple: (best_feature_index, best_threshold, best_gain)
+                   Returns (None, None, -inf) if no valid split is found
         """
-        best_gain = -1
-        best_feature = None
-        best_threshold = None
+        best_gain = -np.inf
+        best_feature, best_threshold = None, None
+        parent_entropy = self._entropy(y)
 
-        n_features = X.shape[1]
-
-        for feature_index in range(n_features):
+        for feature_index in range(X.shape[1]):
             thresholds = np.unique(X[:, feature_index])
+            if len(thresholds) > 10:  # Limit thresholds for continuous features
+                thresholds = np.percentile(X[:, feature_index], [25, 50, 75])
+            
             for threshold in thresholds:
-                gain = self._information_gain(X, y, feature_index, threshold)
-
+                left_mask = X[:, feature_index] < threshold
+                right_mask = ~left_mask
+                
+                if (np.sum(left_mask) < self.min_samples_leaf or 
+                    np.sum(right_mask) < self.min_samples_leaf):
+                    continue
+                    
+                gain = self._information_gain(y, left_mask, right_mask, parent_entropy)
                 if gain > best_gain:
                     best_gain = gain
                     best_feature = feature_index
                     best_threshold = threshold
 
-        return best_feature, best_threshold
+        return best_feature, best_threshold, best_gain
 
-    def _information_gain(self, X, y, feature_index, threshold):
+    def _information_gain(self, y, left_mask, right_mask, parent_entropy):
         """
-        Calculate the information gain for a given split.
-
-        :param X: Input features
-        :type X: np.ndarray
-        :param y: Labels
-        :type y: np.ndarray
-        :param feature_index: Index of the feature to split on
-        :type feature_index: int
-        :param threshold: Threshold value to split the feature
-        :type threshold: float
-        :return: Information gain value
-        :rtype: float
+        Calculates the information gain from a potential split.
         
-        Example:
-            gain = tree._information_gain(X_train, y_train, feature_index, threshold)
+        Args:
+            y (ndarray): Target values
+            left_mask (ndarray): Boolean mask for left split
+            right_mask (ndarray): Boolean mask for right split
+            parent_entropy (float): Entropy of the parent node
+            
+        Returns:
+            float: Information gain from the split
         """
-        parent_entropy = self._entropy(y)
-
-        left_indices = X[:, feature_index] < threshold
-        right_indices = X[:, feature_index] >= threshold
-
-        # Avoid division by zero or invalid splits
-        if sum(left_indices) == 0 or sum(right_indices) == 0:
+        n_left, n_right = np.sum(left_mask), np.sum(right_mask)
+        if n_left == 0 or n_right == 0:
             return 0
-
-        n = len(y)
-        n_left, n_right = sum(left_indices), sum(right_indices)
-        e_left = self._entropy(y[left_indices])
-        e_right = self._entropy(y[right_indices])
-        child_entropy = (n_left / n) * e_left + (n_right / n) * e_right
-
+            
+        child_entropy = (n_left * self._entropy(y[left_mask]) + 
+                        n_right * self._entropy(y[right_mask])) / (n_left + n_right)
         return parent_entropy - child_entropy
 
     def _entropy(self, y):
         """
-        Compute Shannon entropy for a label set.
-
-        :param y: Labels
-        :type y: np.ndarray
-        :return: Entropy value
-        :rtype: float
+        Calculates the Shannon entropy of a target vector.
         
-        Example:
-            entropy = tree._entropy(y_train)
+        Args:
+            y (ndarray): Target values
+            
+        Returns:
+            float: Entropy value (in bits)
         """
+        if len(y) == 0:
+            return 0
         counts = np.bincount(y)
-        probabilities = counts / len(y)
-        return -np.sum([p * np.log2(p) for p in probabilities if p > 0])
+        probs = counts[counts > 0] / len(y)
+        return -np.sum(probs * np.log2(probs + 1e-10))  # Small epsilon to avoid log(0)
 
     def _most_common_label(self, y):
         """
-        Return the most frequent label in a set.
-
-        :param y: Labels
-        :type y: np.ndarray
-        :return: Most common class label
-        :rtype: int
+        Returns the most common class label in the input vector.
         
-        Example:
-            most_common = tree._most_common_label(y_train)
+        Args:
+            y (ndarray): Target values
+            
+        Returns:
+            int: The most frequent class label
         """
-        counter = Counter(y)
-        return counter.most_common(1)[0][0]
+        return Counter(y).most_common(1)[0][0] if len(y) > 0 else 0
 
     def predict(self, X):
         """
-        Predict class labels for given input samples.
-
-        :param X: Input features (n_samples, n_features)
-        :type X: np.ndarray
-        :return: Predicted class labels
-        :rtype: np.ndarray
+        Predicts class labels for samples in X.
         
-        Example:
-            predictions = tree.predict(X_test)
+        Args:
+            X (ndarray): Input samples of shape (n_samples, n_features)
+            
+        Returns:
+            ndarray: Predicted class labels
+            
+        Raises:
+            ValueError: If the model hasn't been trained yet
         """
-        return np.array([self._predict_single(x, self.tree) for x in X])
+        if self.tree is None:
+            raise ValueError("The model must be trained before making predictions")
+        return np.array([self._predict_single(x) for x in X])
 
-    def _predict_single(self, x, tree):
+    def _predict_single(self, x, tree=None):
         """
-        Predict the class label for a single sample.
-
-        :param x: Single input example (1D array)
-        :type x: np.ndarray
-        :param tree: Decision tree (recursively structured dict)
-        :type tree: dict or int
-        :return: Predicted class
-        :rtype: int
+        Predicts the class label for a single sample by traversing the tree.
         
-        Example:
-            prediction = tree._predict_single(X_test[0], tree)
-        """
-        if not isinstance(tree, dict):
-            return tree
-
-        feature_index = tree["feature_index"]
-        threshold = tree["threshold"]
-
-        if x[feature_index] < threshold:
-            return self._predict_single(x, tree["left"])
-        else:
-            return self._predict_single(x, tree["right"])
-
-    def print_tree(self, tree=None, indent=" "):
-        """
-        Print a simple textual representation of the tree.
-
-        :param tree: Tree to print (default is the main tree)
-        :type tree: dict or int
-        :param indent: Visual indentation string
-        :type indent: str
-        
-        Example:
-            tree.print_tree()
+        Args:
+            x (ndarray): A single input sample
+            tree (dict, optional): Current node in the tree (used internally during recursion)
+            
+        Returns:
+            int: Predicted class label
         """
         if tree is None:
             tree = self.tree
-
-        if not isinstance(tree, dict):
-            print(indent + "Class:", tree)
-            return
-
-        print(indent + f"Feature {tree['feature_index']} < {tree['threshold']}")
-        print(indent + "--> True:")
-        self.print_tree(tree["left"], indent + "  ")
-        print(indent + "--> False:")
-        self.print_tree(tree["right"], indent + "  ")
-
-    def print_visual_tree(self, tree=None, indent="", last='updown'):
-        """
-        Visually print the tree structure with indentation and branches.
-
-        :param tree: Tree to print
-        :type tree: dict or int
-        :param indent: Indentation for formatting
-        :type indent: str
-        :param last: Tree position indicator ('left', 'right', 'updown')
-        :type last: str
-        
-        Example:
-            tree.print_visual_tree()
-        """
-        if tree is None:
-            tree = self.tree
-        
-        if not isinstance(tree, dict):
-            print(indent + "+-- " + f"Class: {tree}")
-            return
-
-        print(indent + "+-- " + f"Feature {tree['feature_index']} < {tree['threshold']}?")
-        
-        self.print_visual_tree(tree["left"], indent + "│   ", 'left')
-        self.print_visual_tree(tree["right"], indent + "    ", 'right')
+            
+        if isinstance(tree, dict):
+            if x[tree["feature_index"]] < tree["threshold"]:
+                return self._predict_single(x, tree["left"])
+            else:
+                return self._predict_single(x, tree["right"])
+        return tree
