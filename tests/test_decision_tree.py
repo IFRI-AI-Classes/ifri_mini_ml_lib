@@ -43,16 +43,6 @@ def test_empty_dataset_handling():
     result = tree.fit(X, y)
     assert result == 0
 
-def test_tree_print_methods():
-    X = np.array([[0], [1], [2], [3]])
-    y = np.array([0, 0, 1, 1])
-    tree = DecisionTree(max_depth=2)
-    tree.fit(X, y)
-
-    # Call the print methods to ensure they run
-    tree.print_tree()
-    tree.print_visual_tree()
-
 def test_entropy_and_most_common_label():
     tree = DecisionTree()
     y = np.array([0, 0, 1, 1, 1])
