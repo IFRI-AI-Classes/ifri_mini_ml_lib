@@ -1,6 +1,6 @@
-from .mlp_classifier import MLPClassifier as mlp_classifier
-from .mlp_regressor import MLPRegressor as mlp_regressor
+from .mlp_classifier import MLPClassifier
+from .mlp_regressor import MLPRegressor
 
 __all__ =[
-    "mlp_classifier", "mlp_regressor",
+    "MLPClassifier", "MLPRegressor",
 ]
