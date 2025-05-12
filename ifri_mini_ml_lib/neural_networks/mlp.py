@@ -2,7 +2,7 @@ import numpy as np
 from typing import List, Tuple, Optional
 
 
-class MLP:
+class MLPClassifier:
     """
     Multi-Layer Perceptron with different activation functions and optimizers
     """
