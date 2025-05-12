@@ -13,25 +13,25 @@ Examples:
     ...     {'A', 'B', 'C', 'E'}
     ... ]
     >>> # Calculating support for an itemset
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import support
+    >>> from ifri_mini_ml_lib.association_rules.metrics import support
     >>> support_ab = support({'A', 'B'}, transactions)
     >>> print(f"Support({'A', 'B'}) = {support_ab:.2f}")
     Support({'A', 'B'}) = 0.60
     
     >>> # Calculating confidence for a rule A → B
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import confidence
+    >>> from ifri_mini_ml_lib.association_rules.metrics import confidence
     >>> conf_a_to_b = confidence({'A'}, {'B'}, transactions)
     >>> print(f"Confidence({'A'} → {'B'}) = {conf_a_to_b:.2f}")
     Confidence({'A'} → {'B'}) = 0.75
     
     >>> # Calculating lift for a rule A → C
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import lift
+    >>> from ifri_mini_ml_lib.association_rules.metrics import lift
     >>> lift_a_to_c = lift({'A'}, {'C'}, transactions)
     >>> print(f"Lift({'A'} → {'C'}) = {lift_a_to_c:.2f}")
     Lift({'A'} → {'C'}) = 1.25
     
     >>> # Complete evaluation of a rule
-    >>> from ifri_mini_ml_lib.Unsupervised.association_rules.metrics import evaluate_rule
+    >>> from ifri_mini_ml_lib.association_rules.metrics import evaluate_rule
     >>> metrics = evaluate_rule({'B'}, {'C'}, transactions)
     >>> for metric_name, value in metrics.items():
     ...     print(f"{metric_name}: {value:.2f}")
