@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Tuple, Callable, Optional, Union, Dict
+from typing import List, Tuple, Optional
 
 
 class MLP:

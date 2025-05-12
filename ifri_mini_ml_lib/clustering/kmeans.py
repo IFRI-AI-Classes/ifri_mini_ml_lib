@@ -12,28 +12,18 @@ class KMeans:
     It partitions data into k clusters by minimizing intra-cluster distances, iteratively assigning points to the nearest centroid and updating centroids accordingly.
 
     Arguments:
-    -----------
-    - n_clusters (int): Number of clusters to form.
-    - max_iter (int): Maximum iterations for convergence.
-    - tol (float): Threshold to declare convergence based on centroid movement.
-    - init (str): Centroid initialization method ('random' or 'k-means++').
-    - random_state (int or None): Seed for reproducibility.
-
-    Functions:
-    -----------
-    - __init__: Initializes the model with parameters.
-    - _initialize_centroids(X): Sets initial centroids based on chosen method.
-    - fit(X): Fits the model to data X by iterating centroid updates.
-    - predict(X): Predicts cluster indices for new samples.
-    - fit_predict(X): Fits the model and returns predicted clusters.
-    - plot_clusters(X): Visualizes clusters in 2D if data has two features.
+        n_clusters (int): Number of clusters to form.
+        max_iter (int): Maximum iterations for convergence.
+        tol (float): Threshold to declare convergence based on centroid movement.
+        init (str): Centroid initialization method ('random' or 'k-means++').
+        random_state (int or None): Seed for reproducibility.
 
     Example:
-    ---------
-    kmeans = KMeans(n_clusters=3, max_iter=300, tol=1e-4, init='k-means++', random_state=42)
-    kmeans.fit(X)
-    labels = kmeans.predict(X)
-    kmeans.plot_clusters(X)
+    >>> from ifri_mini_ml_lib.clustering import KMeans
+    >>> kmeans = KMeans(n_clusters=3, max_iter=300, tol=1e-4, init='k-means++', random_state=42)
+    >>> kmeans.fit(X)
+    >>> labels = kmeans.predict(X)
+    >>> kmeans.plot_clusters(X)
     """
     def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, init='random', random_state=None):
         """

@@ -5,54 +5,32 @@ from .kmeans import KMeans
 
 class HierarchicalClustering:
     """
-      Description:
-      ------------
-      HierarchicalClustering performs hierarchical clustering using either the agglomerative (bottom-up)
-      or divisive (top-down) approach.
+    Description:
+    ------------
+    HierarchicalClustering performs hierarchical clustering using either the agglomerative (bottom-up)
+    or divisive (top-down) approach.
 
-      Arguments:
-      -----------
-      - n_clusters (int or None): Desired number of clusters (required for divisive method).
-      - linkage (str): Linkage criterion to use for merging clusters ('single', 'complete', 'average').
-      - method (str): Clustering strategy ('agglomerative' or 'divisive').
+    Arguments:
+        n_clusters (int or None): Desired number of clusters (required for divisive method).
+        linkage (str): Linkage criterion to use for merging clusters ('single', 'complete', 'average').
+        method (str): Clustering strategy ('agglomerative' or 'divisive').
 
-      Functions:
-      -----------
-      - __init__(self, n_clusters=None, linkage='single', method='agglomerative'): Initializes the clustering parameters.
-      - fit_predict(self, data, kmeans=None): Performs hierarchical clustering and returns cluster labels.
-      - _agglomerative_clustering(self, data): Implements the agglomerative clustering algorithm.
-      - _divisive_clustering(self, data, kmeans): Implements the divisive clustering algorithm.
-      - _bisect_cluster(self, data, cluster, kmeans): Splits a cluster into two using KMeans.
-      - _compute_distance_matrix(self, data): Computes the pairwise distance matrix.
-      - _compute_linkage_distance(self, cluster1, cluster2, distances, linkage): Computes inter-cluster distance.
-      
-      Example:
-      ---------
-      hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
-      labels = hierarchical.fit_predict(data)
-      hierarchical.plot_clusters(data, labels)
+    Example:
+    >>> from ifri_mini_ml_lib.clustering import HierarchicalClustering
+    >>> hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
+    >>> labels = hierarchical.fit_predict(data)
+    >>> hierarchical.plot_clusters(data, labels)
     """
 
     def __init__(self, n_clusters=None, linkage='single', method='agglomerative'):
         """
-        Description:
-        ------------
         Initializes the hierarchical clustering parameters.
 
         Arguments:
-        -----------
-        - n_clusters (int, optional): Desired number of clusters (required for the divisive method).
-          If None, agglomerative clustering proceeds until all points are merged.
-        - linkage (str, optional): Linkage criterion to use ('single', 'complete', 'average').
-        - method (str, optional): Clustering method to apply ('agglomerative' or 'divisive').
-
-        Functions:
-        -----------
-        - Sets the number of clusters, linkage method, and clustering method.
-
-        Example:
-        ---------
-        hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
+            n_clusters (int, optional): Desired number of clusters (required for the divisive method).
+                If None, agglomerative clustering proceeds until all points are merged.
+            linkage (str, optional): Linkage criterion to use ('single', 'complete', 'average').
+            method (str, optional): Clustering method to apply ('agglomerative' or 'divisive').
         """
         self.n_clusters = n_clusters
         self.linkage = linkage
@@ -62,23 +40,11 @@ class HierarchicalClustering:
 
     def fit_predict(self, data, kmeans=None):
         """
-        Description:
-        ------------
         Performs hierarchical clustering on the given data.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): Data to be clustered (n_samples, n_features).
-        - kmeans (KMeans, optional): KMeans instance, required for the divisive method
-
-        Functions:
-        -----------
-        - Executes either agglomerative or divisive clustering based on the chosen method.
-        - Returns the cluster labels assigned to each data point.
-
-        Example:
-        ---------
-        labels = hierarchical.fit_predict(data)
+            data (numpy.ndarray): Data to be clustered (n_samples, n_features).
+            kmeans (KMeans, optional): KMeans instance, required for the divisive method
         """
         if self.method == 'agglomerative':
             self.labels = self._agglomerative_clustering(data)
@@ -93,25 +59,7 @@ class HierarchicalClustering:
 
     def _agglomerative_clustering(self, data):
         """
-        Description:
-        ------------
         Implements agglomerative (bottom-up) hierarchical clustering.
-
-        Arguments:
-        -----------
-        - data (numpy.ndarray): The dataset to be clustered.
-
-        Functions:
-        -----------
-        - Initializes each data point as its own cluster.
-        - Iteratively merges the two closest clusters based on the specified linkage criterion.
-        - Records each merge in a linkage matrix for dendrogram construction.
-        - Stops merging when the desired number of clusters is reached (if specified).
-        - Assigns cluster labels to each data point.
-
-        Example:
-        ---------
-        labels = self._agglomerative_clustering(data)
         """
         # Initialize each data point as a separate cluster (singleton)
         clusters = [{i} for i in range(len(data))]
@@ -171,18 +119,14 @@ class HierarchicalClustering:
 
     def _divisive_clustering(self, data, kmeans):
         """
-        Description:
-        ------------
         Implements divisive (top-down) hierarchical clustering.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The dataset to be clustered.
-        - kmeans (KMeans): An instance of a KMeans algorithm used to split clusters.
+            data (numpy.ndarray): The dataset to be clustered.
+            kmeans (KMeans): An instance of a KMeans algorithm used to split clusters.
 
         Returns:
-        --------
-        - numpy.ndarray: Cluster labels assigned to each data point.
+            numpy.ndarray: Cluster labels assigned to each data point.
         """
         # Initialization: all points are in a single cluster
         clusters = [set(range(len(data)))]
@@ -210,19 +154,15 @@ class HierarchicalClustering:
 
     def _bisect_cluster(self, data, cluster, kmeans):
         """
-        Description:
-        ------------
         Splits a cluster into two sub-clusters using a simple method (K-Means with k=2).
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The complete dataset.
-        - cluster (set): Indices of the data points belonging to the cluster to be split.
-        - kmeans (KMeans): An instance of the KMeans algorithm (can be reinitialized inside the method).
+            data (numpy.ndarray): The complete dataset.
+            cluster (set): Indices of the data points belonging to the cluster to be split.
+            kmeans (KMeans): An instance of the KMeans algorithm (can be reinitialized inside the method).
 
         Returns:
-        --------
-        - tuple: Two sets representing the indices of the resulting sub-clusters.
+            tuple: Two sets representing the indices of the resulting sub-clusters.
         """
         # Convert cluster to data
         cluster_data = data[list(cluster)]
@@ -306,28 +246,16 @@ class HierarchicalClustering:
 
     def plot_dendrogram(self, labels=None):
         """
-        Description:
-        ------------
         Plots a dendrogram based on the linkage matrix constructed during hierarchical clustering.
         The main branches corresponding to the final clusters are colored differently for better visualization.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): The dataset used for clustering.
-
-        Functions:
-        -----------
-        - Retrieves the linkage matrix generated during agglomerative clustering.
-        - Computes the horizontal and vertical positions of leaves and internal nodes.
-        - Colors the main branches according to the final clusters, while secondary branches inherit parent color or are shown in gray.
-        - Optionally displays or hides leaf labels depending on the number of data points.
-        - Generates and displays the hierarchical dendrogram.
+            data (numpy.ndarray): The dataset used for clustering.
 
         Example:
-        ---------
-        hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
-        labels = hierarchical.fit_predict(data)
-        hierarchical.plot_dendrogram(data)
+        >>> hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
+        >>> labels = hierarchical.fit_predict(data)
+        >>> hierarchical.plot_dendrogram(data)
         """
         if self.method != 'agglomerative':
             raise NotImplementedError("Dendrogram plotting is only implemented for agglomerative clustering.")
@@ -408,25 +336,14 @@ class HierarchicalClustering:
 
     def plot_clusters(self, data):
         """
-        Description:
-        ------------
         Plots a scatter plot of the data points colored by their cluster labels,
         supporting 1D, 2D, and 3D data. For higher dimensions, PCA is applied to reduce to 3D.
 
         Arguments:
-        -----------
-        - data (numpy.ndarray): Data array.
-
-        Functions:
-        -----------
-        - Generates a scatter plot of the data points, colored by cluster ID.
-        - Noise points are plotted in black.
-        - Adds a legend and labels to the plot.
-        - Uses PCA for dimensionality reduction to 3D if the input data has more than 3 features.
+            data (numpy.ndarray): Data array.
 
         Example:
-        ---------
-        hierarchical.plot_clusters(data)
+        >>> hierarchical.plot_clusters(data)
         """
         n_features = data.shape[1]
         labels = self.fit_predict(data)

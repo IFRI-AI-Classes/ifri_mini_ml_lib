@@ -148,8 +148,6 @@ def f1_score(y_true, y_pred, positive_class=1):
 
 def calculate_inertia(data, labels, centroids):
     """
-    Description
-    ------------
     Computes the inertia of a clustering model.  Inertia measures the sum of squared distances
     from each data point to its cluster's centroid, providing an indication of cluster density
     and separation.  Lower inertia generally indicates better clustering.
@@ -177,8 +175,6 @@ def calculate_inertia(data, labels, centroids):
 
 def calculate_silhouette(data, labels):
     """
-    Description:
-    ------------
     Computes the average silhouette score for a clustering model. The silhouette score measures
     how well each data point fits within its assigned cluster compared to other clusters.
     It ranges from -1 to 1, where higher values indicate better clustering.

@@ -11,9 +11,9 @@ class KNN:
         task (str): Type of task - either 'classification' or 'regression' (default is 'classification').
 
     Example:
-        knn = KNN(k=5, task='classification')
-        knn.fit(X_train, y_train)
-        predictions = knn.predict(X_test)
+        >>> knn = KNN(k=5, task='classification')
+        >>> knn.fit(X_train, y_train)
+        >>> predictions = knn.predict(X_test)
     """
     def __init__(self, k=3, task='classification'):
         self.k = k

@@ -14,9 +14,9 @@ class LogisticRegression:
         loss_history (list): Stores the loss value at each iteration.
 
     Example:
-        model = LogisticRegression(learning_rate=0.01, max_iter=1000)
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
+        >>> model = LogisticRegression(learning_rate=0.01, max_iter=1000)
+        >>> model.fit(X_train, y_train)
+        >>> preds = model.predict(X_test)
     """
 
     def __init__(self, learning_rate=0.01, max_iter=1000, tol=1e-4):
