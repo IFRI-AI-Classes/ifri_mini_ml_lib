@@ -202,7 +202,3 @@ class DecisionTree:
             else:
                 return self._predict_single(x, tree["right"])
         return tree
-
-    # Visualization methods would be documented similarly
-    def print_tree(self, tree=None, indent=" "): ...
-    def print_visual_tree(self, tree=None, indent="", last='updown'): ...

@@ -18,13 +18,12 @@ class LogisticRegression:
         loss_history (list): Records loss values during training.
         
     Examples:
-         # Basic usage
-         model = LogisticRegression(learning_rate=0.01, max_iter=1000)
-         model.fit(X_train, y_train)
-         predictions = model.predict(X_test)
+        >>> model = LogisticRegression(learning_rate=0.01, max_iter=1000)
+        >>> model.fit(X_train, y_train)
+        >>> predictions = model.predict(X_test)
         
-         # With probability outputs
-         probabilities = model.predict_proba(X_test)
+        >>> # With probability outputs
+        >>> probabilities = model.predict_proba(X_test)
     """
 
     def __init__(self, learning_rate=0.01, max_iter=1000, tol=1e-4):
