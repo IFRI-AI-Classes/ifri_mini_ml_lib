@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional
 
 class MLP:
     """
-    Multi-Layer Perceptron avec différentes fonctions d'activation et optimiseurs
+    Multi-Layer Perceptron with different activation functions and optimizers
     """
     
     def __init__(
@@ -28,44 +28,44 @@ class MLP:
         n_iter_no_change: int = 10
     ):
         """
-        Initialise un réseau MLP
+        Initialize an MLP network
         
         Parameters:
         -----------
         hidden_layer_sizes : tuple
-            Les tailles des couches cachées
+            The sizes of hidden layers
         activation : str
-            Fonction d'activation ('sigmoid', 'relu', 'tanh', 'leaky_relu')
+            Activation function ('sigmoid', 'relu', 'tanh', 'leaky_relu')
         solver : str
-            L'algorithme d'optimisation ('sgd', 'adam', 'rmsprop', 'momentum')
+            Optimization algorithm ('sgd', 'adam', 'rmsprop', 'momentum')
         alpha : float
-            Paramètre de régularisation L2
+            L2 regularization parameter
         batch_size : int
-            Taille des batchs pour l'entraînement
+            Batch size for training
         learning_rate : float
-            Taux d'apprentissage
+            Learning rate
         max_iter : int
-            Nombre maximum d'itérations
+            Maximum number of iterations
         shuffle : bool
-            Si True, mélange les données à chaque epoch
+            If True, shuffle data at each epoch
         random_state : int or None
-            Graine pour la reproductibilité
+            Seed for reproducibility
         beta1 : float
-            Paramètre pour Adam (décroissance exponentielle du premier moment)
+            Parameter for Adam (exponential decay of first moment)
         beta2 : float
-            Paramètre pour Adam (décroissance exponentielle du second moment)
+            Parameter for Adam (exponential decay of second moment)
         epsilon : float
-            Valeur pour éviter la division par zéro
+            Value to avoid division by zero
         momentum : float
-            Paramètre pour l'optimiseur momentum
+            Parameter for momentum optimizer
         tol : float
-            Tolérance pour l'arrêt précoce
+            Tolerance for early stopping
         early_stopping : bool
-            Si True, utilise l'arrêt précoce basé sur la validation
+            If True, use early stopping based on validation
         validation_fraction : float
-            Fraction des données d'entraînement à utiliser comme validation
+            Fraction of training data to use as validation
         n_iter_no_change : int
-            Nombre d'itérations sans amélioration pour l'arrêt précoce
+            Number of iterations with no improvement for early stopping
         """
         self.hidden_layer_sizes = hidden_layer_sizes
         self.activation = activation
@@ -87,7 +87,7 @@ class MLP:
         if random_state is not None:
             np.random.seed(random_state)
         
-        # Sélection des fonctions d'activation
+        # Selection of activation functions
         self.activation_functions = {
             'sigmoid': self._sigmoid,
             'relu': self._relu,
@@ -104,51 +104,52 @@ class MLP:
             'leaky_relu': self._leaky_relu_derivative,
         }
         
-        # Sélection de la fonction d'activation et de sa dérivée
+        # Selection of activation function and its derivative
         if activation not in self.activation_functions:
-            raise ValueError(f"Activation '{activation}' non reconnue. Utilisez 'sigmoid', 'relu', 'tanh' ou 'leaky_relu'.")
+            raise ValueError(f"Activation '{activation}' not recognized. Use 'sigmoid', 'relu', 'tanh', or 'leaky_relu'.")
         
         self.activation_func = self.activation_functions[activation]
         self.activation_derivative = self.activation_derivatives[activation]
         
-        # Initialisation des poids
+        # Weight initialization
         self.weights = []
         self.biases = []
         self.n_layers = None
         self.n_outputs = None
         
-        # Pour les optimiseurs
-        self.velocity_weights = []  # Pour Momentum
+        # For optimizers
+        self.velocity_weights = []  # For Momentum
         self.velocity_biases = []
-        self.m_weights = []  # Pour Adam
+        self.m_weights = []  # For Adam
         self.m_biases = []
-        self.v_weights = []  # Pour Adam
+        self.v_weights = []  # For Adam
         self.v_biases = []
-        self.t = 1  # Timestep pour Adam
+        self.t = 1  # Timestep for Adam
         
         self.loss_history = []
         self.val_loss_history = []
         self.best_loss = np.inf
         self.no_improvement_count = 0
         self.trained = False
+        self.classes_ = None
     
     def _initialize_weights(self, n_features: int, n_outputs: int) -> None:
         """
-        Initialise les poids et biais du réseau
+        Initialize the weights and biases of the network
         
         Parameters:
         -----------
         n_features : int
-            Nombre de features en entrée
+            Number of input features
         n_outputs : int
-            Nombre de classes en sortie
+            Number of output classes
         """
-        # Dimensions des couches
+        # Layer dimensions
         layer_sizes = [n_features] + list(self.hidden_layer_sizes) + [n_outputs]
         self.n_layers = len(layer_sizes) - 1
         self.n_outputs = n_outputs
         
-        # Réinitialiser les listes
+        # Reset lists
         self.weights = []
         self.biases = []
         self.velocity_weights = []
@@ -158,114 +159,114 @@ class MLP:
         self.v_weights = []
         self.v_biases = []
         
-        # Initialisation des poids avec la methode Xavier/Glorot
+        # Weight initialization with Xavier/Glorot method
         for i in range(self.n_layers):
             limit = np.sqrt(6 / (layer_sizes[i] + layer_sizes[i + 1]))
             self.weights.append(np.random.uniform(-limit, limit, (layer_sizes[i], layer_sizes[i + 1])))
             self.biases.append(np.zeros(layer_sizes[i + 1]))
             
-            # Initialisation pour les optimiseurs
-            self.velocity_weights.append(np.zeros_like(self.weights[-1]))  # Pour Momentum
+            # Initialization for optimizers
+            self.velocity_weights.append(np.zeros_like(self.weights[-1]))  # For Momentum
             self.velocity_biases.append(np.zeros_like(self.biases[-1]))
-            self.m_weights.append(np.zeros_like(self.weights[-1]))  # Pour Adam
+            self.m_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
             self.m_biases.append(np.zeros_like(self.biases[-1]))
-            self.v_weights.append(np.zeros_like(self.weights[-1]))  # Pour Adam
+            self.v_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
             self.v_biases.append(np.zeros_like(self.biases[-1]))
     
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         """
-        Fonction d'activation softmax
+        Softmax activation function
         """
         exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
         return exp_x / np.sum(exp_x, axis=1, keepdims=True)
     
     def _softmax_derivative(self, x: np.ndarray) -> np.ndarray:
         """
-        Dérivée de la fonction softmax
-        Pour la rétropropagation avec softmax et entropie croisée,
-        cette dérivée est simplifiée et déjà gérée dans _backward_pass
+        Derivative of softmax function
+        For backpropagation with softmax and cross-entropy,
+        this derivative is simplified and already handled in _backward_pass
         """
         s = self._softmax(x)
         return s * (1 - s)
     
     def _leaky_relu(self, x: np.ndarray) -> np.ndarray:
         """
-        Fonction d'activation Leaky ReLU
+        Leaky ReLU activation function
         """
         return np.where(x > 0, x, 0.01 * x)
     
     def _leaky_relu_derivative(self, x: np.ndarray) -> np.ndarray:
         """
-        Dérivée de la fonction Leaky ReLU
+        Derivative of Leaky ReLU function
         """
         return np.where(x > 0, 1, 0.01)
     
     def _sigmoid(self, x: np.ndarray) -> np.ndarray:
         """
-        Fonction d'activation sigmoïde
+        Sigmoid activation function
         """
         return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
     
     def _sigmoid_derivative(self, x: np.ndarray) -> np.ndarray:
         """
-        Dérivée de la fonction sigmoïde
+        Derivative of sigmoid function
         """
         sigmoid_x = self._sigmoid(x)
         return sigmoid_x * (1 - sigmoid_x)
     
     def _relu(self, x: np.ndarray) -> np.ndarray:
         """
-        Fonction d'activation ReLU
+        ReLU activation function
         """
         return np.maximum(0, x)
     
     def _relu_derivative(self, x: np.ndarray) -> np.ndarray:
         """
-        Dérivée de la fonction ReLU
+        Derivative of ReLU function
         """
         return np.where(x > 0, 1, 0)
     
     def _tanh(self, x: np.ndarray) -> np.ndarray:
         """
-        Fonction d'activation tanh
+        Tanh activation function
         """
         return np.tanh(x)
     
     def _tanh_derivative(self, x: np.ndarray) -> np.ndarray:
         """
-        Dérivée de la fonction tanh
+        Derivative of tanh function
         """
         return 1 - np.power(np.tanh(x), 2)
     
     def _forward_pass(self, X: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
-        Propagation avant pour calculer les activations
+        Forward propagation to calculate activations
         
         Parameters:
         -----------
         X : np.ndarray, shape (n_samples, n_features)
-            Données d'entrée
+            Input data
             
         Returns:
         --------
-        activations : Liste des activations pour chaque couche
-        layer_inputs : Liste des entrées pour chaque couche (avant activation)
+        activations : List of activations for each layer
+        layer_inputs : List of inputs for each layer (before activation)
         """
         activations = [X]
         layer_inputs = []
         
-        # Passe à travers toutes les couches sauf la dernière
+        # Pass through all layers except the last one
         for i in range(self.n_layers - 1):
             layer_input = np.dot(activations[-1], self.weights[i]) + self.biases[i]
             layer_inputs.append(layer_input)
             activation = self.activation_func(layer_input)
             activations.append(activation)
         
-        # Couche de sortie avec softmax pour la classification
+        # Output layer with softmax for classification
         last_layer_input = np.dot(activations[-1], self.weights[-1]) + self.biases[-1]
         layer_inputs.append(last_layer_input)
         
-        # Utiliser softmax pour la couche de sortie
+        # Use softmax for output layer
         output_activation = self._softmax(last_layer_input)
         activations.append(output_activation)
         
@@ -273,25 +274,25 @@ class MLP:
     
     def _compute_loss(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """
-        Calcule l'entropie croisée avec régularisation L2
+        Calculate cross-entropy loss with L2 regularization
         
         Parameters:
         -----------
         y_true : np.ndarray, shape (n_samples, n_classes)
-            Les labels en one-hot encoding
+            One-hot encoded labels
         y_pred : np.ndarray, shape (n_samples, n_classes)
-            Les prédictions du modèle
+            Model predictions
             
         Returns:
         --------
         loss : float
-            La valeur de la perte
+            Loss value
         """
         m = y_true.shape[0]
-        # Entropie croisée
+        # Cross-entropy
         log_likelihood = -np.sum(y_true * np.log(np.clip(y_pred, 1e-10, 1.0))) / m
         
-        # Régularisation L2
+        # L2 regularization
         l2_reg = 0
         for w in self.weights:
             l2_reg += np.sum(np.square(w))
@@ -307,47 +308,47 @@ class MLP:
         layer_inputs: List[np.ndarray]
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
-        Rétropropagation du gradient
+        Backpropagation of gradient
         
         Parameters:
         -----------
         X : np.ndarray
-            Données d'entrée
+            Input data
         y : np.ndarray
-            Labels en one-hot encoding
-        activations : Liste des activations pour chaque couche
-        layer_inputs : Liste des entrées pour chaque couche
+            One-hot encoded labels
+        activations : List of activations for each layer
+        layer_inputs : List of inputs for each layer
             
         Returns:
         --------
-        gradients_w : Liste des gradients pour les poids
-        gradients_b : Liste des gradients pour les biais
+        gradients_w : List of gradients for weights
+        gradients_b : List of gradients for biases
         """
         m = X.shape[0]
         gradients_w = [None] * self.n_layers
         gradients_b = [None] * self.n_layers
         
-        # Gradient de la couche de sortie (dérivée de l'entropie croisée avec softmax)
+        # Gradient of output layer (derivative of cross-entropy with softmax)
         delta = activations[-1] - y
         
-        # Rétropropagation du gradient à travers les couches
+        # Backpropagate gradient through layers
         for i in range(self.n_layers - 1, -1, -1):
-            # Calcul du gradient pour les poids et biais de la couche i
+            # Calculate gradient for weights and biases of layer i
             gradients_w[i] = np.dot(activations[i].T, delta) / m + self.alpha * self.weights[i]
             gradients_b[i] = np.mean(delta, axis=0)
             
-            # Rétropropagation du delta (sauf pour la première couche)
+            # Backpropagate delta (except for first layer)
             if i > 0:
                 delta = np.dot(delta, self.weights[i].T)
-                # Pour les autres couches, appliquer la dérivée de la fonction d'activation
-                if i < self.n_layers - 1:  # Pas pour la dernière couche qui utilise softmax
+                # For other layers, apply derivative of activation function
+                if i < self.n_layers - 1:  # Not for last layer which uses softmax
                     delta *= self.activation_derivative(layer_inputs[i-1])
         
         return gradients_w, gradients_b
     
     def _update_weights_sgd(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
         """
-        Met à jour les poids avec la descente de gradient stochastique
+        Update weights with stochastic gradient descent
         """
         for i in range(self.n_layers):
             self.weights[i] -= self.learning_rate * gradients_w[i]
@@ -355,7 +356,7 @@ class MLP:
     
     def _update_weights_momentum(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
         """
-        Met à jour les poids avec la descente de gradient avec momentum
+        Update weights with gradient descent with momentum
         """
         for i in range(self.n_layers):
             self.velocity_weights[i] = self.momentum * self.velocity_weights[i] - self.learning_rate * gradients_w[i]
@@ -366,81 +367,58 @@ class MLP:
     
     def _update_weights_rmsprop(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
         """
-        Met à jour les poids avec RMSProp
+        Update weights with RMSProp
         """
         decay_rate = 0.9
         
         for i in range(self.n_layers):
-            # Mise à jour des accumulateurs
+            # Update accumulators
             self.v_weights[i] = decay_rate * self.v_weights[i] + (1 - decay_rate) * np.square(gradients_w[i])
             self.v_biases[i] = decay_rate * self.v_biases[i] + (1 - decay_rate) * np.square(gradients_b[i])
             
-            # Mise à jour des poids
-            self.weights[i] -= self.learning_rate * gradients_w[i] / (np.sqrt(self.v_weights[i] + self.epsilon))
+            # Update weights
+            self.weights[i] -= self.learning_rate * gradients_w[i] / (np.sqrt(self.v_weights[i]+ self.epsilon))
             self.biases[i] -= self.learning_rate * gradients_b[i] / (np.sqrt(self.v_biases[i] + self.epsilon))
     
     def _update_weights_adam(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
         """
-        Met à jour les poids avec Adam
+        Update weights with Adam optimizer
         """
         for i in range(self.n_layers):
-            # Mise à jour des moments
+            # Update moments
             self.m_weights[i] = self.beta1 * self.m_weights[i] + (1 - self.beta1) * gradients_w[i]
             self.m_biases[i] = self.beta1 * self.m_biases[i] + (1 - self.beta1) * gradients_b[i]
             
-            # Mise à jour des moments du second ordre
+            # Update second-order moments
             self.v_weights[i] = self.beta2 * self.v_weights[i] + (1 - self.beta2) * np.square(gradients_w[i])
             self.v_biases[i] = self.beta2 * self.v_biases[i] + (1 - self.beta2) * np.square(gradients_b[i])
             
-            # Correction du biais
+            # Bias correction
             m_weights_corrected = self.m_weights[i] / (1 - self.beta1 ** self.t)
             m_biases_corrected = self.m_biases[i] / (1 - self.beta1 ** self.t)
             v_weights_corrected = self.v_weights[i] / (1 - self.beta2 ** self.t)
             v_biases_corrected = self.v_biases[i] / (1 - self.beta2 ** self.t)
             
-            # Mise à jour des poids
+            # Update weights
             self.weights[i] -= self.learning_rate * m_weights_corrected / (np.sqrt(v_weights_corrected + self.epsilon))
             self.biases[i] -= self.learning_rate * m_biases_corrected / (np.sqrt(v_biases_corrected + self.epsilon))
         
         self.t += 1
     
-    def _one_hot_encode(self, y: np.ndarray) -> np.ndarray:
-        """
-        Convertit les labels en représentation one-hot
-        
-        Parameters:
-        -----------
-        y : np.ndarray de shape (n_samples,)
-            Les labels à encoder
-            
-        Returns:
-        --------
-        one_hot : np.ndarray de shape (n_samples, n_classes)
-            Les labels encodés
-        """
-        n_samples = len(y)
-        unique_classes = np.unique(y)
-        if len(unique_classes) > self.n_outputs:
-            raise ValueError(f"Nombre de classes ({len(unique_classes)}) supérieur à n_outputs ({self.n_outputs})")
-            
-        one_hot = np.zeros((n_samples, self.n_outputs))
-        one_hot[np.arange(n_samples), y.astype(int)] = 1
-        return one_hot
-    
     def _split_train_validation(self, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Divise les données en ensembles d'entraînement et de validation
+        Split data into training and validation sets
         
         Parameters:
         -----------
         X : np.ndarray
-            Les données d'entrée
+            Input data
         y : np.ndarray
-            Les labels
+            Labels
             
         Returns:
         --------
-        X_train, X_val, y_train, y_val : Les ensembles divisés
+        X_train, X_val, y_train, y_val : The split datasets
         """
         n_samples = X.shape[0]
         n_val = int(n_samples * self.validation_fraction)
@@ -455,43 +433,74 @@ class MLP:
         
         return X_train, X_val, y_train, y_val
     
-    def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLP':
+    def _encode_labels(self, y: np.ndarray) -> np.ndarray:
         """
-        Entraîne le MLP sur les données fournies
+        Encode labels to one-hot representation
         
         Parameters:
         -----------
-        X : np.ndarray de shape (n_samples, n_features)
-            Les données d'entraînement
-        y : np.ndarray de shape (n_samples,)
-            Les labels cibles
+        y : np.ndarray
+            Input labels
             
         Returns:
         --------
-        self : objet
-            Le MLP entraîné
+        one_hot : np.ndarray
+            One-hot encoded labels
         """
-        # Conversion des arrays
+        # Determine unique classes and create a mapping
+        self.classes_ = np.unique(y)
+        n_samples = len(y)
+        n_classes = len(self.classes_)
+        
+        # Create an empty one-hot encoded matrix
+        one_hot = np.zeros((n_samples, n_classes))
+        
+        # Map original labels to one-hot encoded labels
+        for i, label in enumerate(y):
+            one_hot[i, np.where(self.classes_ == label)[0][0]] = 1
+        
+        return one_hot
+    
+    def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLP':
+        """
+        Train the MLP on the provided data
+        
+        Parameters:
+        -----------
+        X : np.ndarray of shape (n_samples, n_features)
+            Training data
+        y : np.ndarray of shape (n_samples,)
+            Target labels
+            
+        Returns:
+        --------
+        self : object
+            The trained MLP
+        """
+        # Convert arrays
         X = np.array(X, dtype=float)
         y = np.array(y)
         
-        # Déterminer le nombre de classes
+        # Determine number of classes
         n_samples, n_features = X.shape
-        n_outputs = len(np.unique(y))
         
-        # Initialisation des poids
+        # Encode labels and determine number of classes
+        y_one_hot = self._encode_labels(y)
+        n_outputs = y_one_hot.shape[1]
+        
+        # Initialize weights
         self._initialize_weights(n_features, n_outputs)
         
-        # Division en ensembles d'entraînement et de validation si early_stopping
+        # Split into training and validation sets if early_stopping
         if self.early_stopping:
             X_train, X_val, y_train, y_val = self._split_train_validation(X, y)
-            y_train_one_hot = self._one_hot_encode(y_train)
-            y_val_one_hot = self._one_hot_encode(y_val)
+            y_train_one_hot = self._encode_labels(y_train)
+            y_val_one_hot = self._encode_labels(y_val)
         else:
             X_train, y_train = X, y
-            y_train_one_hot = self._one_hot_encode(y_train)
+            y_train_one_hot = y_one_hot
         
-        # Méthode de mise à jour selon l'optimiseur choisi
+        # Update method according to chosen optimizer
         update_methods = {
             'sgd': self._update_weights_sgd,
             'momentum': self._update_weights_momentum,
@@ -500,18 +509,18 @@ class MLP:
         }
         
         if self.solver not in update_methods:
-            raise ValueError(f"Optimiseur '{self.solver}' non reconnu.")
+            raise ValueError(f"Optimizer '{self.solver}' not recognized.")
         
         update_weights = update_methods[self.solver]
         
-        # Entraînement sur plusieurs époques
+        # Training over multiple epochs
         self.loss_history = []
         self.val_loss_history = []
         self.best_loss = np.inf
         self.no_improvement_count = 0
         
         for epoch in range(self.max_iter):
-            # Mélange des données si demandé
+            # Shuffle data if requested
             if self.shuffle:
                 indices = np.random.permutation(len(y_train))
                 X_train_shuffled = X_train[indices]
@@ -520,46 +529,46 @@ class MLP:
                 X_train_shuffled = X_train
                 y_train_shuffled = y_train_one_hot
             
-            # Entraînement par mini-batchs
+            # Training by mini-batches
             batch_losses = []
             for i in range(0, len(y_train), self.batch_size):
                 X_batch = X_train_shuffled[i:i+self.batch_size]
                 y_batch = y_train_shuffled[i:i+self.batch_size]
                 
-                # Propagation avant
+                # Forward propagation
                 activations, layer_inputs = self._forward_pass(X_batch)
                 
-                # Calcul de la perte
+                # Loss calculation
                 loss = self._compute_loss(y_batch, activations[-1])
                 batch_losses.append(loss)
                 
-                # Rétropropagation
+                # Backpropagation
                 gradients_w, gradients_b = self._backward_pass(X_batch, y_batch, activations, layer_inputs)
                 
-                # Mise à jour des poids
+                # Weight update
                 update_weights(gradients_w, gradients_b)
             
-            # Moyenne des pertes sur l'époque
+            # Average loss over the epoch
             epoch_loss = np.mean(batch_losses)
             self.loss_history.append(epoch_loss)
             
-            # Validation si early_stopping est activé
+            # Validation if early_stopping is activated
             if self.early_stopping:
-                # Calcul de la perte sur l'ensemble de validation
+                # Calculate loss on validation set
                 val_activations, _ = self._forward_pass(X_val)
                 val_loss = self._compute_loss(y_val_one_hot, val_activations[-1])
                 self.val_loss_history.append(val_loss)
                 
-                # Vérification de l'amélioration
+                # Check for improvement
                 if val_loss < self.best_loss - self.tol:
                     self.best_loss = val_loss
                     self.no_improvement_count = 0
                 else:
                     self.no_improvement_count += 1
                 
-                # Arrêt précoce
+                # Early stopping
                 if self.no_improvement_count >= self.n_iter_no_change:
-                    print(f"Arrêt précoce à l'époque {epoch+1}")
+                    print(f"Early stopping at epoch {epoch+1}")
                     break
         
         self.trained = True
@@ -567,42 +576,42 @@ class MLP:
     
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Prédit les classes pour les échantillons X
+        Predict classes for samples X
         
         Parameters:
         -----------
-        X : np.ndarray de shape (n_samples, n_features)
-            Les données pour lesquelles on veut faire des prédictions
+        X : np.ndarray of shape (n_samples, n_features)
+            Data for which to make predictions
             
         Returns:
         --------
-        y_pred : np.ndarray de shape (n_samples,)
-            Les classes prédites
+        y_pred : np.ndarray of shape (n_samples,)
+            Predicted classes
         """
         if not self.trained:
-            raise ValueError("Le modèle doit être entraîné avant de pouvoir faire des prédictions.")
+            raise ValueError("The model must be trained before making predictions.")
         
         X = np.array(X, dtype=float)
         activations, _ = self._forward_pass(X)
-        y_pred = np.argmax(activations[-1], axis=1)
-        return y_pred
+        y_pred_indices = np.argmax(activations[-1], axis=1)
+        return self.classes_[y_pred_indices]
     
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
-        Prédit les probabilités pour chaque classe
+        Predict probabilities for each class
         
         Parameters:
         -----------
-        X : np.ndarray de shape (n_samples, n_features)
-            Les données pour lesquelles on veut faire des prédictions
+        X : np.ndarray of shape (n_samples, n_features)
+            Data for which to make predictions
             
         Returns:
         --------
-        probas : np.ndarray de shape (n_samples, n_classes)
-            Les probabilités pour chaque classe
+        probas : np.ndarray of shape (n_samples, n_classes)
+            Probabilities for each class
         """
         if not self.trained:
-            raise ValueError("Le modèle doit être entraîné avant de pouvoir faire des prédictions.")
+            raise ValueError("The model must be trained before making predictions.")
         
         X = np.array(X, dtype=float)
         activations, _ = self._forward_pass(X)
@@ -610,22 +619,22 @@ class MLP:
     
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
         """
-        Retourne la précision du modèle sur les données fournies
+        Return the accuracy of the model on the provided data
         
         Parameters:
         -----------
-        X : np.ndarray de shape (n_samples, n_features)
-            Les données de test
-        y : np.ndarray de shape (n_samples,)
-            Les vrais labels
+        X : np.ndarray of shape (n_samples, n_features)
+            Test data
+        y : np.ndarray of shape (n_samples,)
+            True labels
             
         Returns:
         --------
         accuracy : float
-            La précision du modèle
+            Model accuracy
         """
         if not self.trained:
-            raise ValueError("Le modèle doit être entraîné avant de calculer son score.")
+            raise ValueError("The model must be trained before calculating its score.")
             
         y_pred = self.predict(X)
         return np.mean(y_pred == y)
