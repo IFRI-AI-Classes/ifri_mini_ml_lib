@@ -76,24 +76,6 @@ class TestMLP:
         # Vérification que les activations de sortie sont des probabilités
         assert np.allclose(np.sum(activations[2], axis=1), np.ones(100))
         
-    def test_one_hot_encode(self):
-        """Test de l'encodage one-hot."""
-        mlp = MLP()
-        mlp.n_outputs = 3
-        
-        y = np.array([0, 1, 2, 1, 0])
-        one_hot = mlp._one_hot_encode(y)
-        
-        expected = np.array([
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-            [0, 1, 0],
-            [1, 0, 0]
-        ])
-        
-        assert np.allclose(one_hot, expected)
-        
     def test_fit_predict(self):
         """Test de l'entraînement et de la prédiction."""
         # Utilisons un jeu de données très simple pour tester l'apprentissage

@@ -3,6 +3,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import norm
 from .cross_validation import k_fold_cross_validation
 
+
 class GaussianProcess:
     """
     Gaussian process with RBF (Radial Basis Function) kernel.
@@ -67,7 +68,11 @@ class GaussianProcess:
         self.X_train = X_train
         self.y_train = y_train
         K = self.rbf_kernel(X_train, X_train) + self.noise * np.eye(len(X_train))
-        self.K_inv = np.linalg.inv(K)
+        self.L = np.linalg.cholesky(K)  
+        self.alpha = np.linalg.solve(self.L.T, np.linalg.solve(self.L, y_train))
+        self.y_mean = np.mean(y_train)
+        self.y_std = np.std(y_train)
+
 
     def predict(self, X_test):
         """
@@ -85,8 +90,10 @@ class GaussianProcess:
         """
         K_s = self.rbf_kernel(self.X_train, X_test)
         K_ss = self.rbf_kernel(X_test, X_test) + self.noise * np.eye(len(X_test))
-        mu = K_s.T @ self.K_inv @ self.y_train
-        cov = K_ss - K_s.T @ self.K_inv @ K_s
+        v = np.linalg.solve(self.L, K_s)
+        mu = v.T @ self.alpha
+        mu = mu * self.y_std + self.y_mean
+        cov = K_ss - v.T @ v
         return mu, np.sqrt(np.diag(cov))
 
 
@@ -124,7 +131,7 @@ class BayesianSearchCV:
     Uses a Gaussian process to model the objective function and Expected Improvement for acquisition.
     """
 
-    def __init__(self, estimator, param_bounds, scoring, stratified=None, n_iter=20, init_points=5, cv=5, param_types=None):
+    def __init__(self, estimator, param_bounds, scoring, maximize, stratified=None, n_iter=20, init_points=5, cv=5, param_types=None, random_state = 42):
         """
         Description:
             Initialize the Bayesian search optimization.
@@ -158,9 +165,26 @@ class BayesianSearchCV:
         self.scoring = scoring
         self.stratified = stratified
         self.param_types= param_types or {}
+        self.random_state = random_state
         self.X_obs = []  # list of tested hyperparameter vectors
         self.y_obs = []  # corresponding scores
         self.gp = GaussianProcess()
+        self.maximize = maximize
+        self.history_ = []
+
+    def _normalize_params(self, x_vector):
+        """Normalize parameters to [0,1] range"""
+        normalized = np.zeros_like(x_vector, dtype=float)
+        for i, ((low, high), val) in enumerate(zip(self.param_bounds.values(), x_vector)):
+            normalized[i] = (val - low) / (high - low)
+        return normalized
+
+    def _denormalize_params(self, normalized_vector):
+        """Convert normalized parameters back to original scale"""
+        denormalized = np.zeros_like(normalized_vector, dtype=float)
+        for i, (low, high) in enumerate(self.param_bounds.values()):
+            denormalized[i] = normalized_vector[i] * (high - low) + low
+        return denormalized
 
     def _sample_params(self):
         """
@@ -202,8 +226,10 @@ class BayesianSearchCV:
                     casted_params[param_name] = int(round(casted_params[param_name]))
                 elif param_type == "float":
                     casted_params[param_name] = float(casted_params[param_name])
-                # (optionnel) Ajout d'autres types ici plus tard
+                elif param_type == "bool":
+                    casted_params[param_name] = bool(round(float(casted_params[param_name])))  
         return casted_params
+
 
 
     def _evaluate(self, X, y, x):
@@ -235,6 +261,8 @@ class BayesianSearchCV:
         x = self._cast_parameters(x)
         self.estimator.set_params(**x)
         mean_score, _ = k_fold_cross_validation(self.estimator, X, y, self.scoring, self.stratified, k=self.cv)
+        if not self.maximize:
+            mean_score = -mean_score
         print(x)
         return mean_score
 
@@ -252,7 +280,7 @@ class BayesianSearchCV:
         Example:
             >>> next_params = bo._suggest()
         """
-        X_candidates = np.array([self._sample_params() for _ in range(n_candidates)])
+        X_candidates = np.array([np.random.uniform(0, 1, len(self.param_bounds)) for _ in range(n_candidates)])
         ei = expected_improvement(X_candidates, self.gp, y_min=np.max(self.y_obs))
         return X_candidates[np.argmax(ei)]
 
@@ -278,22 +306,25 @@ class BayesianSearchCV:
         # Initial phase: random points
         for _ in range(self.init_points):
             x = self._sample_params()
+            x_normalized = self._normalize_params(x)
             y_score = self._evaluate(X, y, x)
-            self.X_obs.append(x)
+            self.X_obs.append(x_normalized)
             self.y_obs.append(y_score)
 
         # Optimization loop
         for i in range(self.n_iter):
             self.gp.fit(np.array(self.X_obs), np.array(self.y_obs))
-            x_next = self._suggest()
-            y_next = self._evaluate(X, y, x_next)
-            self.X_obs.append(x_next)
+            x_next_normalized = self._suggest()
+            x_next_original = self._denormalize_params(x_next_normalized)
+            y_next = self._evaluate(X, y, x_next_original)
+            self.X_obs.append(x_next_normalized)
             self.y_obs.append(y_next)
+            self.history_.append(y_next)
             print(f"[{i+1}/{self.n_iter}] Score = {y_next:.4f}")
 
         # Get best parameters
-        best_idx = np.argmin(self.y_obs)  # minimization if score is an error
-        self.best_params_ = self._cast_parameters(self._dict_from_vector(self.X_obs[best_idx]))
+        best_idx = np.argmax(self.y_obs) if self.maximize else np.argmin(self.y_obs)
+        self.best_params_ = self._cast_parameters(self._dict_from_vector(self._denormalize_params(self.X_obs[best_idx])))
         self.best_score_ = self.y_obs[best_idx]
 
         return self

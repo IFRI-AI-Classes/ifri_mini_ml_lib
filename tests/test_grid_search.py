@@ -1,11 +1,11 @@
 import pytest
 import numpy as np
-from sklearn.base import BaseEstimator
-from sklearn.metrics import accuracy_score
+from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
+from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
 from ifri_mini_ml_lib.model_selection import GridSearchCV
 
 # Mock Model pour les tests
-class MockClassifier(BaseEstimator):
+class MockClassifier(BaseEstimatorMinimal):
     def __init__(self, param1=1, param2='a'):
         self.param1 = param1
         self.param2 = param2
@@ -24,7 +24,7 @@ def test_grid_search_initialization():
     """Teste l'initialisation de GridSearchCV"""
     model = MockClassifier()
     param_grid = {'param1': [1, 2], 'param2': ['a', 'b']}
-    grid = GridSearchCV(model, param_grid, accuracy_score)
+    grid = GridSearchCV(model, param_grid, accuracy)
     
     assert grid.k == 5
     assert not grid.stratified
@@ -34,7 +34,7 @@ def test_grid_search_fit():
     """Teste le fonctionnement de base de fit()"""
     model = MockClassifier()
     param_grid = {'param1': [1, 2], 'param2': ['a', 'b']}
-    grid = GridSearchCV(model, param_grid, accuracy_score, k=2)
+    grid = GridSearchCV(model, param_grid, accuracy, k=2)
     
     grid.fit(X, y)
     
@@ -47,7 +47,7 @@ def test_grid_search_with_stratified():
     """Teste le mode stratifié"""
     model = MockClassifier()
     param_grid = {'param1': [1]}
-    grid = GridSearchCV(model, param_grid, accuracy_score, stratified=True, k=2)
+    grid = GridSearchCV(model, param_grid, accuracy, stratified=True, k=2)
     
     grid.fit(X, y)
     assert grid.best_score_ >= 0
@@ -60,7 +60,7 @@ def test_param_combinations(monkeypatch):
         'param1': [1, 2, 3],  # 3 valeurs
         'param2': ['a', 'b']   # 2 valeurs
     }  # Total: 6 combinaisons
-    grid = GridSearchCV(model, param_grid, accuracy_score, k=2)
+    grid = GridSearchCV(model, param_grid, accuracy, k=2)
     
     # Mock tracking
     call_counter = 0
@@ -89,7 +89,7 @@ def test_best_estimator():
     """Vérifie que le meilleur estimateur est bien entraîné"""
     model = MockClassifier()
     param_grid = {'param1': [1]}
-    grid = GridSearchCV(model, param_grid, accuracy_score, k=2)
+    grid = GridSearchCV(model, param_grid, accuracy, k=2)
     
     grid.fit(X, y)
     assert hasattr(grid.best_estimator_, 'param1')
