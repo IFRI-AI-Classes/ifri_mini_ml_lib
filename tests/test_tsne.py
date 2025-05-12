@@ -5,7 +5,7 @@ from sklearn.manifold import TSNE as skTSNE
 
 
 # Votre classe TSNE doit être importée ici
-from t_sne import TSNE
+from ifri_mini_ml_lib.preprocessing.dimensionality_reduction import TSNE
 
 @pytest.fixture
 def test_data():

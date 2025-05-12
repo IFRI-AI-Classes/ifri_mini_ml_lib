@@ -68,7 +68,7 @@ def test_random_search_with_mocked_cv(monkeypatch):
         return 0.8, 0.1 
 
     monkeypatch.setattr(
-        "ifri_mini_lib.model_selection.random_searchCV.k_fold_cross_validation", 
+        "ifri_mini_ml_lib.model_selection.random_searchCV.k_fold_cross_validation", 
         fake_cv
     )
 

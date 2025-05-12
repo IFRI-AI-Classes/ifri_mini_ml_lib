@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from fairness_metrics import (
+from ifri_mini_ml_lib.metrics.bias_evaluation import (
     selection_rate,
     selection_rate_per_group,
     demographic_parity_ratio,

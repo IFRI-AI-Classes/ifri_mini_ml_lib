@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifri_mini_ml_lib.metrics.silhouette import calculate_silhouette
+from ifri_mini_ml_lib.metrics.evaluation_metrics import calculate_silhouette
 
 @pytest.fixture
 def sample_data():

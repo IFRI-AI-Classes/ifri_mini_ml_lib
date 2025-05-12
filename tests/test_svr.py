@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from SVR import SVR
+from ifri_mini_ml_lib.regression import SVR
 
 # ================================
 # Tests pour SVR

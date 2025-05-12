@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ifri_mini_ml_lib.model_selection import k_fold_cross_validation
+from ifri_mini_ml_lib.model_selection.cross_validation import k_fold_cross_validation
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
 

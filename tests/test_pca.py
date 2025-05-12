@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pca import PCA
+from ifri_mini_ml_lib.preprocessing.dimensionality_reduction import PCA
 
 @pytest.fixture
 def sample_data():
