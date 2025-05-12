@@ -20,7 +20,7 @@ def sample_df():
 # remove_missing
 def test_remove_missing_rows(handler, sample_df):
     result = handler.remove_missing(sample_df, threshold=0.75, axis=0)
-    assert result.shape[0] == 2  # Deux lignes devraient être supprimées
+    assert result.shape[0] == 2  # Two rows should remain in the resulting DataFrame
 
 def test_remove_missing_columns(handler):
     df = pd.DataFrame({
