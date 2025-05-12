@@ -461,7 +461,7 @@ class MLPClassifier:
         
         return one_hot
     
-    def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLP':
+    def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLPClassifier':
         """
         Train the MLP on the provided data
         
