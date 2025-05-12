@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from categorical_encoder import CategoricalEncoder  
+from ifri_mini_ml_lib.preprocessing.preparation import CategoricalEncoder
 
 @pytest.fixture
 def sample_data():

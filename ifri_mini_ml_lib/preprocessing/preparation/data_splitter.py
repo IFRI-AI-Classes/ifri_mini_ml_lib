@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 class DataSplitter:
     def __init__(self, seed=None):

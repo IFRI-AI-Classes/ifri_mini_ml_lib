@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from missing_value_handler import MissingValueHandler
+from ifri_mini_ml_lib.preprocessing.preparation import MissingValueHandler
 
 # Fixtures
 @pytest.fixture

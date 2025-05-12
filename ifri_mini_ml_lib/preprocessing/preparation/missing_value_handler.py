@@ -5,8 +5,8 @@
 
 import numpy as np
 import pandas as pd
-from knn import KNN
-from regression import LinearRegression
+from ifri_mini_ml_lib.regression import LinearRegression
+from ifri_mini_ml_lib.classification import KNN
 
 class MissingValueHandler:
     """

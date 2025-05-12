@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from standard_scaler import StandardScaler  # Remplace par le nom réel de ton fichier si différent
+from ifri_mini_ml_lib.preprocessing.preparation import StandardScaler
 
 def test_fit_and_transform_numpy_array():
     scaler = StandardScaler()

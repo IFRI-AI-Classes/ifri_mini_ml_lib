@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from data_splitter import DataSplitter  
+from ifri_mini_ml_lib.preprocessing.preparation import DataSplitter
 
 @pytest.fixture
 def sample_data():
