@@ -56,7 +56,7 @@ print(prediction)
 
 ## Documentation
 
-Full documentation is available at: [Documentation Site](https://your-documentation-site.com)
+Full documentation is available at: [ifri_mini_ml_lib.github.io](https://ifri-ai-classes.github.io/ifri_mini_ml_lib/)
 
 ## Contributing
 
