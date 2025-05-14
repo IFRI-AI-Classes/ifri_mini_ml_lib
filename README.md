@@ -1,6 +1,6 @@
 # ifri_mini_ml_lib
 
-[![PyPI version](https://img.shields.io/pypi/v/ifri-mini-ml-lib.svg)](https://pypi.org/project/ifri-mini-ml-lib/) ![Coverage](https://img.shields.io/badge/coverage-dynamic-lightgrey?style=flat&logo=codecov)
+![PyPI](https://img.shields.io/pypi/v/ifri-mini-ml-lib) ![Coverage](https://img.shields.io/badge/coverage-dynamic-lightgrey?style=flat&logo=codecov)
 
 A lightweight, educational machine learning library reimplementing core algorithms from scratch, inspired by scikit-learn. Developed by IFRI AI students for the Concepts & Applications of Machine Learning course.
 
