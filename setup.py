@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name='ifri_mini_ml_lib',
-    version='0.1.2',
+    version='0.1.3',
     description='A lightweight machine learning library built from scratch by IFRI IA students',
     author='IFRI IA Students',
     packages=find_packages(),  
