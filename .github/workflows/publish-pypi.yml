@@ -1,5 +1,9 @@
 name: Publish Python Package to PyPI
 
+permissions:
+  contents: write    # pour git push
+  packages: write    # pour publication PyPI
+
 on:
   release:
     types: [created]
@@ -18,12 +22,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        persist-credentials: true
     
     - name: Set up Python
       uses: actions/setup-python@v4
