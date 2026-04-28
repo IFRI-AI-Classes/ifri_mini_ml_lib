@@ -1,14 +1,11 @@
 import numpy as np
 
+
 class LogisticRegression:
     """
     Binary logistic regression classifier implemented with gradient descent optimization.
-    
-    Description:
-        Implements logistic regression with optional polynomial feature expansion,
-        momentum-based gradient descent, and early stopping. The model includes
-        numerical stability improvements and handles edge cases.
-        
+
+
     Attributes:
         learning_rate (float): Step size for gradient descent updates.
         max_iter (int): Maximum number of training iterations.
@@ -18,13 +15,13 @@ class LogisticRegression:
         loss_history (list): Records loss values during training.
         
     Examples:
-         # Basic usage
-         model = LogisticRegression(learning_rate=0.01, max_iter=1000)
-         model.fit(X_train, y_train)
-         predictions = model.predict(X_test)
-        
-         # With probability outputs
-         probabilities = model.predict_proba(X_test)
+
+    >>> # Basic usage
+    >>> model = LogisticRegression(learning_rate=0.01, max_iter=1000)
+    >>> model.fit(X_train, y_train)
+    >>> predictions = model.predict(X_test)
+    ... # With probability outputs
+    >>> probabilities = model.predict_proba(X_test)
     """
 
     def __init__(self, learning_rate=0.01, max_iter=1000, tol=1e-4, momentum=0.9):

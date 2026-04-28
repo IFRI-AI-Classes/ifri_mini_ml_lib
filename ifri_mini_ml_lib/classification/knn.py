@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class KNN:
     """
     K-Nearest Neighbors (KNN) algorithm for classification and regression.
@@ -25,6 +26,7 @@ class KNN:
         >>> knn_reg.fit(X_train, y_train)
         >>> predictions = knn_reg.predict(X_test)
     """
+
     def __init__(self, k=3, task='classification'):
         """
         Initializes the KNN classifier/regressor.
@@ -34,8 +36,8 @@ class KNN:
             task (str): Type of task ('classification' or 'regression').
         """
         self.k = k
-        self.task = task 
-    
+        self.task = task
+
     def fit(self, X, y):
         """
         Stores the training dataset for later predictions.
@@ -51,7 +53,7 @@ class KNN:
         """
         self.x_train = np.array(X)
         self.y_train = np.array(y)
-    
+
     def predict(self, X):
         """
         Predicts the target values for the provided data.
@@ -68,7 +70,7 @@ class KNN:
             list: Predicted target values for each input sample.
         """
         return [self._predict(x) for x in X]
-    
+
     def _predict(self, x):
         """
         Helper method to predict the target for a single sample.
@@ -85,20 +87,20 @@ class KNN:
         """
         # Compute Euclidean distances between x and all training samples
         distances = np.linalg.norm(self.x_train - x, axis=1)
-        
+
         # Get indices of k nearest neighbors
         k_indices = np.argsort(distances)[:self.k]
-        
+
         # Get labels/values of the nearest neighbors
         k_nearest_labels = self.y_train[k_indices]
-        
+
         if self.task == 'regression':
             # Return mean value for regression tasks
             return np.mean(k_nearest_labels)
         else:
             # Return most frequent class for classification tasks
             unique_labels, counts = np.unique(k_nearest_labels, return_counts=True)
-            
+
             # In case of ties, return the class with the smallest index (stable behavior)
             max_count_indices = np.where(counts == np.max(counts))[0]
             return unique_labels[max_count_indices[0]]

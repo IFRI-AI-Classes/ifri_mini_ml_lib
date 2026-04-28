@@ -1,6 +1,9 @@
-import numpy as np
 from typing import Union, List
+
+import numpy as np
+
 from .linear import LinearRegression
+
 
 class PolynomialRegression:
     """
@@ -29,9 +32,6 @@ class PolynomialRegression:
 
         Returns:
             np.ndarray: Polynomial features matrix including all terms up to the specified degree
-        
-        Example: degree=2 et X=[[a, b]] :
-        Output : [a, b, a², ab, b²]
         """
         # Ensure X is properly formatted as a 2D array
         if not isinstance(X[0], (list, np.ndarray)):
@@ -100,10 +100,6 @@ class PolynomialRegression:
             
         Returns:
             list: Predicted values (shape: [n_samples]).
-            
-        Example:
-            >>> model.predict([[4]])
-            [16.0]
         """
         if X is None or len(X) == 0:
             raise ValueError("Input datas for prediction are empties")

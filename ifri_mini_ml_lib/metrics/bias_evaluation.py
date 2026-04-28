@@ -1,22 +1,20 @@
 import numpy as np
 from typing import Any, Dict, Optional, Tuple
 
-def selection_rate(y_true: Optional[np.ndarray], y_pred: np.ndarray, *, pos_label: Any = 1, sample_weight: Optional[np.ndarray] = None) -> float:
+
+def selection_rate(y_pred: np.ndarray, *,
+                   pos_label: Any = 1,
+                   sample_weight: Optional[np.ndarray] = None) -> float:
     """
-    Description:
-        Computes the fraction of predicted labels equal to the positive outcome (pos_label).
+    Computes the fraction of predicted labels equal to the positive outcome (pos_label).
         
     Args:
-        y_true (np.ndarray or None): Not used here but kept for API consistency.
         y_pred (np.ndarray): Predicted labels.
         pos_label (Any): The label considered as the positive class. Default is 1.
         sample_weight (np.ndarray or None): Optional sample weights.
 
     Returns:
         float: The selection rate (i.e., proportion of positive predictions).
-
-    Example:
-        selection_rate(None, np.array([1, 0, 1, 1]), pos_label=1)
     """
     if not isinstance(y_pred, np.ndarray):
         y_pred = np.array(y_pred)
@@ -32,18 +30,15 @@ def selection_rate(y_true: Optional[np.ndarray], y_pred: np.ndarray, *, pos_labe
 
 
 def selection_rate_per_group(
-    y_true: Optional[np.ndarray],
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any,
-    sample_weight: Optional[np.ndarray] = None
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any,
+        sample_weight: Optional[np.ndarray] = None
 ) -> Dict[Any, float]:
     """
-    Description:
-        Computes selection rate for each group in the sensitive feature.
+    Computes selection rate for each group in the sensitive feature.
         
     Args:
-        y_true (np.ndarray or None): Not used.
         y_pred (np.ndarray): Predicted labels.
         sensitive_features (np.ndarray): Group identifiers for each sample.
         pos_label (Any): The positive label to count as selected.
@@ -64,21 +59,20 @@ def selection_rate_per_group(
         group_mask = sensitive_features == group
         y_pred_group = y_pred[group_mask]
         weight_group = sample_weight[group_mask] if sample_weight is not None else None
-        rate = selection_rate(None, y_pred_group, pos_label=pos_label, sample_weight=weight_group)
+        rate = selection_rate(y_pred_group, pos_label=pos_label, sample_weight=weight_group)
         selection_rates[group] = rate
 
     return selection_rates
 
 
 def demographic_parity_ratio(
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any = 1,
-    sample_weight: Optional[np.ndarray] = None
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any = 1,
+        sample_weight: Optional[np.ndarray] = None
 ) -> Tuple[float, Dict[Any, float]]:
     """
-    Description:
-        Computes the demographic parity ratio (min rate / max rate).
+    Computes the demographic parity ratio (min rate / max rate).
 
     Args:
         y_pred (np.ndarray): Predicted labels.
@@ -88,11 +82,8 @@ def demographic_parity_ratio(
 
     Returns:
         Tuple[float, Dict[Any, float]]: Ratio and rates per group.
-
-    Example:
-        demographic_parity_ratio(np.array([1, 0, 1]), np.array(['A', 'B', 'A']))
     """
-    rates = selection_rate_per_group(None, y_pred, sensitive_features, pos_label, sample_weight)
+    rates = selection_rate_per_group(y_pred, sensitive_features, pos_label)
     max_rate = max(rates.values())
     min_rate = min(rates.values())
     ratio = min_rate / max_rate if max_rate != 0 else 0
@@ -100,10 +91,10 @@ def demographic_parity_ratio(
 
 
 def demographic_parity_difference(
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any = 1,
-    sample_weight: Optional[np.ndarray] = None
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any = 1,
+        sample_weight: Optional[np.ndarray] = None
 ) -> Tuple[float, Dict[Any, float]]:
     """
     Description:
@@ -118,21 +109,19 @@ def demographic_parity_difference(
     Returns:
         Tuple[float, Dict[Any, float]]: Difference and selection rates per group.
     """
-    rates = selection_rate_per_group(None, y_pred, sensitive_features, pos_label, sample_weight)
+    rates = selection_rate_per_group(y_pred, sensitive_features, pos_label)
     max_rate = max(rates.values())
     min_rate = min(rates.values())
     return abs(min_rate - max_rate), rates
 
 
 def tpr_fpr_by_group(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any = 1
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any = 1
 ) -> Tuple[Dict[Any, float], Dict[Any, float]]:
-    """
-    Description:
-        Computes True Positive Rate (TPR) and False Positive Rate (FPR) for each group.
+    """Computes True Positive Rate (TPR) and False Positive Rate (FPR) for each group.
 
     Args:
         y_true (np.ndarray): Ground truth labels.
@@ -164,14 +153,13 @@ def tpr_fpr_by_group(
 
 
 def equalized_odds_ratio(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any = 1
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any = 1
 ) -> Tuple[float, Dict[Any, float], Dict[Any, float]]:
     """
-    Description:
-        Computes the Equalized Odds Ratio (min/max of TPR and FPR between groups).
+    Computes the Equalized Odds Ratio (min/max of TPR and FPR between groups).
 
     Args:
         y_true (np.ndarray): Ground truth labels.
@@ -189,14 +177,13 @@ def equalized_odds_ratio(
 
 
 def equalized_odds_difference(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-    sensitive_features: np.ndarray,
-    pos_label: Any = 1
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        sensitive_features: np.ndarray,
+        pos_label: Any = 1
 ) -> Tuple[float, Dict[Any, float], Dict[Any, float]]:
     """
-    Description:
-        Computes the maximum difference of TPR and FPR between groups.
+    Computes the maximum difference of TPR and FPR between groups.
 
     Args:
         y_true (np.ndarray): Ground truth.

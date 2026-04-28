@@ -1,5 +1,6 @@
+from typing import List, Tuple, Optional
+
 import numpy as np
-from typing import List, Tuple, Callable, Optional, Union, Dict
 
 
 class MLPRegressor:

@@ -1,14 +1,12 @@
 import numpy as np
-from .utils import euclidean_distance
 from matplotlib import pyplot as plt
+
+from ifri_mini_ml_lib.utils.tools import _euclidean_distance
+
 
 class KMeans:
     """
     KMeans Class: Custom implementation of the K-Means unsupervised clustering algorithm.
-    
-    Description:
-    ------------
-    Custom implementation of the K-Means unsupervised clustering algorithm.  
     It partitions data into k clusters by minimizing intra-cluster distances, iteratively assigning points to the nearest centroid and updating centroids accordingly.
 
     Arguments:
@@ -19,6 +17,7 @@ class KMeans:
         random_state (int or None): Seed for reproducibility.
 
     Example:
+
     >>> from ifri_mini_ml_lib.clustering import KMeans
     >>> kmeans = KMeans(n_clusters=3, max_iter=300, tol=1e-4, init='k-means++', random_state=42)
     >>> kmeans.fit(X)
@@ -84,7 +83,7 @@ class KMeans:
         elif self.init == 'k-means++':
             self.centroids = [X[np.random.randint(X.shape[0])]]
             for _ in range(1, self.n_clusters):
-                distances = np.array([min([euclidean_distance(c,x) for c in self.centroids]) for x in X])
+                distances = np.array([min([_euclidean_distance(c,x) for c in self.centroids]) for x in X])
                 probabilities = distances / distances.sum()
                 cumulative_probabilities = probabilities.cumsum()
                 random_float = np.random.rand()
@@ -123,7 +122,7 @@ class KMeans:
         self._initialize_centroids(X)
 
         for _ in range(self.max_iter):
-            distances = np.array([[euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
+            distances = np.array([[_euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
             self.labels = np.argmin(distances, axis=1)
 
             new_centroids = np.array([X[self.labels == i].mean(axis=0) for i in range(self.n_clusters)])
@@ -152,7 +151,7 @@ class KMeans:
         ---------
         labels = kmeans.predict(X_new)
         """
-        distances = np.array([[euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
+        distances = np.array([[_euclidean_distance(x, centroid) for centroid in self.centroids] for x in X])
         return np.argmin(distances, axis=1)
 
     def fit_predict(self, X):

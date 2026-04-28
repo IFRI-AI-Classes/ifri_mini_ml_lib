@@ -1,5 +1,6 @@
-import numpy as np
 from typing import List, Tuple, Optional
+
+import numpy as np
 
 
 class MLPClassifier:

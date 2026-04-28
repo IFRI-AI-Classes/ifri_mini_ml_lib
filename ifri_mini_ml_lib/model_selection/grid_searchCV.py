@@ -1,12 +1,13 @@
-import numpy as np
-from .utils import clone
 from itertools import product
+
+import numpy as np
+
 from .cross_validation import k_fold_cross_validation
+from ifri_mini_ml_lib.utils.tools import _clone
 
 class GridSearchCV:
     """
     Grid search implementation with cross-validation for hyperparameter optimization.
-    
     This class allows to test different combinations of hyperparameters on a machine learning model
     using cross-validation to avoid overfitting and select the best hyperparameter combination.
     
@@ -20,14 +21,6 @@ class GridSearchCV:
         
     Returns:
         None
-        
-    Example:
-        >>> from ifri_mini_lib.supervised.classification import SVC
-        >>> from ifri_mini_lib.metrics import accuracy_score
-        >>> model = SVC()
-        >>> param_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf']}
-        >>> grid_search = GridSearchCV(model, param_grid, accuracy_score, k=5)
-    
     """
 
     def __init__(self, model, param_grid, scoring, k=5, stratified=False):
@@ -53,12 +46,6 @@ class GridSearchCV:
             
         Returns:
             self: The instance itself, allowing for method chaining
-            
-        Example:
-            >>> grid_search.fit(X_train, y_train)
-            >>> best_params = grid_search.best_params_
-            >>> best_score = grid_search.best_score_
-            >>> best_model = grid_search.best_estimator_
         """
         # Extract hyperparameter names and values
         param_names = list(self.param_grid.keys())
@@ -69,7 +56,7 @@ class GridSearchCV:
             # Create parameter dictionary for current combination
             params = dict(zip(param_names, param_combination))
             # Clone the model and set parameters
-            model = clone(self.model).set_params(**params)
+            model = _clone(self.model).set_params(**params)
             
             # Perform cross-validation (stratified or standard)
             if self.stratified:
@@ -83,6 +70,4 @@ class GridSearchCV:
                 self.best_params_ = params
                 self.best_estimator_ = model.fit(X, y) 
 
-        #print("Best hyperparameters:", self.best_params_)
-        #print("Best score:", self.best_score_)
         

@@ -1,20 +1,20 @@
 import pandas as pd
 
+
 class CategoricalEncoder:
     """
     A flexible categorical encoder that supports multiple encoding techniques for categorical variables.
-    
-    Description:
-        This class provides functionality to encode categorical variables using various techniques:
-        - Label Encoding: Assigns each unique category an integer value
-        - Ordinal Encoding: Similar to label encoding but categories are sorted first
-        - Frequency Encoding: Replaces categories with their frequency in the dataset
-        - Target Encoding: Replaces categories with the mean of the target variable for that category
-        - One-Hot Encoding: Creates binary columns for each category
+
+    This class provides functionality to encode categorical variables using various techniques:
+
+    - Label Encoding: Assigns each unique category an integer value
+    - Ordinal Encoding: Similar to label encoding but categories are sorted first
+    - Frequency Encoding: Replaces categories with their frequency in the dataset
+    - Target Encoding: Replaces categories with the mean of the target variable for that category
+    - One-Hot Encoding: Creates binary columns for each category
         
     Args:
-        encoding_type (str): Type of encoding to apply. Options: 'onehot', 'label', 'ordinal', 'frequency', 'target'.
-                            Default is 'onehot'.
+        encoding_type (str): Type of encoding to apply. Options: 'onehot', 'label', 'ordinal', 'frequency', 'target'. Default is 'onehot'.
         target_column (str): Name of the target column (required for target encoding). Default is None.
     """
     
@@ -25,10 +25,7 @@ class CategoricalEncoder:
 
     def fit(self, X, y=None):
         """
-        Learn the encoding mappings from the data.
-        
-        Description:
-            Computes and stores the necessary encoding information based on the training data.
+        Learn the encoding mappings from the data. Computes and stores the necessary encoding information based on the training data.
             
         Args:
             X (pd.DataFrame): Input data containing categorical features to encode
@@ -64,9 +61,7 @@ class CategoricalEncoder:
     def transform(self, X):
         """
         Apply the encoding to new data using the learned mappings.
-        
-        Description:
-            Transforms the input data by applying the encoding learned during fit().
+        Transforms the input data by applying the encoding learned during fit().
             
         Args:
             X (pd.DataFrame): Data to be encoded
@@ -89,9 +84,7 @@ class CategoricalEncoder:
     def fit_transform(self, X, y=None):
         """
         Learn the encoding and apply it to the training data in one step.
-        
-        Description:
-            Convenience method that combines fit() and transform() operations.
+        Convenience method that combines fit() and transform() operations.
             
         Args:
             X (pd.DataFrame): Training data to fit and transform

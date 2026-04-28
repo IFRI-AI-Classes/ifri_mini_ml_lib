@@ -25,8 +25,7 @@ class TSNE:
                  learning_rate=200.0, n_iter=1000, init = 'pca', min_grad_norm=1e-7, random_state=None, verbose=0):
 
         """
-        Description:
-            Initializes the t-SNE parameters.
+        Initializes the t-SNE parameters.
 
         Args:
             n_components (int): Output dimension (default: 2)
@@ -38,9 +37,6 @@ class TSNE:
             min_grad_norm (float): Gradient norm stopping threshold (default: 1e-7)
             random_state (int): Reproducibility seed (default: None)
             verbose (int): Verbosity level (0 or 1) (default: 0)
-
-        Example:
-            >>> tsne = TSNE(n_components=2, perplexity=20)
         """
 
         self.n_components = n_components
@@ -64,8 +60,7 @@ class TSNE:
     def _euclidean_distance(self, X: np.ndarray) -> np.ndarray:
        
         """
-        Description:
-            Computes the squared Euclidean distance matrix.
+        Computes the squared Euclidean distance matrix.
 
         Args:
             X (np.ndarray): Input data (shape: [n_samples, n_features])
@@ -83,8 +78,7 @@ class TSNE:
     def _binary_search_perplexity(self, distances, perplexity, tol=1e-5, max_iter=50) -> np.ndarray:
 
         """
-        Description:
-            Dichotomous search to find the optimal sigmas.
+        Dichotomous search to find the optimal sigmas.
 
         Args:
             distances (np.ndarray): Distance matrix
@@ -146,8 +140,7 @@ class TSNE:
     def _compute_joint_probabilities(self, X: np.ndarray, perplexity: float) -> np.ndarray:
 
         """
-        Description:
-            Computes the joint probabilities P in high dimensions.
+        Computes the joint probabilities P in high dimensions.
 
         Args:
             X (np.ndarray): Original data
@@ -173,17 +166,13 @@ class TSNE:
     def _compute_low_dimensional_probabilities(self, Y: np.ndarray) -> np.ndarray:
 
         """
-        Description:
-            Computes the low-dimensional joint probabilities q_ij according to a Student t distribution.
+        Computes the low-dimensional joint probabilities q_ij according to a Student t distribution.
 
         Args:
             Y (np.ndarray): Current low-dimensional embedding (shape: [n_samples, n_components])
 
         Returns:
             np.ndarray: Probability matrix Q (shape: [n_samples, n_samples])
-
-        Example:
-            >>> q_matrix = self._compute_low_dimensional_probabilities(current_embedding)
         """
 
         distances = self._euclidean_distance(Y)
@@ -197,8 +186,7 @@ class TSNE:
     def _compute_gradient(self, P: np.ndarray, Q: np.ndarray, Y: np.ndarray) -> np.ndarray:
 
         """
-        Description:
-            Computes the gradient of the KL divergence with respect to the embedding coordinates.
+        Computes the gradient of the KL divergence with respect to the embedding coordinates.
 
         Args:
             P (np.ndarray): High-dimensional probability matrix
@@ -207,9 +195,6 @@ class TSNE:
 
         Returns:
             np.ndarray: Gradient matrix (same shape as Y)
-
-        Example:
-            >>> grad = self._compute_gradient(p_matrix, q_matrix, current_embedding)
         """
 
         diff = Y[:, None, :] - Y[None, :, :]  # Shape: (n_samples, n_samples, n_components)
@@ -221,8 +206,7 @@ class TSNE:
     def _compute_kl_divergence(self, P: np.ndarray, Q: np.ndarray) -> float:
 
         """
-        Description:
-            Computes the Kullback-Leibler divergence between the P and Q distributions.
+        Computes the Kullback-Leibler divergence between the P and Q distributions.
 
         Args:
             P (np.ndarray): Reference probability distribution
@@ -230,9 +214,6 @@ class TSNE:
 
         Returns:
             float: KL divergence value (in bits)
-
-        Example:
-            >>> kl = self._compute_kl_divergence(p_matrix, q_matrix)
         """
         return np.sum(P * np.log(P / Q))
     
@@ -240,8 +221,7 @@ class TSNE:
     def fit(self, X: np.ndarray) -> 'TSNE':
 
         """
-        Description:
-            Training the t-SNE model.
+        Training the t-SNE model.
 
         Args:
             X (np.ndarray): Data to project (shape: [n_samples, n_features])
@@ -251,10 +231,6 @@ class TSNE:
 
         Raises:
             ValueError: If n_samples < 3 * perplexity
-
-        Example:
-            >>> data = np.random.rand(100, 10)
-            >>> tsne.fit(data)
         """
 
         n_samples = X.shape[0]
@@ -342,19 +318,14 @@ class TSNE:
         return self
     
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
-
         """
-        Description:
-            One-step data training and projection.
+        One-step data training and projection.
 
         Args:
             X (np.ndarray): Data to transform
 
         Returns:
             np.ndarray: Projected data (shape: [n_samples, n_components])
-
-        Example:
-            >>> embedding = tsne.fit_transform(data)
         """
 
         self.fit(X)
@@ -364,10 +335,8 @@ class TSNE:
 
     @staticmethod
     def generate_test_data(n_samples=300, case='blobs', random_state=None):
-
         """
-        Description:
-            Generates test data for visualization.
+        Generates test data for visualization.
 
         Args:
             n_samples (int): Number of samples (default: 300)
@@ -376,9 +345,6 @@ class TSNE:
 
         Returns:
             tuple: (X, y) data and labels
-
-        Example:
-            >>> X, y = TSNE.generate_test_data(case='swiss_roll')
         """
 
         if random_state:
@@ -409,19 +375,14 @@ class TSNE:
 
     @staticmethod
     def plot_results(X, y, title, ax=None):
-
         """
-        Description:
-            Views the projection results.
+        Views the projection results.
 
         Args:
             X (np.ndarray): Projected data (2D or 3D)
             y (np.ndarray): Labels for coloring
             title (str): Plot title
             ax (matplotlib.axes.Axes): Optional axis for the plot
-
-        Example:
-            >>> TSNE.plot_results(embedding, y, 't-SNE Projection')
         """
 
         if ax is None:

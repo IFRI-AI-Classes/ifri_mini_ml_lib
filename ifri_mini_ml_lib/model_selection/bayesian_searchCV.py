@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import norm
-from .cross_validation import k_fold_cross_validation
+
+from ifri_mini_ml_lib.model_selection.cross_validation import k_fold_cross_validation
 
 
 class GaussianProcess:
@@ -12,8 +13,7 @@ class GaussianProcess:
 
     def __init__(self, kernel_var=1.0, length_scale=1.0, noise=1e-6):
         """
-        Description:
-            Initialize the Gaussian process model with kernel parameters.
+        Initialize the Gaussian process model with kernel parameters.
             
         Args:
             kernel_var: Variance of the RBF kernel (default: 1.0)
@@ -22,18 +22,15 @@ class GaussianProcess:
             
         Returns:
             None
-            
-        Example:
-            >>> gp = GaussianProcess(kernel_var=2.0, length_scale=0.5)
         """
         self.kernel_var = kernel_var
         self.length_scale = length_scale
         self.noise = noise
 
+
     def rbf_kernel(self, X1, X2):
         """
-        Description:
-            Compute the covariance matrix between two sets of points using RBF kernel.
+        Compute the covariance matrix between two sets of points using RBF kernel.
             
         Args:
             X1: First set of points, array of shape (n_samples_1, n_features)
@@ -41,19 +38,14 @@ class GaussianProcess:
             
         Returns:
             Covariance matrix of shape (n_samples_1, n_samples_2)
-            
-        Example:
-            >>> X1 = np.array([[1, 2], [3, 4]])
-            >>> X2 = np.array([[5, 6], [7, 8]])
-            >>> K = gp.rbf_kernel(X1, X2)
         """
         dists = cdist(X1, X2, 'sqeuclidean')  # squared euclidean distance
         return self.kernel_var * np.exp(-0.5 * dists / self.length_scale**2)
 
+
     def fit(self, X_train, y_train):
         """
-        Description:
-            Train the Gaussian Process model with given data.
+        Train the Gaussian Process model with given data.
             
         Args:
             X_train: Training feature data, array of shape (n_samples, n_features)
@@ -76,17 +68,13 @@ class GaussianProcess:
 
     def predict(self, X_test):
         """
-        Description:
-            Predict mean and standard deviation for new test points.
+        Predict mean and standard deviation for new test points.
             
         Args:
             X_test: Test points, array of shape (n_samples, n_features)
             
         Returns:
             tuple: (mean, std_dev) where both are arrays of shape (n_samples,)
-            
-        Example:
-            >>> mu, sigma = gp.predict(X_test)
         """
         K_s = self.rbf_kernel(self.X_train, X_test)
         K_ss = self.rbf_kernel(X_test, X_test) + self.noise * np.eye(len(X_test))
@@ -99,8 +87,7 @@ class GaussianProcess:
 
 def expected_improvement(X, gp, y_min, xi=0.01):
     """
-    Description:
-        Calculate Expected Improvement (EI) acquisition function for given candidate points.
+    Calculate Expected Improvement (EI) acquisition function for given candidate points.
         
     Args:
         X: Candidate points to evaluate, array of shape (n_samples, n_features)
@@ -133,8 +120,7 @@ class BayesianSearchCV:
 
     def __init__(self, estimator, param_bounds, scoring, maximize, stratified=None, n_iter=20, init_points=5, cv=5, param_types=None, random_state = 42):
         """
-        Description:
-            Initialize the Bayesian search optimization.
+        Initialize the Bayesian search optimization.
             
         Args:
             estimator: ML model to optimize (must implement fit and predict methods)
@@ -149,13 +135,6 @@ class BayesianSearchCV:
             
         Returns:
             None
-            
-        Example:
-            >>> from ifri_mini_lib.supervised.classification import SVC
-            >>> from ifri_mini_lib.metrics import accuracy_score
-            >>> model = SVC()
-            >>> param_bounds = {'C': (0.1, 100), 'gamma': (0.001, 1.0)}
-            >>> bo = BayesianSearchCV(model, param_bounds, accuracy_score, n_iter=30)
         """
         self.estimator = estimator
         self.param_bounds = param_bounds
@@ -188,33 +167,25 @@ class BayesianSearchCV:
 
     def _sample_params(self):
         """
-        Description:
-            Generate random hyperparameter vector within specified bounds.
+        Generate random hyperparameter vector within specified bounds.
             
         Args:
             None
             
         Returns:
             array: Random hyperparameter vector
-            
-        Example:
-            >>> random_params = bo._sample_params()
         """
         return np.array([np.random.uniform(low, high) for (low, high) in self.param_bounds.values()])
 
     def _dict_from_vector(self, x_vector):
         """
-        Description:
-            Convert hyperparameter vector to dictionary with parameter names.
+        Convert hyperparameter vector to dictionary with parameter names.
             
         Args:
             x_vector: Vector of hyperparameter values
             
         Returns:
             dict: Dictionary mapping parameter names to values
-            
-        Example:
-            >>> params_dict = bo._dict_from_vector([1.0, 0.1])
         """
         return dict(zip(self.param_bounds.keys(), x_vector))
 
@@ -234,8 +205,7 @@ class BayesianSearchCV:
 
     def _evaluate(self, X, y, x):
         """
-        Description:
-            Evaluate a set of hyperparameters using cross-validation.
+        Evaluate a set of hyperparameters using cross-validation.
             
         Args:
             X: Input data, array of shape (n_samples, n_features)
@@ -244,9 +214,6 @@ class BayesianSearchCV:
             
         Returns:
             float: Cross-validation score
-            
-        Example:
-            >>> score = bo._evaluate(X_train, y_train, {'C': 10, 'gamma': 0.1})
         """
        
         # Special handling for integer parameters
@@ -268,17 +235,13 @@ class BayesianSearchCV:
 
     def _suggest(self, n_candidates=100):
         """
-        Description:
-            Suggest next hyperparameters to evaluate using Expected Improvement.
+        Suggest next hyperparameters to evaluate using Expected Improvement.
             
         Args:
             n_candidates: Number of random candidates to generate (default: 100)
             
         Returns:
             array: Vector of suggested hyperparameter values
-            
-        Example:
-            >>> next_params = bo._suggest()
         """
         X_candidates = np.array([np.random.uniform(0, 1, len(self.param_bounds)) for _ in range(n_candidates)])
         ei = expected_improvement(X_candidates, self.gp, y_min=np.max(self.y_obs))
@@ -286,8 +249,7 @@ class BayesianSearchCV:
 
     def fit(self, X, y):
         """
-        Description:
-            Run Bayesian optimization to find optimal hyperparameters.
+        Run Bayesian optimization to find optimal hyperparameters.
             
         Args:
             X: Input data, array of shape (n_samples, n_features)
@@ -295,11 +257,6 @@ class BayesianSearchCV:
             
         Returns:
             self: The instance itself
-            
-        Example:
-            >>> bo.fit(X_train, y_train)
-            >>> best_params = bo.best_params_
-            >>> best_score = bo.best_score_
         """
         X, y = np.array(X), np.array(y)
 
@@ -331,18 +288,12 @@ class BayesianSearchCV:
 
     def get_best_params(self):
         """
-        Description:
-            Return the best hyperparameters found during optimization.
+        Return the best hyperparameters found during optimization.
             
         Args:
             None
             
         Returns:
-            dict: Dictionary with best hyperparameter values
-            
-        Example:
-            >>> best_params = bo.get_best_params()
-            >>> print(best_params)
-            {'C': 10.0, 'gamma': 0.01}
+            dict: Dictionary with best hyperparameter value
         """
         return self.best_params_

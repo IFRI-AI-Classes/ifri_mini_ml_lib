@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class DataSplitter:
     def __init__(self, seed=None):
         """

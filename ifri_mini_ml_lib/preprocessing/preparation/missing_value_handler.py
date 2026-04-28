@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-"""Handling missing values in datasets using different strategies."""
-
 import numpy as np
 import pandas as pd
+
 from ifri_mini_ml_lib.regression import LinearRegression
 from ifri_mini_ml_lib.classification import KNN
 
@@ -19,17 +15,13 @@ class MissingValueHandler:
 
     def _convert_to_dataframe(self, X):
         """
-        Description:
-            Converts input to a pandas DataFrame if not already one.
+        Converts input to a pandas DataFrame if not already one.
 
         Args:
             X (pd.DataFrame | np.ndarray | array-like): Input data.
 
         Returns:
             pd.DataFrame: Data converted to DataFrame.
-
-        Example:
-            >>> handler._convert_to_dataframe(np.array([[1, 2], [3, np.nan]]))
         """
         if isinstance(X, pd.DataFrame):
             return X
@@ -37,8 +29,7 @@ class MissingValueHandler:
 
     def remove_missing(self, X, threshold=0.5, axis=0):
         """
-        Description:
-            Removes rows or columns containing too many missing values.
+        Removes rows or columns containing too many missing values.
 
         Args:
             X (pd.DataFrame | np.ndarray): Input data.
@@ -47,9 +38,6 @@ class MissingValueHandler:
 
         Returns:
             pd.DataFrame: Data after deletion.
-
-        Example:
-            >>> handler.remove_missing(df, threshold=0.4, axis=0)
         """
         df = self._convert_to_dataframe(X)
         df_cleaned = df.dropna(thresh=int(threshold * df.shape[axis]), axis=axis)
@@ -57,8 +45,7 @@ class MissingValueHandler:
 
     def impute_statistical(self, X, strategy="mean"):
         """
-        Description:
-            Imputes missing values using a statistical strategy.
+        Imputes missing values using a statistical strategy.
 
         Args:
             X (pd.DataFrame | np.ndarray): Input data.
@@ -66,9 +53,6 @@ class MissingValueHandler:
 
         Returns:
             pd.DataFrame: Imputed data.
-
-        Example:
-            >>> handler.impute_statistical(df, strategy="median")
         """
         df = self._convert_to_dataframe(X)
         df = df.copy()  # Create a copy to avoid modifying the original DataFrame in-place
@@ -86,8 +70,7 @@ class MissingValueHandler:
 
     def impute_default(self, X, value=0):
         """
-        Description:
-            Replaces all missing values with a constant value.
+        Replaces all missing values with a constant value.
 
         Args:
             X (pd.DataFrame | np.ndarray): Input data.
@@ -95,17 +78,13 @@ class MissingValueHandler:
 
         Returns:
             pd.DataFrame: Imputed data.
-
-        Example:
-            >>> handler.impute_default(df, value=-1)
         """
         df = self._convert_to_dataframe(X)
         return df.fillna(value)
 
     def impute_knn(self, X, k=3, task='regression'):
         """
-        Description:
-            Imputes missing values using k-nearest neighbors.
+        Imputes missing values using k-nearest neighbors.
 
         Args:
             X (pd.DataFrame | np.ndarray): Input data.
@@ -113,9 +92,6 @@ class MissingValueHandler:
 
         Returns:
             pd.DataFrame: Imputed data.
-
-        Example:
-            >>> handler.impute_knn(df, k=5)
         """
 
         df = self._convert_to_dataframe(X)
@@ -142,9 +118,7 @@ class MissingValueHandler:
 
     def impute_regression(self, X, target_col):
         """
-        Description:
-            Imputes a target column by predicting it with a regression model
-            based on other columns.
+        Imputes a target column by predicting it with a regression model based on other columns.
 
         Args:
             X (pd.DataFrame | np.ndarray): Input data.
@@ -155,9 +129,6 @@ class MissingValueHandler:
 
         Raises:
             ValueError: If target column doesn't exist in DataFrame.
-
-        Example:
-            >>> handler.impute_regression(df, target_col='Age')
         """
         df = self._convert_to_dataframe(X)
 

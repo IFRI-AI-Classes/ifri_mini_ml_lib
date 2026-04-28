@@ -1,14 +1,10 @@
-"""Standardisation"""
 import numpy as np
 import pandas as pd
 
 class StandardScaler:
     """
-    Description:
-        A custom implementation of a standard scaler similar to scikit-learn's StandardScaler.
-
-        This class centers and scales input data so that each feature has a mean of 0 and a standard deviation of 1.
-        It supports both NumPy arrays and pandas DataFrames.
+    This class centers and scales input data so that each feature has a mean of 0 and a standard deviation of 1.
+    It supports both NumPy arrays and pandas DataFrames.
 
     Attributes:
         mean_ (np.ndarray): Mean of each feature in the training data.
@@ -18,10 +14,7 @@ class StandardScaler:
     """
 
     def __init__(self):
-        """
-        Description:
-            Initializes the StandardScaler with default attributes.
-        """
+        """Initializes the StandardScaler with default attributes."""
         self.mean_ = None
         self.std_ = None
         self.is_dataframe = False
@@ -29,8 +22,7 @@ class StandardScaler:
 
     def _convert_to_array(self, X):
         """
-        Description:
-            Converts input data to a NumPy array if it's a DataFrame.
+        Converts input data to a NumPy array if it's a DataFrame.
 
         Args:
             X (np.ndarray or pd.DataFrame): Input data.
@@ -47,8 +39,7 @@ class StandardScaler:
 
     def _convert_to_dataframe(self, X_scaled):
         """
-        Description:
-            Converts the scaled NumPy array back to a pandas DataFrame if the original data was a DataFrame.
+        Converts the scaled NumPy array back to a pandas DataFrame if the original data was a DataFrame.
 
         Args:
             X_scaled (np.ndarray): Scaled data.
@@ -62,15 +53,10 @@ class StandardScaler:
 
     def fit(self, X):
         """
-        Description:
-            Computes the mean and standard deviation of each feature from the input data.
+        Computes the mean and standard deviation of each feature from the input data.
 
         Args:
             X (np.ndarray or pd.DataFrame): Input data where each row is a sample.
-
-        Example:
-            scaler = StandardScaler()
-            scaler.fit(data)
         """
         X = self._convert_to_array(X)
         self.mean_ = np.mean(X, axis=0)
@@ -78,8 +64,7 @@ class StandardScaler:
 
     def transform(self, X):
         """
-        Description:
-            Applies standardization to the input data using the previously computed mean and std.
+        Applies standardization to the input data using the previously computed mean and std.
 
         Args:
             X (np.ndarray or pd.DataFrame): Input data to standardize.
@@ -89,9 +74,6 @@ class StandardScaler:
 
         Raises:
             ValueError: If fit was not called before transform.
-
-        Example:
-            X_scaled = scaler.transform(data)
         """
         X = self._convert_to_array(X)
         if self.mean_ is None or self.std_ is None:
@@ -102,25 +84,20 @@ class StandardScaler:
 
     def fit_transform(self, X):
         """
-        Description:
-            Fits the scaler to the data and then transforms it.
+        Fits the scaler to the data and then transforms it.
 
         Args:
             X (np.ndarray or pd.DataFrame): Input data to fit and transform.
 
         Returns:
             np.ndarray or pd.DataFrame: Standardized data.
-
-        Example:
-            X_scaled = scaler.fit_transform(data)
         """
         self.fit(X)
         return self.transform(X)
 
     def inverse_transform(self, X_scaled):
         """
-        Description:
-            Reverses the standardization process and returns data to its original scale.
+        Reverses the standardization process and returns data to its original scale.
 
         Args:
             X_scaled (np.ndarray or pd.DataFrame): Standardized data.
@@ -130,9 +107,6 @@ class StandardScaler:
 
         Raises:
             ValueError: If fit was not called before inverse_transform.
-
-        Example:
-            original_data = scaler.inverse_transform(X_scaled)
         """
         X_scaled = self._convert_to_array(X_scaled)
         if self.mean_ is None or self.std_ is None:

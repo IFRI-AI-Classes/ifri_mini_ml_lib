@@ -1,16 +1,18 @@
 import numpy as np
-from ifri_mini_ml_lib.clustering.utils import euclidean_distance
 
-def evaluate_model(y_true, y_pred):
+from ifri_mini_ml_lib.utils.tools import _euclidean_distance
+
+
+def evaluate_rg_model(y_true, y_pred):
     """
-    Compute : MSE, RMSE, MAE, MAPE, R²
+    Compute : MSE, RMSE, MAE, MAPE, R² for a regression model
     """
     if len(y_true) != len(y_pred):
         raise ValueError("y_true and y_pred have not the length")
 
     errors = [yt - yp for yt, yp in zip(y_true, y_pred)]
     abs_errors = [abs(e) for e in errors]
-    squared_errors = [e**2 for e in errors]
+    squared_errors = [e ** 2 for e in errors]
 
     mse = sum(squared_errors) / len(squared_errors)
     rmse = mse ** 0.5
@@ -29,7 +31,7 @@ def evaluate_model(y_true, y_pred):
         "MAPE": mape,
         "R²": r2
     }
-    
+
 
 def confusion_matrix(y_true, y_pred, classes=None):
     """
@@ -143,6 +145,7 @@ def f1_score(y_true, y_pred, positive_class=1):
 
     return 2 * (prec * rec) / (prec + rec) if (prec + rec) > 0 else 0
 
+
 #################################################
 # UNSUPERVISED METRICS
 
@@ -170,8 +173,8 @@ def calculate_inertia(data, labels, centroids):
         centroid = centroids[centroid_idx]
         distance = np.linalg.norm(data[i] - centroid) ** 2
         inertia += distance
-    
     return inertia
+
 
 def calculate_silhouette(data, labels):
     """
@@ -197,7 +200,7 @@ def calculate_silhouette(data, labels):
             cluster_label = labels[i]
             cluster_points = data[labels == cluster_label]
             if len(cluster_points) > 1:
-                distances_same_cluster = [euclidean_distance(data[i], point) for point in cluster_points if not np.array_equal(point, data[i])]
+                distances_same_cluster = [_euclidean_distance(data[i], point) for point in cluster_points if not np.array_equal(point, data[i])]
                 a = np.mean(distances_same_cluster)
             else:
                 a = 0  # If only one point in the cluster
@@ -207,7 +210,7 @@ def calculate_silhouette(data, labels):
             b_values = []
             for other_label in other_clusters:
                 other_cluster_points = data[labels == other_label]
-                distances_other_cluster = [euclidean_distance(data[i], point) for point in other_cluster_points]
+                distances_other_cluster = [_euclidean_distance(data[i], point) for point in other_cluster_points]
                 b_values.append(np.mean(distances_other_cluster))
 
             if b_values:
