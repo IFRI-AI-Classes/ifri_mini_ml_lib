@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from ifri_mini_ml_lib.association_rules import DataAdapter
+from ifri_mini_ml_lib.utils.data_format import DataAdapter
 
 @pytest.fixture
 def transactions():

@@ -1,5 +1,5 @@
 from .pca import PCA
-from .t_sne import TSNE
+from .tsne import TSNE
 
 __all__ = [
     "PCA",

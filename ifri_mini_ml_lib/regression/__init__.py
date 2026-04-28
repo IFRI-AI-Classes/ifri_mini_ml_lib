@@ -1,5 +1,5 @@
-from .linear import LinearRegression
-from .polynomial import PolynomialRegression
+from .linear_regression import LinearRegression
+from .polynomial_regression import PolynomialRegression
 from .svr import SVR
 
 __all__ = [

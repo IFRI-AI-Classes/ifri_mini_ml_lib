@@ -2,8 +2,8 @@ import time
 from collections import defaultdict
 from itertools import combinations, chain
 
-from ifri_mini_ml_lib.association_rules.utils import DataAdapter
-from ifri_mini_ml_lib.association_rules.metrics import support, confidence, lift
+from ifri_mini_ml_lib.utils.data_format import DataAdapter
+from ifri_mini_ml_lib.metrics.rules import support, confidence, lift
 
 
 class Apriori:

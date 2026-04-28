@@ -2,9 +2,8 @@ import pytest
 import numpy as np
 import pandas as pd
 from ifri_mini_ml_lib.classification.knn import KNN
-from ifri_mini_ml_lib.metrics.bias_evaluation import equalized_odds_difference, equalized_odds_ratio, demographic_parity_difference, demographic_parity_ratio
-from ifri_mini_ml_lib.preprocessing.preparation.min_max_scaler import MinMaxScaler
-from ifri_mini_ml_lib.preprocessing.preparation.data_splitter import DataSplitter
+from ifri_mini_ml_lib.metrics.fairness import equalized_odds_difference, equalized_odds_ratio, demographic_parity_difference, demographic_parity_ratio
+from ifri_mini_ml_lib.preprocessing.preparation import MinMaxScaler, DataSplitter
 
 @pytest.fixture
 def breast_data():

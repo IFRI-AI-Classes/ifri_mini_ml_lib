@@ -1,7 +1,6 @@
-import pytest
 import numpy as np
-from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
-from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
+from tests.utils import BaseEstimatorMinimal
+from ifri_mini_ml_lib.metrics.classification import accuracy
 from ifri_mini_ml_lib.model_selection import GridSearchCV
 
 # Mock Model pour les tests
@@ -73,7 +72,7 @@ def test_param_combinations(monkeypatch):
     
     # Apply mock
     monkeypatch.setattr(
-        'ifri_mini_ml_lib.model_selection.grid_searchCV.k_fold_cross_validation',
+        'ifri_mini_ml_lib.model_selection.grid_search_cv.k_fold_cross_validation',
         mock_cv
     )
     

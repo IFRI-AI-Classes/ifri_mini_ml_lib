@@ -2,7 +2,7 @@ from typing import Union, List
 
 import numpy as np
 
-from .linear import LinearRegression
+from .linear_regression import LinearRegression
 
 
 class PolynomialRegression:

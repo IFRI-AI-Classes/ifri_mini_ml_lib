@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
-from ifri_mini_ml_lib.metrics.evaluation_metrics import (
-    evaluate_rg_model, calculate_silhouette,
-    calculate_inertia, confusion_matrix,
-    accuracy, precision, recall, f1_score,
-)
+from ifri_mini_ml_lib.metrics.classification import accuracy, precision, recall, f1_score, confusion_matrix
+from ifri_mini_ml_lib.metrics.clustering import calculate_inertia, calculate_silhouette
+from ifri_mini_ml_lib.metrics.regression import evaluate_rg_model
 
 # Fixtures pour les données de test
 @pytest.fixture
