@@ -1,0 +1,19 @@
+/* docs/assets/custom.css */
+
+/* Importation de la police Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+
+* {
+  /* Couleurs principales */
+  --primary-color: #1a6fa3;         /* bleu principal */
+  --secondary-color: #f4a261;       /* couleur d'accent */
+
+  /* Typographie */
+  --font-size-base: 16px;
+  --font-family: 'Lato', 'Inter', sans-serif;
+
+  /* Sidebar */
+  --sidebar-background: #f8f9fa;    /* fond de la navigation latérale */
+}
+

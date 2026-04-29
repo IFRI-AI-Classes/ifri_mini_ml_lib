@@ -16,7 +16,6 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "setuptools>=82.0.1",
-    "voila>=0.5.12",
 ]
 
 [build-system]

@@ -225,3 +225,8 @@ ifri_mini_ml_lib.egg-info/
 
 uv.lock
 
+# java-script
+node_modules/
+
+# MyST build outputs
+_build
