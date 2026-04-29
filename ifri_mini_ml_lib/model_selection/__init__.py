@@ -1,7 +1,7 @@
 from .bagging import BaggingClassifier, BaggingRegressor
-from .bayesian_searchCV import BayesianSearchCV
-from .grid_searchCV import GridSearchCV
-from .random_searchCV import RandomSearchCV
+from .bayesian_search_cv import BayesianSearchCV
+from .grid_search_cv import GridSearchCV
+from .random_search_cv import RandomSearchCV
 
 __all__ = [
     "BaggingClassifier",

@@ -1,6 +1,7 @@
 from typing import Optional, Callable, Union
-import numpy as np
+
 import cvxpy as cp
+import numpy as np
 import pandas as pd
 
 class SVR:
@@ -16,9 +17,6 @@ class SVR:
         gamma (float): Gamma parameter for RBF and sigmoid kernels. Default is 1.
         alpha (float): Scaling factor for the sigmoid kernel. Default is 0.01.
         test_size (float): Proportion of the dataset to include in the test split. Default is 0.2.
-
-    Example:
-        model = SVR(C_reg=1.0, epsilon=0.1, kernel='rbf')
     """
 
     kerlist = ["lin", "poly", "rbf", "sig"]
@@ -160,9 +158,6 @@ class SVR:
 
         Returns:
             None
-
-        Example:
-            model.fit(X_train, y_train)
         """
         self.train_X = X
         self.train_y = Y
@@ -218,9 +213,6 @@ class SVR:
 
         Returns:
             ndarray: Predicted values.
-
-        Example:
-            y_pred = model.predict(X_test)
         """
         if isinstance(X_test, pd.DataFrame):
             X_test = X_test.to_numpy()
@@ -231,21 +223,6 @@ class SVR:
         
         return y_pred
 
-    # def score(self):
-    #     """
-    #     Computes the R^2 score on test data.
-    #
-    #     Returns:
-    #         float: R^2 score.
-    #     """
-    #     y_pred = self.predict(self.test_X)
-    #     y_true = self.test_y
-    #     ss_total = np.sum((y_true - np.mean(y_true)) ** 2)
-    #     if ss_total == 0:
-    #         return 0.0
-    #     ss_residual = np.sum((y_true - y_pred) ** 2)
-    #     return 1 - (ss_residual / ss_total)
-
     def set_params(self, **kwargs):
         """
         Set multiple internal parameters dynamically.
@@ -255,9 +232,6 @@ class SVR:
 
         Returns:
             None
-
-        Example:
-            model.set_params(C_reg=2.0, gamma=0.5)
         """
         param_mapping = {
             'C_reg': '_c_reg',

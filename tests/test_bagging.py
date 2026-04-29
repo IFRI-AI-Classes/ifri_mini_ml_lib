@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
-from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
+from tests.utils import BaseEstimatorMinimal
+from ifri_mini_ml_lib.metrics.classification import accuracy
 from ifri_mini_ml_lib.model_selection import BaggingRegressor, BaggingClassifier 
 
 class SimpleDecisionTreeRegressor(BaseEstimatorMinimal):

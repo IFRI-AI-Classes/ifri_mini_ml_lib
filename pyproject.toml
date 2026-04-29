@@ -1,3 +1,23 @@
+[project]
+name = "ifri-mini-ml-lib"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cvxpy>=1.8.2",
+    "ipykernel>=7.2.0",
+    "ipywidgets>=8.1.8",
+    "jupyter-book>=2.1.4",
+    "matplotlib>=3.10.9",
+    "numpy>=2.4.4",
+    "pandas>=3.0.2",
+    "pytest[dev]>=9.0.3",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "setuptools>=82.0.1",
+]
+
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"

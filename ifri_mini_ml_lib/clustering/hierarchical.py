@@ -1,12 +1,11 @@
 import numpy as np
-from .utils import euclidean_distance  # Import function euclidean_distance
 from matplotlib import pyplot as plt
+
 from .kmeans import KMeans
+from ifri_mini_ml_lib.utils.tools import _euclidean_distance
 
 class HierarchicalClustering:
     """
-    Description:
-    ------------
     HierarchicalClustering performs hierarchical clustering using either the agglomerative (bottom-up)
     or divisive (top-down) approach.
 
@@ -16,6 +15,7 @@ class HierarchicalClustering:
         method (str): Clustering strategy ('agglomerative' or 'divisive').
 
     Example:
+
     >>> from ifri_mini_ml_lib.clustering import HierarchicalClustering
     >>> hierarchical = HierarchicalClustering(n_clusters=3, linkage='complete', method='agglomerative')
     >>> labels = hierarchical.fit_predict(data)
@@ -23,15 +23,7 @@ class HierarchicalClustering:
     """
 
     def __init__(self, n_clusters=None, linkage='single', method='agglomerative'):
-        """
-        Initializes the hierarchical clustering parameters.
 
-        Arguments:
-            n_clusters (int, optional): Desired number of clusters (required for the divisive method).
-                If None, agglomerative clustering proceeds until all points are merged.
-            linkage (str, optional): Linkage criterion to use ('single', 'complete', 'average').
-            method (str, optional): Clustering method to apply ('agglomerative' or 'divisive').
-        """
         self.n_clusters = n_clusters
         self.linkage = linkage
         self.method = method
@@ -195,7 +187,7 @@ class HierarchicalClustering:
         distances = np.zeros((n_samples, n_samples))
         for i in range(n_samples):
             for j in range(i + 1, n_samples):
-                distances[i, j] = distances[j, i] = euclidean_distance(data[i], data[j])
+                distances[i, j] = distances[j, i] = _euclidean_distance(data[i], data[j])
         return distances
 
     def _compute_linkage_distance(self, cluster1, cluster2, distances, linkage='single'):

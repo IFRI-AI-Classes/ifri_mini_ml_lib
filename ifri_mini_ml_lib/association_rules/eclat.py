@@ -1,5 +1,5 @@
-from itertools import combinations, chain
 import time
+from itertools import combinations, chain
 
 
 class Eclat:

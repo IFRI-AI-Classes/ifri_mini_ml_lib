@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
-from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
+from tests.utils import BaseEstimatorMinimal
+from ifri_mini_ml_lib.metrics.classification import accuracy
 from ifri_mini_ml_lib.model_selection import RandomSearchCV  
 
 # Mock classifier
@@ -67,7 +66,7 @@ def test_random_search_with_mocked_cv(monkeypatch):
         return 0.8, 0.1 
 
     monkeypatch.setattr(
-        "ifri_mini_ml_lib.model_selection.random_searchCV.k_fold_cross_validation", 
+        "ifri_mini_ml_lib.model_selection.random_search_cv.k_fold_cross_validation",
         fake_cv
     )
 

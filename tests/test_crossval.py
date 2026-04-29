@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
+from tests.utils import BaseEstimatorMinimal
 from ifri_mini_ml_lib.model_selection.cross_validation import k_fold_cross_validation
-from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
+from ifri_mini_ml_lib.metrics.classification import accuracy
 
 # Mock model for testing
 class MockModel(BaseEstimatorMinimal):

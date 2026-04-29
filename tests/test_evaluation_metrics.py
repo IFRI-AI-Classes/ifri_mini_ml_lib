@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
-from ifri_mini_ml_lib.metrics.evaluation_metrics import *
+from ifri_mini_ml_lib.metrics.classification import accuracy, precision, recall, f1_score, confusion_matrix
+from ifri_mini_ml_lib.metrics.clustering import calculate_inertia, calculate_silhouette
+from ifri_mini_ml_lib.metrics.regression import evaluate_rg_model
 
 # Fixtures pour les données de test
 @pytest.fixture
@@ -40,11 +42,11 @@ def clustering_data_silhouette():
     labels = np.array([0, 0, 1, 1])
     return data, labels
 
-# Tests pour evaluate_model
-def test_evaluate_model_perfect_predictions(regression_data_perfect):
+# Tests pour evaluate_rg_model
+def test_evaluate_rg_model_perfect_predictions(regression_data_perfect):
     
     y_true, y_pred = regression_data_perfect
-    metrics = evaluate_model(y_true, y_pred)
+    metrics = evaluate_rg_model(y_true, y_pred)
     
     assert metrics["MSE"] == pytest.approx(0.0)
     assert metrics["RMSE"] == pytest.approx(0.0)
@@ -52,10 +54,10 @@ def test_evaluate_model_perfect_predictions(regression_data_perfect):
     assert metrics["MAPE"] == pytest.approx(0.0)
     assert metrics["R²"] == pytest.approx(1.0)
 
-def test_evaluate_model_with_errors(regression_data_errors):
+def test_evaluate_rg_model_with_errors(regression_data_errors):
     
     y_true, y_pred = regression_data_errors
-    metrics = evaluate_model(y_true, y_pred)
+    metrics = evaluate_rg_model(y_true, y_pred)
     
     assert metrics["MSE"] == pytest.approx(1.0)
     assert metrics["RMSE"] == pytest.approx(1.0)
@@ -63,17 +65,17 @@ def test_evaluate_model_with_errors(regression_data_errors):
     assert metrics["MAPE"] == pytest.approx(30.55555555555, rel=1e-3)
     assert metrics["R²"] == pytest.approx(0.625)
 
-def test_evaluate_model_zero_division(regression_data_zero_division):
+def test_evaluate_rg_model_zero_division(regression_data_zero_division):
     
     y_true, y_pred = regression_data_zero_division
-    metrics = evaluate_model(y_true, y_pred)
+    metrics = evaluate_rg_model(y_true, y_pred)
     
     assert metrics["MAPE"] == pytest.approx(16.666666666666668)
 
-def test_evaluate_model_length_mismatch():
+def test_evaluate_rg_model_length_mismatch():
     
     with pytest.raises(ValueError):
-        evaluate_model([1, 2], [3])
+        evaluate_rg_model([1, 2], [3])
 
 # Tests pour confusion_matrix
 def test_confusion_matrix_simple(classification_data_simple):

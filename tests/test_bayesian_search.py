@@ -1,7 +1,7 @@
 import numpy as np
-from ifri_mini_ml_lib.model_selection.utils import BaseEstimatorMinimal
-from ifri_mini_ml_lib.metrics.evaluation_metrics import accuracy
-from ifri_mini_ml_lib.model_selection.bayesian_searchCV import BayesianSearchCV, GaussianProcess, expected_improvement
+from tests.utils import BaseEstimatorMinimal
+from ifri_mini_ml_lib.metrics.classification import accuracy
+from ifri_mini_ml_lib.model_selection.bayesian_search_cv import BayesianSearchCV, GaussianProcess, expected_improvement
 
 class KNeighborsClassifierSimple(BaseEstimatorMinimal):
     def __init__(self, n_neighbors=3):

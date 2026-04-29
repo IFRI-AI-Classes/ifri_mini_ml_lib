@@ -1,8 +1,10 @@
-from .utils import DataAdapter
-from .metrics import support, confidence, lift
-from itertools import chain, combinations
-from collections import defaultdict
 import time
+from collections import defaultdict
+from itertools import combinations, chain
+
+from ifri_mini_ml_lib.utils.data_format import DataAdapter
+from ifri_mini_ml_lib.metrics.rules import support, confidence, lift
+
 
 class Apriori:
     """
@@ -14,7 +16,7 @@ class Apriori:
         min_support(float): Minimum support threshold for considering an itemset
         min_confidence(float): Minimum confidence threshold for a rule
         
-    Examples:
+    Example:
 
     >>> transactions = [
     ...     {'bread', 'milk', 'butter'},

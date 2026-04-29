@@ -1,11 +1,10 @@
 import numpy as np
-from .utils import euclidean_distance  # Import function euclidean_distance
 from matplotlib import pyplot as plt
+
+from ifri_mini_ml_lib.utils.tools import _euclidean_distance
 
 class DBSCAN:
     """
-    Description:
-    ------------
     DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that identifies clusters based on the density of points. It groups nearby points (defined by epsilon and min_samples) and labels outliers as noise.
 
     Arguments:
@@ -13,6 +12,7 @@ class DBSCAN:
         min_samples (int): The minimum number of points to form a cluster.
 
     Example:
+
     >>> from ifri_mini_ml_lib.clustering import DBSCAN
     >>> dbscan = DBSCAN(eps=0.5, min_samples=5)
     >>> labels = dbscan.fit_predict(data)
@@ -20,16 +20,6 @@ class DBSCAN:
     """
 
     def __init__(self, eps=0.5, min_samples=5):
-        """
-        Initializes the DBSCAN parameters.
-
-        Arguments:
-            eps (float): The maximum radius to consider two points as neighbors.
-            min_samples (int): The minimum number of points to form a cluster.
-
-        Example:
-        >>> dbscan = DBSCAN(eps=0.5, min_samples=5)
-        """
         self.eps = eps
         self.min_samples = min_samples
         self.labels = None  # Cluster labels
@@ -77,7 +67,7 @@ class DBSCAN:
         """
         neighbors = []
         for i in range(len(data)):
-            if euclidean_distance(data[point_index], data[i]) <= self.eps:
+            if _euclidean_distance(data[point_index], data[i]) <= self.eps:
                 neighbors.append(i)
         return neighbors
         

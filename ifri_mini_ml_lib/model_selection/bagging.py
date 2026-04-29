@@ -1,12 +1,13 @@
-import numpy as np 
-from .utils import clone
+import numpy as np
+
+from ifri_mini_ml_lib.utils.tools import _clone
+
 
 class BaggingRegressor:
     """
-    Description:
-        BaggingRegressor is an implementation of the Bagging (Bootstrap Aggregating) technique for regression tasks.
-        It trains multiple copies of a base model on different bootstrap samples of the training set, and 
-        aggregates predictions by averaging them.
+    BaggingRegressor is an implementation of the Bagging (Bootstrap Aggregating) technique for regression tasks.
+    It trains multiple copies of a base model on different bootstrap samples of the training set, and
+    aggregates predictions by averaging them.
 
     Args:
         base_model (object): A regression model implementing `fit()` and `predict()` methods.
@@ -18,12 +19,11 @@ class BaggingRegressor:
         None
 
     Example:
-        Case 1 - base model which need fitting
+
         >>> model = BaggingRegressor(base_model=DecisionTreeRegressor(), n_estimators=5, random_state=123)
         >>> model.fit(X_train, y_train)
         >>> y_pred = model.predict(X_test)
 
-        Case 2 - base models already trained which don't need fitting
         >>> trained_models = [trained_model1, trained_model2, trained_model3]
         >>> model = BaggingRegressor(pretrained_models=trained_models)
         >>> y_pred = model.predict(X_test)
@@ -38,8 +38,7 @@ class BaggingRegressor:
 
     def fit(self, X, y):
         """
-        Description:
-            Trains multiple instances of the base model on bootstrap samples of the training data.
+        Trains multiple instances of the base model on bootstrap samples of the training data.
 
         Args:
             X (array-like): Feature matrix of shape (n_samples, n_features).
@@ -47,9 +46,6 @@ class BaggingRegressor:
 
         Returns:
             None
-
-        Example:
-            >>> model.fit(X_train, y_train)
         """
         if self.pretrained:
             for model in self.models:
@@ -75,14 +71,13 @@ class BaggingRegressor:
             y_sample = y[indices]
 
             #model = self.base_model
-            model = clone(self.base_model)            
+            model = _clone(self.base_model)
             model.fit(X_sample, y_sample)
             self.models.append(model)
 
     def predict(self, X):
         """
-        Description:
-            Predicts target values for given input samples by averaging the predictions of all models.
+        Predicts target values for given input samples by averaging the predictions of all models.
 
         Args:
             X (array-like): Feature matrix of shape (n_samples, n_features).
@@ -100,12 +95,13 @@ class BaggingRegressor:
 
         return np.mean(predictions, axis=0)
 
+
+
 class BaggingClassifier:
     """
-    Description:
-        BaggingClassifier is an implementation of the Bagging (Bootstrap Aggregating) technique for classification tasks.
-        It trains multiple copies of a base classifier on bootstrap samples of the training set, and 
-        aggregates predictions using majority voting.
+    BaggingClassifier is an implementation of the Bagging (Bootstrap Aggregating) technique for classification tasks.
+    It trains multiple copies of a base classifier on bootstrap samples of the training set, and
+    aggregates predictions using majority voting.
 
     Args:
         base_model (object): A classification model implementing `fit()` and `predict()` methods.
@@ -117,12 +113,11 @@ class BaggingClassifier:
         None
 
     Example:
-        Case 1 - base model which need fitting
+
         >>> model = BaggingClassifier(base_model=DecisionTreeClassifier(), n_estimators=5, random_state=123)
         >>> model.fit(X_train, y_train)
         >>> y_pred = model.predict(X_test)
 
-        Case 2 - base models already trained which don't need fitting
         >>> trained_models = [trained_model1, trained_model2, trained_model3]
         >>> model = BaggingClassifier(pretrained_models=trained_models)
         >>> y_pred = model.predict(X_test)
@@ -140,8 +135,7 @@ class BaggingClassifier:
 
     def fit(self, X, y):
         """
-        Description:
-            Trains multiple instances of the base model on bootstrap samples of the training data.
+        Trains multiple instances of the base model on bootstrap samples of the training data.
 
         Args:
             X (array-like): Feature matrix of shape (n_samples, n_features).
@@ -149,9 +143,6 @@ class BaggingClassifier:
 
         Returns:
             None
-
-        Example:
-            >>> model.fit(X_train, y_train)
         """
 
         if self.pretrained:
@@ -175,24 +166,20 @@ class BaggingClassifier:
             X_sample = X[indices]
             y_sample = y[indices]
 
-            model = clone(self.base_model)
+            model = _clone(self.base_model)
             
             model.fit(X_sample, y_sample)
             self.models.append(model)
 
     def predict(self, X):
         """
-        Description:
-            Predicts target classes for given input samples using majority voting across all models.
+        Predicts target classes for given input samples using majority voting across all models.
 
         Args:
             X (array-like): Feature matrix of shape (n_samples, n_features).
 
         Returns:
             np.ndarray: Predicted class labels for all samples.
-
-        Example:
-            >>> y_pred = model.predict(X_test)
         """
 
         predictions = np.zeros((self.n_estimators, X.shape[0]))
