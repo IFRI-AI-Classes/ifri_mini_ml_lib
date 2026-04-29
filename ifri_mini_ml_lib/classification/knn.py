@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 
@@ -27,7 +29,7 @@ class KNN:
         >>> predictions = knn_reg.predict(X_test)
     """
 
-    def __init__(self, k=3, task='classification'):
+    def __init__(self, k: int = 3, task: Literal['regression', 'classification'] = 'classification'):
         """
         Initializes the KNN classifier/regressor.
         
@@ -69,6 +71,7 @@ class KNN:
         Returns:
             list: Predicted target values for each input sample.
         """
+        X = np.array(X)
         return [self._predict(x) for x in X]
 
     def _predict(self, x):
