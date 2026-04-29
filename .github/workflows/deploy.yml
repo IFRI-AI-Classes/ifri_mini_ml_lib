@@ -6,7 +6,7 @@ on:
   push:
     # Runs on pushes targeting the default branch
     branches:
-      - ${{ github.event.repository.default_branch }}
+      - main
       - dev
 env:
   # `BASE_URL` determines, relative to the root of the domain, the URL that your site is served from.
