@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional
-
+from utils import *
 import numpy as np
 
 
@@ -90,19 +90,11 @@ class MLPClassifier:
         
         # Selection of activation functions
         self.activation_functions = {
-            'sigmoid': self._sigmoid,
-            'relu': self._relu,
-            'tanh': self._tanh,
-            'softmax': self._softmax,
-            'leaky_relu': self._leaky_relu,
+            k : ACTIVATIONS[k] for k in TASK_ACTIVATIONS['classification']
         }
         
         self.activation_derivatives = {
-            'sigmoid': self._sigmoid_derivative,
-            'relu': self._relu_derivative,
-            'tanh': self._tanh_derivative,
-            'softmax': self._softmax_derivative,
-            'leaky_relu': self._leaky_relu_derivative,
+            k : DERIVATIVES[k] for k in TASK_ACTIVATIONS['classification']
         }
         
         # Selection of activation function and its derivative
@@ -173,71 +165,6 @@ class MLPClassifier:
             self.m_biases.append(np.zeros_like(self.biases[-1]))
             self.v_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
             self.v_biases.append(np.zeros_like(self.biases[-1]))
-    
-    def _softmax(self, x: np.ndarray) -> np.ndarray:
-        """
-        Softmax activation function
-        """
-        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
-        return exp_x / np.sum(exp_x, axis=1, keepdims=True)
-    
-    def _softmax_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of softmax function
-        For backpropagation with softmax and cross-entropy,
-        this derivative is simplified and already handled in _backward_pass
-        """
-        s = self._softmax(x)
-        return s * (1 - s)
-    
-    def _leaky_relu(self, x: np.ndarray) -> np.ndarray:
-        """
-        Leaky ReLU activation function
-        """
-        return np.where(x > 0, x, 0.01 * x)
-    
-    def _leaky_relu_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of Leaky ReLU function
-        """
-        return np.where(x > 0, 1, 0.01)
-    
-    def _sigmoid(self, x: np.ndarray) -> np.ndarray:
-        """
-        Sigmoid activation function
-        """
-        return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
-    
-    def _sigmoid_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of sigmoid function
-        """
-        sigmoid_x = self._sigmoid(x)
-        return sigmoid_x * (1 - sigmoid_x)
-    
-    def _relu(self, x: np.ndarray) -> np.ndarray:
-        """
-        ReLU activation function
-        """
-        return np.maximum(0, x)
-    
-    def _relu_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of ReLU function
-        """
-        return np.where(x > 0, 1, 0)
-    
-    def _tanh(self, x: np.ndarray) -> np.ndarray:
-        """
-        Tanh activation function
-        """
-        return np.tanh(x)
-    
-    def _tanh_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of tanh function
-        """
-        return 1 - np.power(np.tanh(x), 2)
     
     def _forward_pass(self, X: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
