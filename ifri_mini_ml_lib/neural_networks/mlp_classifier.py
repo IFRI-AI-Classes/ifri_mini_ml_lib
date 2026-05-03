@@ -1,6 +1,8 @@
 from typing import List, Tuple, Optional
 from utils import *
 import numpy as np
+from ifri_mini_ml_lib.preprocessing.preparation.splitting import DataSplitter
+from ifri_mini_ml_lib.preprocessing.preparation.encoding import OneHotEncoder
 
 
 class MLPClassifier:
@@ -333,7 +335,7 @@ class MLPClassifier:
         
         self.t += 1
     
-    def _split_train_validation(self, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def _split_train_validation(self, X: np.ndarray, y: np.ndarray, seed = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Split data into training and validation sets
         
@@ -348,46 +350,10 @@ class MLPClassifier:
         --------
         X_train, X_val, y_train, y_val : The split datasets
         """
-        n_samples = X.shape[0]
-        n_val = int(n_samples * self.validation_fraction)
-        
-        if self.shuffle:
-            indices = np.random.permutation(n_samples)
-            X = X[indices]
-            y = y[indices]
-        
-        X_val, y_val = X[:n_val], y[:n_val]
-        X_train, y_train = X[n_val:], y[n_val:]
+        splitter = DataSplitter(seed=seed)
+        X_train, X_val, y_train, y_val = splitter.train_test_split(X, y, test_size=self.validation_fraction)
         
         return X_train, X_val, y_train, y_val
-    
-    def _encode_labels(self, y: np.ndarray) -> np.ndarray:
-        """
-        Encode labels to one-hot representation
-        
-        Parameters:
-        -----------
-        y : np.ndarray
-            Input labels
-            
-        Returns:
-        --------
-        one_hot : np.ndarray
-            One-hot encoded labels
-        """
-        # Determine unique classes and create a mapping
-        self.classes_ = np.unique(y)
-        n_samples = len(y)
-        n_classes = len(self.classes_)
-        
-        # Create an empty one-hot encoded matrix
-        one_hot = np.zeros((n_samples, n_classes))
-        
-        # Map original labels to one-hot encoded labels
-        for i, label in enumerate(y):
-            one_hot[i, np.where(self.classes_ == label)[0][0]] = 1
-        
-        return one_hot
     
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLPClassifier':
         """
@@ -413,8 +379,12 @@ class MLPClassifier:
         n_samples, n_features = X.shape
         
         # Encode labels and determine number of classes
-        y_one_hot = self._encode_labels(y)
+        encoder = OneHotEncoder()
+
+        encoder.fit(y)
+        y_one_hot = encoder.transform(y)
         n_outputs = y_one_hot.shape[1]
+        
         
         # Initialize weights
         self._initialize_weights(n_features, n_outputs)
@@ -422,8 +392,9 @@ class MLPClassifier:
         # Split into training and validation sets if early_stopping
         if self.early_stopping:
             X_train, X_val, y_train, y_val = self._split_train_validation(X, y)
-            y_train_one_hot = self._encode_labels(y_train)
-            y_val_one_hot = self._encode_labels(y_val)
+            
+            y_train_one_hot = encoder.transform(y_train)
+            y_val_one_hot = encoder.transform(y_val)
         else:
             X_train, y_train = X, y
             y_train_one_hot = y_one_hot

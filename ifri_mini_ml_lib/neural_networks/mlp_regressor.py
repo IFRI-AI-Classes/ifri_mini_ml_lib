@@ -1,4 +1,5 @@
 from typing import List, Tuple, Optional
+from ifri_mini_ml_lib.preprocessing.preparation.splitting import DataSplitter
 from utils import *
 import numpy as np
 
@@ -332,7 +333,7 @@ class MLPRegressor:
         
         self.t += 1
     
-    def _split_train_validation(self, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def _split_train_validation(self, X: np.ndarray, y: np.ndarray, seed = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Split data into training and validation sets
         
@@ -342,23 +343,18 @@ class MLPRegressor:
             Input data
         y : np.ndarray
             Target values
+        seed : int or None
+            Random seed for reproducibility
             
         Returns:
         --------
-        X_train, X_val, y_train, y_val : Split datasets
+        X_train, X_val, y_train, y_val : The split datasets
         """
-        n_samples = X.shape[0]
-        n_val = int(n_samples * self.validation_fraction)
-        
-        if self.shuffle:
-            indices = np.random.permutation(n_samples)
-            X = X[indices]
-            y = y[indices]
-        
-        X_val, y_val = X[:n_val], y[:n_val]
-        X_train, y_train = X[n_val:], y[n_val:]
+        splitter = DataSplitter(seed=seed)
+        X_train, X_val, y_train, y_val = splitter.train_test_split(X, y, test_size=self.validation_fraction)
         
         return X_train, X_val, y_train, y_val
+    
     
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLPRegressor':
         """
