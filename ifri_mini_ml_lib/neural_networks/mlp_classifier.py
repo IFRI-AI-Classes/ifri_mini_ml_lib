@@ -1,7 +1,6 @@
 from typing import List, Tuple, Optional
-from utils import *
+from utils import ACTIVATIONS, DERIVATIVES, UPDATE_WEIGHTS_METHODS, TASK_ACTIVATIONS, initialize_weights, split_train_validation
 import numpy as np
-from ifri_mini_ml_lib.preprocessing.preparation.splitting import DataSplitter
 from ifri_mini_ml_lib.preprocessing.preparation.encoding import OneHotEncoder
 
 
@@ -128,46 +127,6 @@ class MLPClassifier:
         self.trained = False
         self.classes_ = None
     
-    def _initialize_weights(self, n_features: int, n_outputs: int) -> None:
-        """
-        Initialize the weights and biases of the network
-        
-        Parameters:
-        -----------
-        n_features : int
-            Number of input features
-        n_outputs : int
-            Number of output classes
-        """
-        # Layer dimensions
-        layer_sizes = [n_features] + list(self.hidden_layer_sizes) + [n_outputs]
-        self.n_layers = len(layer_sizes) - 1
-        self.n_outputs = n_outputs
-        
-        # Reset lists
-        self.weights = []
-        self.biases = []
-        self.velocity_weights = []
-        self.velocity_biases = []
-        self.m_weights = []
-        self.m_biases = []
-        self.v_weights = []
-        self.v_biases = []
-        
-        # Weight initialization with Xavier/Glorot method
-        for i in range(self.n_layers):
-            limit = np.sqrt(6 / (layer_sizes[i] + layer_sizes[i + 1]))
-            self.weights.append(np.random.uniform(-limit, limit, (layer_sizes[i], layer_sizes[i + 1])))
-            self.biases.append(np.zeros(layer_sizes[i + 1]))
-            
-            # Initialization for optimizers
-            self.velocity_weights.append(np.zeros_like(self.weights[-1]))  # For Momentum
-            self.velocity_biases.append(np.zeros_like(self.biases[-1]))
-            self.m_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
-            self.m_biases.append(np.zeros_like(self.biases[-1]))
-            self.v_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
-            self.v_biases.append(np.zeros_like(self.biases[-1]))
-    
     def _forward_pass(self, X: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
         Forward propagation to calculate activations
@@ -276,85 +235,6 @@ class MLPClassifier:
         
         return gradients_w, gradients_b
     
-    def _update_weights_sgd(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with stochastic gradient descent
-        """
-        for i in range(self.n_layers):
-            self.weights[i] -= self.learning_rate * gradients_w[i]
-            self.biases[i] -= self.learning_rate * gradients_b[i]
-    
-    def _update_weights_momentum(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with gradient descent with momentum
-        """
-        for i in range(self.n_layers):
-            self.velocity_weights[i] = self.momentum * self.velocity_weights[i] - self.learning_rate * gradients_w[i]
-            self.velocity_biases[i] = self.momentum * self.velocity_biases[i] - self.learning_rate * gradients_b[i]
-            
-            self.weights[i] += self.velocity_weights[i]
-            self.biases[i] += self.velocity_biases[i]
-    
-    def _update_weights_rmsprop(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with RMSProp
-        """
-        decay_rate = 0.9
-        
-        for i in range(self.n_layers):
-            # Update accumulators
-            self.v_weights[i] = decay_rate * self.v_weights[i] + (1 - decay_rate) * np.square(gradients_w[i])
-            self.v_biases[i] = decay_rate * self.v_biases[i] + (1 - decay_rate) * np.square(gradients_b[i])
-            
-            # Update weights
-            self.weights[i] -= self.learning_rate * gradients_w[i] / (np.sqrt(self.v_weights[i]+ self.epsilon))
-            self.biases[i] -= self.learning_rate * gradients_b[i] / (np.sqrt(self.v_biases[i] + self.epsilon))
-    
-    def _update_weights_adam(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with Adam optimizer
-        """
-        for i in range(self.n_layers):
-            # Update moments
-            self.m_weights[i] = self.beta1 * self.m_weights[i] + (1 - self.beta1) * gradients_w[i]
-            self.m_biases[i] = self.beta1 * self.m_biases[i] + (1 - self.beta1) * gradients_b[i]
-            
-            # Update second-order moments
-            self.v_weights[i] = self.beta2 * self.v_weights[i] + (1 - self.beta2) * np.square(gradients_w[i])
-            self.v_biases[i] = self.beta2 * self.v_biases[i] + (1 - self.beta2) * np.square(gradients_b[i])
-            
-            # Bias correction
-            m_weights_corrected = self.m_weights[i] / (1 - self.beta1 ** self.t)
-            m_biases_corrected = self.m_biases[i] / (1 - self.beta1 ** self.t)
-            v_weights_corrected = self.v_weights[i] / (1 - self.beta2 ** self.t)
-            v_biases_corrected = self.v_biases[i] / (1 - self.beta2 ** self.t)
-            
-            # Update weights
-            self.weights[i] -= self.learning_rate * m_weights_corrected / (np.sqrt(v_weights_corrected + self.epsilon))
-            self.biases[i] -= self.learning_rate * m_biases_corrected / (np.sqrt(v_biases_corrected + self.epsilon))
-        
-        self.t += 1
-    
-    def _split_train_validation(self, X: np.ndarray, y: np.ndarray, seed = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Split data into training and validation sets
-        
-        Parameters:
-        -----------
-        X : np.ndarray
-            Input data
-        y : np.ndarray
-            Labels
-            
-        Returns:
-        --------
-        X_train, X_val, y_train, y_val : The split datasets
-        """
-        splitter = DataSplitter(seed=seed)
-        X_train, X_val, y_train, y_val = splitter.train_test_split(X, y, test_size=self.validation_fraction)
-        
-        return X_train, X_val, y_train, y_val
-    
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLPClassifier':
         """
         Train the MLP on the provided data
@@ -387,11 +267,11 @@ class MLPClassifier:
         
         
         # Initialize weights
-        self._initialize_weights(n_features, n_outputs)
+        initialize_weights(self, n_features, n_outputs)
         
         # Split into training and validation sets if early_stopping
         if self.early_stopping:
-            X_train, X_val, y_train, y_val = self._split_train_validation(X, y)
+            X_train, X_val, y_train, y_val = split_train_validation(self, X, y)
             
             y_train_one_hot = encoder.transform(y_train)
             y_val_one_hot = encoder.transform(y_val)
@@ -400,12 +280,7 @@ class MLPClassifier:
             y_train_one_hot = y_one_hot
         
         # Update method according to chosen optimizer
-        update_methods = {
-            'sgd': self._update_weights_sgd,
-            'momentum': self._update_weights_momentum,
-            'rmsprop': self._update_weights_rmsprop,
-            'adam': self._update_weights_adam
-        }
+        update_methods = UPDATE_WEIGHTS_METHODS
         
         if self.solver not in update_methods:
             raise ValueError(f"Optimizer '{self.solver}' not recognized.")
@@ -445,7 +320,7 @@ class MLPClassifier:
                 gradients_w, gradients_b = self._backward_pass(X_batch, y_batch, activations, layer_inputs)
                 
                 # Weight update
-                update_weights(gradients_w, gradients_b)
+                update_weights(self,gradients_w, gradients_b)
             
             # Average loss over the epoch
             epoch_loss = np.mean(batch_losses)
