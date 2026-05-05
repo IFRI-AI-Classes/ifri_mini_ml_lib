@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from typing import List, Tuple, Optional
 
 
 class CategoricalEncoder:
@@ -95,3 +97,88 @@ class CategoricalEncoder:
         """
         self.fit(X, y)
         return self.transform(X)
+    
+class OneHotEncoder:
+    """
+    One-hot encoder for transforming categorical labels into binary vectors.
+
+    This encoder learns the unique classes from the input data during `fit`,
+    and converts labels into one-hot encoded format during `transform`.
+
+    Attributes
+    ----------
+    classes_ : np.ndarray
+        Array of unique classes observed during fitting.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initialize the encoder.
+
+        Sets the internal classes attribute to None.
+        """
+        self.classes_: np.ndarray | None = None
+
+    def fit(self, y: np.ndarray) -> "OneHotEncoder":
+        """
+        Learn the unique classes from the input labels.
+
+        Parameters
+        ----------
+        y : np.ndarray
+            Array of categorical labels.
+
+        Returns
+        -------
+        OneHotEncoder
+            Fitted encoder instance (allows method chaining).
+        """
+        self.classes_ = np.unique(y)
+        return self
+
+    def transform(self, y: np.ndarray) -> np.ndarray:
+        """
+        Transform labels into one-hot encoded format.
+
+        Parameters
+        ----------
+        y : np.ndarray
+            Array of categorical labels to encode.
+
+        Returns
+        -------
+        np.ndarray
+            One-hot encoded array of shape (n_samples, n_classes).
+
+        Raises
+        ------
+        ValueError
+            If the encoder has not been fitted yet.
+        """
+        if self.classes_ is None:
+            raise ValueError("Encoder has not been fitted yet.")
+
+        n_samples = len(y)
+        n_classes = len(self.classes_)
+
+        one_hot = np.zeros((n_samples, n_classes))
+        indices = np.searchsorted(self.classes_, y)
+        one_hot[np.arange(n_samples), indices] = 1
+
+        return one_hot
+
+    def fit_transform(self, y: np.ndarray) -> np.ndarray:
+        """
+        Fit the encoder and transform the labels in one step.
+
+        Parameters
+        ----------
+        y : np.ndarray
+            Array of categorical labels.
+
+        Returns
+        -------
+        np.ndarray
+            One-hot encoded labels.
+        """
+        return self.fit(y).transform(y)

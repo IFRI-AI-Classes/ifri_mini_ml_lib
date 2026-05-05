@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional
-
+from utils import ACTIVATIONS, DERIVATIVES, UPDATE_WEIGHTS_METHODS, TASK_ACTIVATIONS, initialize_weights, split_train_validation
 import numpy as np
 
 
@@ -90,17 +90,12 @@ class MLPRegressor:
         
         # Selection of activation functions
         self.activation_functions = {
-            'sigmoid': self._sigmoid,
-            'relu': self._relu,
-            'tanh': self._tanh,
-            'leaky_relu': self._leaky_relu,
+            k : ACTIVATIONS[k] for k in TASK_ACTIVATIONS['regression']
         }
         
+        # Selection of activation derivatives
         self.activation_derivatives = {
-            'sigmoid': self._sigmoid_derivative,
-            'relu': self._relu_derivative,
-            'tanh': self._tanh_derivative,
-            'leaky_relu': self._leaky_relu_derivative,
+            k : DERIVATIVES[k] for k in TASK_ACTIVATIONS['regression']
         }
         
         # Selection of activation function and its derivative
@@ -130,95 +125,6 @@ class MLPRegressor:
         self.best_loss = np.inf
         self.no_improvement_count = 0
         self.trained = False
-    
-    def _initialize_weights(self, n_features: int, n_outputs: int) -> None:
-        """
-        Initialize the weights and biases of the network
-        
-        Parameters:
-        -----------
-        n_features : int
-            Number of input features
-        n_outputs : int
-            Number of output targets
-        """
-        # Layer dimensions
-        layer_sizes = [n_features] + list(self.hidden_layer_sizes) + [n_outputs]
-        self.n_layers = len(layer_sizes) - 1
-        self.n_outputs = n_outputs
-        
-        # Reset lists
-        self.weights = []
-        self.biases = []
-        self.velocity_weights = []
-        self.velocity_biases = []
-        self.m_weights = []
-        self.m_biases = []
-        self.v_weights = []
-        self.v_biases = []
-        
-        # Initialize weights with Xavier/Glorot method
-        for i in range(self.n_layers):
-            limit = np.sqrt(6 / (layer_sizes[i] + layer_sizes[i + 1]))
-            self.weights.append(np.random.uniform(-limit, limit, (layer_sizes[i], layer_sizes[i + 1])))
-            self.biases.append(np.zeros(layer_sizes[i + 1]))
-            
-            # Initialization for optimizers
-            self.velocity_weights.append(np.zeros_like(self.weights[-1]))  # For Momentum
-            self.velocity_biases.append(np.zeros_like(self.biases[-1]))
-            self.m_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
-            self.m_biases.append(np.zeros_like(self.biases[-1]))
-            self.v_weights.append(np.zeros_like(self.weights[-1]))  # For Adam
-            self.v_biases.append(np.zeros_like(self.biases[-1]))
-    
-    def _leaky_relu(self, x: np.ndarray) -> np.ndarray:
-        """
-        Leaky ReLU activation function
-        """
-        return np.where(x > 0, x, 0.01 * x)
-    
-    def _leaky_relu_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of Leaky ReLU function
-        """
-        return np.where(x > 0, 1, 0.01)
-    
-    def _sigmoid(self, x: np.ndarray) -> np.ndarray:
-        """
-        Sigmoid activation function
-        """
-        return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
-    
-    def _sigmoid_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of sigmoid function
-        """
-        sigmoid_x = self._sigmoid(x)
-        return sigmoid_x * (1 - sigmoid_x)
-    
-    def _relu(self, x: np.ndarray) -> np.ndarray:
-        """
-        ReLU activation function
-        """
-        return np.maximum(0, x)
-    
-    def _relu_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of ReLU function
-        """
-        return np.where(x > 0, 1, 0)
-    
-    def _tanh(self, x: np.ndarray) -> np.ndarray:
-        """
-        Tanh activation function
-        """
-        return np.tanh(x)
-    
-    def _tanh_derivative(self, x: np.ndarray) -> np.ndarray:
-        """
-        Derivative of tanh function
-        """
-        return 1 - np.power(np.tanh(x), 2)
     
     def _forward_pass(self, X: np.ndarray) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
@@ -327,93 +233,6 @@ class MLPRegressor:
         
         return gradients_w, gradients_b
     
-    def _update_weights_sgd(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with stochastic gradient descent
-        """
-        for i in range(self.n_layers):
-            self.weights[i] -= self.learning_rate * gradients_w[i]
-            self.biases[i] -= self.learning_rate * gradients_b[i]
-    
-    def _update_weights_momentum(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with momentum gradient descent
-        """
-        for i in range(self.n_layers):
-            self.velocity_weights[i] = self.momentum * self.velocity_weights[i] - self.learning_rate * gradients_w[i]
-            self.velocity_biases[i] = self.momentum * self.velocity_biases[i] - self.learning_rate * gradients_b[i]
-            
-            self.weights[i] += self.velocity_weights[i]
-            self.biases[i] += self.velocity_biases[i]
-    
-    def _update_weights_rmsprop(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with RMSProp
-        """
-        decay_rate = 0.9
-        
-        for i in range(self.n_layers):
-            # Update accumulators
-            self.v_weights[i] = decay_rate * self.v_weights[i] + (1 - decay_rate) * np.square(gradients_w[i])
-            self.v_biases[i] = decay_rate * self.v_biases[i] + (1 - decay_rate) * np.square(gradients_b[i])
-            
-            # Update weights
-            self.weights[i] -= self.learning_rate * gradients_w[i] / (np.sqrt(self.v_weights[i] + self.epsilon))
-            self.biases[i] -= self.learning_rate * gradients_b[i] / (np.sqrt(self.v_biases[i] + self.epsilon))
-    
-    def _update_weights_adam(self, gradients_w: List[np.ndarray], gradients_b: List[np.ndarray]) -> None:
-        """
-        Update weights with Adam optimizer
-        """
-        for i in range(self.n_layers):
-            # Update moments
-            self.m_weights[i] = self.beta1 * self.m_weights[i] + (1 - self.beta1) * gradients_w[i]
-            self.m_biases[i] = self.beta1 * self.m_biases[i] + (1 - self.beta1) * gradients_b[i]
-            
-            # Update second moments
-            self.v_weights[i] = self.beta2 * self.v_weights[i] + (1 - self.beta2) * np.square(gradients_w[i])
-            self.v_biases[i] = self.beta2 * self.v_biases[i] + (1 - self.beta2) * np.square(gradients_b[i])
-            
-            # Bias correction
-            m_weights_corrected = self.m_weights[i] / (1 - self.beta1 ** self.t)
-            m_biases_corrected = self.m_biases[i] / (1 - self.beta1 ** self.t)
-            v_weights_corrected = self.v_weights[i] / (1 - self.beta2 ** self.t)
-            v_biases_corrected = self.v_biases[i] / (1 - self.beta2 ** self.t)
-            
-            # Update weights
-            self.weights[i] -= self.learning_rate * m_weights_corrected / (np.sqrt(v_weights_corrected + self.epsilon))
-            self.biases[i] -= self.learning_rate * m_biases_corrected / (np.sqrt(v_biases_corrected + self.epsilon))
-        
-        self.t += 1
-    
-    def _split_train_validation(self, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Split data into training and validation sets
-        
-        Parameters:
-        -----------
-        X : np.ndarray
-            Input data
-        y : np.ndarray
-            Target values
-            
-        Returns:
-        --------
-        X_train, X_val, y_train, y_val : Split datasets
-        """
-        n_samples = X.shape[0]
-        n_val = int(n_samples * self.validation_fraction)
-        
-        if self.shuffle:
-            indices = np.random.permutation(n_samples)
-            X = X[indices]
-            y = y[indices]
-        
-        X_val, y_val = X[:n_val], y[:n_val]
-        X_train, y_train = X[n_val:], y[n_val:]
-        
-        return X_train, X_val, y_train, y_val
-    
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'MLPRegressor':
         """
         Train the MLP on the provided data
@@ -445,21 +264,16 @@ class MLPRegressor:
         _, n_outputs = y.shape
         
         # Initialize weights
-        self._initialize_weights(n_features, n_outputs)
+        initialize_weights(self,n_features, n_outputs)
         
         # Split into training and validation sets if early_stopping is enabled
         if self.early_stopping:
-            X_train, X_val, y_train, y_val = self._split_train_validation(X, y)
+            X_train, X_val, y_train, y_val = split_train_validation(self, X, y)
         else:
             X_train, y_train = X, y
         
         # Update method according to chosen optimizer
-        update_methods = {
-            'sgd': self._update_weights_sgd,
-            'momentum': self._update_weights_momentum,
-            'rmsprop': self._update_weights_rmsprop,
-            'adam': self._update_weights_adam
-        }
+        update_methods = UPDATE_WEIGHTS_METHODS
         
         if self.solver not in update_methods:
             raise ValueError(f"Optimizer '{self.solver}' not recognized.")
@@ -499,7 +313,7 @@ class MLPRegressor:
                 gradients_w, gradients_b = self._backward_pass(X_batch, y_batch, activations, layer_inputs)
                 
                 # Update weights
-                update_weights(gradients_w, gradients_b)
+                update_weights(self, gradients_w, gradients_b)
             
             # Mean loss over the epoch
             epoch_loss = np.mean(batch_losses)

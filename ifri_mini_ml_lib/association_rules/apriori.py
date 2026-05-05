@@ -1,20 +1,28 @@
-import time
+from itertools import combinations
 from collections import defaultdict
-from itertools import combinations, chain
-
-from ifri_mini_ml_lib.utils.data_format import DataAdapter
-from ifri_mini_ml_lib.metrics.rules import support, confidence, lift
+import time
+import pandas as pd
 
 
 class Apriori:
     """
-    The Apriori algorithm is used to discover interesting association rules
+    The Apriori algorithm is used to discover frequent itemsets
     in large transactional datasets. For more details: 
     `Agrawal, R., & Srikant, R. (1994, September) <http://www.vldb.org/conf/1994/P487.PDF>`_
 
+    The algorithm performs a breadth-first search over itemsets of increasing
+    size.  At each level k it:
+    1- Generates candidate k-itemsets from the frequent (k-1)-itemsets
+        (join step).
+    2- Prunes any candidate whose (k-1)-subsets are not all frequent
+        (prune step, based on the anti-monotonicity of support).
+    3- Counts candidate support by scanning the transaction database.
+    4- Retains only candidates whose support meets *min_support*.
+    
     Args:
-        min_support(float): Minimum support threshold for considering an itemset
-        min_confidence(float): Minimum confidence threshold for a rule
+        min_support (float, optional): Minimum support threshold in [0, 1]. Defaults to 0.5.
+        min_confidence (float | None, optional): Optional confidence threshold in (0, 1]
+            kept for API consistency with rule-generation workflows. Defaults to None.
         
     Example:
 
@@ -27,232 +35,189 @@ class Apriori:
     ... ]
     >>> from ifri_mini_ml_lib.association_rules import Apriori
     >>> apriori = Apriori(min_support=0.4, min_confidence=0.6)
-    >>> apriori.fit(transactions) # Frequents itemsets + Rules generation
+    >>> apriori.fit(transactions)
     <ifri_mini_ml_lib.association_rules.apriori.Apriori object>
     >>> frequent_itemsets = apriori.get_frequent_itemsets()
-    >>> # Displaying frequent itemsets of size 1
-    >>> for item in frequent_itemsets[1]:
-    ...     print(f"Item: {list(item)[0]}")
-    Item: bread
-    Item: milk
-    Item: butter
-    >>> rules = apriori.get_rules()
-    >>> # Displaying some association rules
-    >>> if rules:
-    ...     for rule in rules[:2]:
-    ...         print(f"{set(rule['antecedent'])} -> {set(rule['consequent'])}, "
-    ...               f"Support: {rule['support']:.2f}, Confidence: {rule['confidence']:.2f}")
-    {'milk'} -> {'bread'}, Support: 0.60, Confidence: 0.75
-    {'bread'} -> {'milk'}, Support: 0.60, Confidence: 0.75
+    >>> print(frequent_itemsets.head(3))
     """
-    def __init__(self, min_support: float, min_confidence: float):
+
+    def __init__(self, min_support: float = 0.5, min_confidence: float | None = None):
+        """
+        Initialize the Apriori algorithm.
         
-        if not 0 <= min_support <= 1:
-            raise ValueError("Minimum support must be between 0 and 1")
-        if not 0 <= min_confidence <= 1:
-            raise ValueError("Minimum confidence must be between 0 and 1")
+        Args:
+            min_support (float): Minimum support threshold in (0, 1]. Defaults to 0.5.
+            min_confidence (float | None): Optional confidence threshold in (0, 1].
+                Defaults to None.
+        
+        Raises:
+            ValueError: If min_support is not in (0, 1] or min_confidence is invalid.
+        """
+        if not 0.0 < min_support <= 1.0:
+            raise ValueError("min_support must be between 0 and 1.")
+        if min_confidence is not None and not 0.0 < min_confidence <= 1.0:
+            raise ValueError("min_confidence must be in (0, 1].")
         
         self.min_support = min_support
         self.min_confidence = min_confidence
-        self.frequent_itemsets_ = {}
-        self.rules_ = []
+        self._frequent_itemsets: dict[frozenset, float] = {}  
+        self._n_transactions: int = 0
+        self._execution_time: float = 0.0
 
-    def fit(self, transactions: list):
+    def fit(self, transactions: list[list]) -> "Apriori":
         """
-        Main method for learning frequent itemsets and rules.
-        
+        Mine frequent itemsets from a list of transactions.
+
         Args:
-            transactions: Input data (list[set])
-            
+            transactions (list[list]): Each inner list is one transaction containing hashable items
+                (strings, ints, etc.).
+
         Returns:
-            self: The current instance for method chaining
+            Apriori: The current instance for method chaining.
+        
+        Raises:
+            ValueError: If transactions list is empty.
         """
         start_time = time.time()
-        
-        # Check the conformity of the input data format
-        if isinstance(transactions, list):
-            transactions_list = DataAdapter._convert_from_list(transactions)
-        else:
-            raise TypeError("Data format not respected! Only List[set] format is accepted.")
-        
-        print(f"\nApplying Apriori algorithm with:")
-        print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
-        print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
+        if not transactions:
+            raise ValueError("transactions must not be empty.")
 
-        print(f"Number of valid transactions: {len(transactions_list)}")
-        if transactions_list:
-            print(f"Example transaction: {list(transactions_list[0])[:5]}...")
-        else:
-            return self
+        # Convert once to frozensets for fast subset checks
+        encoded = [frozenset(t) for t in transactions]
+        self._n_transactions = len(encoded)
+        self._frequent_itemsets = {}
 
-        # Generate frequent itemsets
-        self._fit_apriori(transactions_list)
-        # Generate association rules
-        self._generate_rules(transactions_list)
+        # For single items 
+        freq_k = self._get_frequent_1_itemsets(encoded)
+        self._frequent_itemsets.update(freq_k)
 
-        elapsed_time = time.time() - start_time
-
-        print(f"\nExecution time: {elapsed_time:.2f} seconds")
-        return self
-    
-    def _fit_apriori(self, transactions: list[set]):
-        """
-        Extraction of k-frequent itemsets
-
-        ## Steps:
-            1. Extract all unique items
-            2. Find 1-itemsets that are frequent
-            3. Iteratively generate itemsets of increasing size
-        """
-        # Get unique items
-        items = set(chain(*transactions))
-        # Get 1-itemsets that are frequent
-        self.frequent_itemsets_ = {
-            1: self._get_one_itemsets(items, transactions)
-        }
-        
-        # Generate itemsets of increasing size
-        size = 1
-        while True:
-            size += 1
-            candidates = self._generate_candidates(self.frequent_itemsets_[size-1])
-            frequent = self._prune_candidates(candidates, transactions)
-
-            # Stop if no frequent item is found
-            if not frequent: 
+        # for k >= 2
+        k = 2
+        while freq_k:
+            candidates = self._generate_candidates(freq_k, k)
+            if not candidates:
                 break
-            # Store frequent itemsets of this size
-            self.frequent_itemsets_[size] = frequent
+            freq_k = self._count_and_filter(encoded, candidates)
+            self._frequent_itemsets.update(freq_k)
+            k += 1
 
-    def _get_one_itemsets(self, items: set, transactions: list[set]):
+        self._execution_time = time.time() - start_time
+        return self
+
+    def get_frequent_itemsets(self) -> pd.DataFrame:
         """
-        Computes the frequent 1-itemsets (individual items).
-        
-        Args:
-            items: Set of all unique items
-            transactions: List of transactions
+        Return the mined frequent itemsets as a DataFrame.
         
         Returns:
-            Set of frequent items that satisfy the minimum support
-        """
-        # Occurrence of each unique item in the database
-        items_counts = defaultdict(int)
-        for t in transactions:
-            for i in items:
-                if i in t:
-                    items_counts[frozenset([i])] +=1
+            pd.DataFrame: DataFrame with columns 'itemsets' (frozenset), 'support' (float), 
+                and 'length' (int). Sorted by itemset length then support.
         
-        n_trans = len(transactions)
-
-        return {i for i, count in items_counts.items()
-                if count/n_trans >= self.min_support}
-
-    def _generate_candidates(self, previous_itemsets: set):
+        Raises:
+            RuntimeError: If fit() has not been called yet.
         """
-        Generates new candidates by combining previous itemsets.
-        Uses the optimized "join-and-prune" approach that only combines
-        itemsets sharing the same first k-1 elements.
+        if not self._frequent_itemsets:
+            raise RuntimeError("Call fit() before get_frequent_itemsets().")
+
+        records = [
+            {"itemsets": itemset, "support": support}
+            for itemset, support in self._frequent_itemsets.items()
+        ]
+        df = pd.DataFrame(records)
+        df["length"] = df["itemsets"].apply(len)
+        return df.sort_values(["length", "support"], ascending=[True, False]).reset_index(drop=True)
+
+    @property
+    def n_transactions(self) -> int:
+        """Number of transactions seen during fit()."""
+        return self._n_transactions
+    
+    @property
+    def execution_time(self) -> float:
+        """Execution time (in seconds) of the last fit() call."""
+        return self._execution_time
+
+    def _get_frequent_1_itemsets(
+        self, encoded: list[frozenset]
+    ) -> dict[frozenset, float]:
+        
+        """
+        Count single-item support and apply min_support filter.
         
         Args:
-            previous_itemsets: Itemsets of the previous size k
-        
+            encoded: List of transactions, where each transaction is a frozenset of items.
         Returns:
-            New candidates of size k + 1
+            Dictionary mapping frequent 1-itemsets (frozensets) to their support.
+        
         """
-        candidates = set()
-        previous_list = list(previous_itemsets)
-        k = len(list(previous_list[0])) if previous_list else 0
+        counts: dict[frozenset, int] = defaultdict(int)
+        for transaction in encoded:
+            for item in transaction:
+                counts[frozenset([item])] += 1
+
+        n = self._n_transactions
+        return {
+            itemset: count / n
+            for itemset, count in counts.items()
+            if count / n >= self.min_support
+        }
+
+    def _generate_candidates(
+        self, freq_prev: dict[frozenset, float], k: int
+    ) -> list[frozenset]:
+        """
+        Generate candidate k-itemsets from frequent (k-1)-itemsets.
+        Two (k-1)-itemsets are joined when they share exactly k-2 items.
+        Each resulting candidate is then pruned if any of its (k-1)-subsets
+        is not in freq_prev.
         
-        # Join phase
-        for i in range(len(previous_list)):
-            for j in range(i+1, len(previous_list)):
-                # Convert to list to compare elements by index
-                items1 = sorted(list(previous_list[i]))
-                items2 = sorted(list(previous_list[j]))
-                
-                # Check if the first k-1 elements are identical
-                if items1[:k-1] == items2[:k-1]:
-                    # Create a new candidate itemset
-                    new_candidate = frozenset(previous_list[i] | previous_list[j])
-                    
-                    # Prune phase - all subsets must be frequent
-                    should_add = True
-                    for subset in combinations(new_candidate, k):
-                        if frozenset(subset) not in previous_itemsets:
-                            should_add = False
-                            break
-                    
-                    if should_add:
-                        candidates.add(new_candidate)
-        
+        Args:
+            freq_prev: Dictionary of frequent (k-1)-itemsets with their support.
+            k: Size of candidates to generate.
+            
+        Returns:
+            List of candidate k-itemsets (as frozensets).
+        """
+        prev_list = sorted([sorted(fs) for fs in freq_prev])
+        freq_set = set(freq_prev.keys())
+        candidates = []
+
+        for i in range(len(prev_list)):
+            for j in range(i + 1, len(prev_list)):
+                # Join: both lists share the first k-2 elements
+                if prev_list[i][: k - 2] == prev_list[j][: k - 2]:
+                    candidate = frozenset(prev_list[i]) | frozenset(prev_list[j])
+                    if len(candidate) == k and self._has_frequent_subsets(
+                        candidate, freq_set, k
+                    ):
+                        candidates.append(candidate)
+                else:
+                    break  # sorted order; no more shared prefix possible
+
         return candidates
 
-    def _prune_candidates(self, candidates: set, transactions: list[set]):
-        """
-        Filters candidates according to minimum support in an optimized way.
-        
-        Args:
-            candidates: Set of candidates to test
-            transactions: List of transactions
-        
-        Returns:
-            Frequent itemsets among the candidates
-        """
-        if not candidates:
-            return set()
-            
-        return {c for c in candidates if support(c, transactions) >= self.min_support}
-    
-    def _generate_rules(self, transactions: list[set]):
-        """
-        Generates association rules from frequent itemsets.
-        Calculates confidence and lift for each rule.
-        
-        Args:
-            transactions: List of transactions
-        """
+    @staticmethod
+    def _has_frequent_subsets(
+        candidate: frozenset, freq_set: set[frozenset], k: int
+    ) -> bool:
+        """Return True if every (k-1)-subset of candidate is frequent."""
+        for subset in combinations(candidate, k - 1):
+            if frozenset(subset) not in freq_set:
+                return False
+        return True
 
-        # Go through frequent itemsets ignoring those of size 1
-        for itemset in chain(*(self.frequent_itemsets_.values())):
-            if len(itemset) < 2:
-                continue
+    def _count_and_filter(
+        self, encoded: list[frozenset], candidates: list[frozenset]
+    ) -> dict[frozenset, float]:
+        """Count candidate support over the database and apply min_support."""
+        counts: dict[frozenset, int] = defaultdict(int)
+        for transaction in encoded:
+            for candidate in candidates:
+                if candidate.issubset(transaction):
+                    counts[candidate] += 1
 
-            # Generate all possible rule combinations
-            for i in range(1, len(itemset)):
-                for antecedent in combinations(itemset, i):
-                    antecedent = frozenset(antecedent)
-                    consequent = itemset - antecedent
-                    
-                    # Calculate metrics
-                    conf = confidence(antecedent, consequent, transactions)
-                    
-                    if conf >= self.min_confidence:
-                        rule_support = support(itemset, transactions)
-                        rule_lift = lift(antecedent, consequent, transactions)
-                        self.rules_.append({
-                            'antecedent': antecedent, 
-                            'consequent': consequent, 
-                            'support': rule_support,
-                            'confidence': conf,
-                            'lift': rule_lift
-                        })
-
-    def get_frequent_itemsets(self):
-        """
-        Retrieve the discovered frequent itemsets.
-        
-        Returns:
-            dict: Dictionary of frequent itemsets where keys are sizes
-                and values are sets of itemsets
-        """
-        return self.frequent_itemsets_
-
-    def get_rules(self):
-        """
-        Retrieve the generated association rules.
-        
-        Returns:
-            List of association rules
-        """
-        return self.rules_
-
+        n = self._n_transactions
+        return {
+            itemset: count / n
+            for itemset, count in counts.items()
+            if count / n >= self.min_support
+        }
