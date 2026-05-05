@@ -18,6 +18,8 @@ from itertools import combinations
 import time
 import pandas as pd
 
+from ..metrics.rules import evaluate_rule_from_supports
+
 
 class AssociationRules:
     """
@@ -114,15 +116,20 @@ class AssociationRules:
                     if ant_support is None or cons_support is None:
                         continue
 
-                    confidence = itemset_support / ant_support
+                    metrics = evaluate_rule_from_supports(
+                        antecedent_support=ant_support,
+                        consequent_support=cons_support,
+                        rule_support=itemset_support,
+                    )
+                    confidence = metrics["confidence"]
                     if confidence < self.min_confidence:
                         continue
 
-                    lift = confidence / cons_support
+                    lift = metrics["lift"]
                     if lift < self.min_lift:
                         continue
 
-                    conviction = self._compute_conviction(confidence, cons_support)
+                    conviction = metrics["conviction"]
 
                     if (
                         self.min_conviction is not None
@@ -199,21 +206,6 @@ class AssociationRules:
                     f"mean: {finite.mean():.4f}  "
                     f"(∞ rules: {(df['conviction'] == float('inf')).sum()})")
 
-
-    @staticmethod
-    def _compute_conviction(confidence: float, cons_support: float) -> float | None:
-        """
-        Compute conviction.  Returns float('inf') for perfect rules
-        (confidence == 1) and None when the formula is undefined (which
-        should not happen for valid inputs but is guarded defensively).
-        """
-        denominator = 1.0 - confidence
-        if denominator == 0.0:
-            return float("inf")  # deterministic rule
-        numerator = 1.0 - cons_support
-        if numerator < 0:
-            return None  # safeguard; shouldn't occur with valid supports
-        return numerator / denominator
 
     @staticmethod
     def _validate_input(df: pd.DataFrame) -> None:
