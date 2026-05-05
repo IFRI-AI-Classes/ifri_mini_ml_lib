@@ -95,3 +95,7 @@ class CategoricalEncoder:
         """
         self.fit(X, y)
         return self.transform(X)
+    
+    
+class OneHotEncoder:
+    pass
