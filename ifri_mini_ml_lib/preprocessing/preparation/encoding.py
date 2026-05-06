@@ -98,4 +98,80 @@ class CategoricalEncoder:
     
     
 class OneHotEncoder:
-    pass
+    """
+    Custom One-Hot Encoder with fit/transform consistency.
+
+    Attributes:
+        categories_ (dict): mapping column -> list of categories
+        feature_names_ (list): generated one-hot column names
+    """
+
+    def __init__(self, handle_unknown="ignore"):
+        """
+        Args:
+            handle_unknown (str):
+                - "ignore" : unknown categories are encoded as all-zero rows
+                - "error" : raise an error when unknown categories appear during transform
+        """
+        if handle_unknown not in {"ignore", "error"}:
+            raise ValueError("handle_unknown must be either 'ignore' or 'error'")
+
+        self.handle_unknown = handle_unknown
+        self.categories_ = {}
+        self.feature_names_ = []
+
+    def fit(self, X):
+        """
+        Learn categories for each categorical column in the training data.
+        """
+        X = X.copy()
+        for column in X.select_dtypes(include=['object', 'category']).columns:
+            self.categories_[column] = sorted(X[column].dropna().unique())
+
+        self.feature_names_ = [
+            f"{column}_{category}"
+            for column in X.select_dtypes(include=['object', 'category']).columns
+            for category in self.categories_[column]
+        ]
+
+        return self
+
+    def transform(self, X):
+        """
+        Transform dataset using learned categories.
+        """
+        if not self.categories_:
+            raise ValueError("The encoder has not been fit yet. Call fit() before transform().")
+
+        X = X.copy()
+        encoded = X.drop(columns=X.select_dtypes(include=['object', 'category']).columns, errors='ignore')
+
+        for column in X.select_dtypes(include=['object', 'category']).columns:
+            if column not in self.categories_:
+                raise ValueError(f"Column '{column}' was not present during fit().")
+
+            categories = self.categories_[column]
+            for category in categories:
+                encoded[f"{column}_{category}"] = (X[column] == category).astype(int)
+
+            if self.handle_unknown == "error":
+                unknown_mask = X[column].notna() & ~X[column].isin(categories)
+                if unknown_mask.any():
+                    unknown_values = sorted(X.loc[unknown_mask, column].unique())
+                    raise ValueError(
+                        f"Unknown categories found in column '{column}': {unknown_values}"
+                    )
+
+        for feature in self.feature_names_:
+            if feature not in encoded.columns:
+                encoded[feature] = 0
+
+        ordered_columns = [
+            feature for feature in self.feature_names_ if feature in encoded.columns
+        ] + [col for col in encoded.columns if col not in self.feature_names_]
+        encoded = encoded[ordered_columns]
+
+        return encoded
+
+    def fit_transform(self, X):
+        return self.fit(X).transform(X)
