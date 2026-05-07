@@ -2,8 +2,7 @@
 # import matplotlib.pyplot as plt
 
 #from perceptron import Perceptron
-from perceptron_classifier import PerceptronClassifier
-from perceptron_regressor import PerceptronRegressor
+from perceptron import Perceptron
 
 
 # EXAMPLES WITH SOME CONTINUOUS DATA
@@ -30,8 +29,8 @@ Y_XOR = [0, 1, 1, 0]  # y
 
 # MODELS     |
 #pct = Perceptron()
-pctLR = PerceptronRegressor(n_iter=21)
-pctBC = PerceptronClassifier(n_iter=100)
+pctLR = PerceptronRegressor(lr=1e-5,n_iter=1000)
+pctBC = PerceptronClassifier(learning_rate=1e-5,n_iter=1000)
 
 # TRAINING   |
 # PREDICTION |

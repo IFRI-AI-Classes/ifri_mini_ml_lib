@@ -1,5 +1,8 @@
 from typing import List, Tuple, Optional
-from utils import ACTIVATIONS, DERIVATIVES, UPDATE_WEIGHTS_METHODS, TASK_ACTIVATIONS, initialize_weights, split_train_validation
+from optimizers import UPDATE_WEIGHTS_METHODS
+from activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
+from initialization import initialize_weights
+from data_split import split_train_validation
 import numpy as np
 from ifri_mini_ml_lib.preprocessing.preparation.encoding import OneHotEncoder
 
@@ -27,7 +30,7 @@ class MLPClassifier:
         tol: float = 1e-4,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
-        n_iter_no_change: int = 10
+        n_iter_no_change: int = 10,
     ):
         """
         Initialize an MLP network
@@ -85,6 +88,7 @@ class MLPClassifier:
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
         self.n_iter_no_change = n_iter_no_change
+        self.random_state = random_state
         
         if random_state is not None:
             np.random.seed(random_state)
@@ -271,7 +275,7 @@ class MLPClassifier:
         
         # Split into training and validation sets if early_stopping
         if self.early_stopping:
-            X_train, X_val, y_train, y_val = split_train_validation(self, X, y)
+            X_train, X_val, y_train, y_val = split_train_validation( X, y, validation_fraction=self.validation_fraction, seed=self.random_state)
             
             y_train_one_hot = encoder.transform(y_train)
             y_val_one_hot = encoder.transform(y_val)
