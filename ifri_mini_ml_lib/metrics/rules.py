@@ -221,3 +221,52 @@ def evaluate_rule(antecedent: Union[Set, FrozenSet],
         'leverage': leverage(antecedent, consequent, transactions),
         'jaccard': jaccard(antecedent, consequent, transactions)
     }
+
+
+def evaluate_rule_from_supports(
+    antecedent_support: float,
+    consequent_support: float,
+    rule_support: float,
+) -> Dict[str, float]:
+    """
+    Evaluate an association rule when supports are already known.
+
+    This helper mirrors the transaction-based metrics without recomputing
+    them from raw data. It is useful for rule generation pipelines that
+    already operate on frequent itemsets.
+
+    Args:
+        antecedent_support: Support of the antecedent X.
+        consequent_support: Support of the consequent Y.
+        rule_support: Support of the union X ∪ Y.
+
+    Returns:
+        Dict[str, float]: Dictionary with support, confidence, lift, and conviction.
+    """
+    if antecedent_support <= 0:
+        warnings.warn("Antecedent support is 0, confidence is undefined (returns 0)")
+        confidence_value = 0.0
+    else:
+        confidence_value = rule_support / antecedent_support
+
+    if consequent_support <= 0:
+        warnings.warn("Consequent support is 0, lift is undefined (returns 0)")
+        lift_value = 0.0
+    else:
+        lift_value = confidence_value / consequent_support
+
+    if confidence_value == 1:
+        conviction_value = float('inf')
+    else:
+        conviction_value = (
+            (1 - consequent_support) / (1 - confidence_value)
+            if confidence_value < 1
+            else float('inf')
+        )
+
+    return {
+        'support': rule_support,
+        'confidence': confidence_value,
+        'lift': lift_value,
+        'conviction': conviction_value,
+    }

@@ -1,8 +1,10 @@
+from itertools import combinations
+from collections import defaultdict
 import time
-from itertools import combinations, chain
+import pandas as pd
 
 
-class Eclat:
+class ECLAT:
     """
     The ECLAT (**Equivalence Class Clustering and bottom-up Lattice Traversal**) algorithm is a depth-first search algorithm that uses a vertical database
     structure. Rather than explicitly listing all transactions, each item is associated 
@@ -16,7 +18,9 @@ class Eclat:
 
     Args:
         min_support (float): Minimum support threshold (between 0 and 1) for frequent itemsets.
-        min_confidence (float): Minimum confidence threshold (between 0 and 1) for association rules.
+        min_confidence (float | None): Optional confidence threshold in (0, 1]
+            kept for API consistency with rule-generation workflows.
+        
         
     Examples:
 
@@ -27,211 +31,146 @@ class Eclat:
     ...     {'bread', 'milk', 'butter', 'cheese'},
     ...     {'bread', 'jam', 'milk'}
     ... ]
-    >>> from ifri_mini_ml_lib.association_rules import Eclat
-    >>> eclat = Eclat(min_support=0.4, min_confidence=0.6)
-    >>> eclat.fit(transactions) # Frequents itemsets + Rules generation
-    <ifri_mini_ml_lib.association_rules.eclat.Eclat object>
+    >>> from ifri_mini_ml_lib.association_rules import ECLAT
+    >>> eclat = ECLAT(min_support=0.4, min_confidence=0.6)
+    >>> eclat.fit(transactions)
+    <ifri_mini_ml_lib.association_rules.eclat.ECLAT object>
     >>> frequent_itemsets = eclat.get_frequent_itemsets()
-    >>> # Displaying frequent itemsets of size 1
-    >>> for itemset, tidset in frequent_itemsets[1].items():
-    ...     item = list(itemset)[0]
-    ...     support = len(tidset) / len(transactions)
-    ...     print(f"Item: {item}, Support: {support:.2f}")
-    Item: bread, Support: 0.80
-    Item: milk, Support: 0.80
-    Item: butter, Support: 0.60
-    >>> rules = eclat.get_rules()
-    >>> # Displaying some association rules
-    >>> if rules:
-    ...     for rule in rules[:2]:
-    ...         print(f"{set(rule['antecedent'])} -> {set(rule['consequent'])}, "
-    ...               f"Confidence: {rule['confidence']:.2f}, Lift: {rule['lift']:.2f}")
-    {'milk'} -> {'bread'}, Confidence: 0.75, Lift: 0.94
-    {'bread'} -> {'milk'}, Confidence: 0.75, Lift: 0.94
+    >>> print(frequent_itemsets.head(3))
     """
 
-    def __init__(self, min_support: float, min_confidence:float):
-        if not 0 <= min_support <= 1:
-            raise ValueError("Minimum support must be between 0 and 1")
-        if not 0 <= min_confidence <= 1:
-            raise ValueError("Minimum confidence must be between 0 and 1")
-
+    def __init__(self, min_support: float = 0.5, min_confidence: float | None = None):
+        """
+        Initialize the ECLAT algorithm.
+        
+        Args:
+            min_support (float): Minimum support threshold in [0, 1]. Defaults to 0.5.
+            min_confidence (float | None): Optional confidence threshold in (0, 1].
+                Defaults to None.
+        
+        Raises:
+            ValueError: If min_support is not in [0, 1] or min_confidence is invalid.
+        """
+        if not 0.0 <= min_support <= 1.0:
+            raise ValueError("min_support must be between 0 and 1.")
+        if min_confidence is not None and not 0.0 < min_confidence <= 1.0:
+            raise ValueError("min_confidence must be in (0, 1].")
+        
         self.min_support = min_support
         self.min_confidence = min_confidence
-        self.frequent_itemsets = {}
-        self.frequent_TIDsets = {}
-        self.rules_ = []
-        self.n_transactions = 0
+        self._frequent_itemsets: dict[frozenset, float] = {}
+        self._n_transactions: int = 0
+        self._execution_time: float = 0.0
 
-    def fit(self, transactions):
+    def fit(self, transactions: list[list]) -> "ECLAT":
         """
-        Main method for learning frequent itemsets.
-        
+        Mine frequent itemsets from a list of transactions using vertical data format.
+
         Args:
-            transactions: List of transactions (each transaction is a set of items)
+            transactions (list[list]): Each inner list is one transaction containing hashable items.
 
         Returns:
-            self: The current instance for method chaining
+            ECLAT: The current instance for method chaining.
+        
+        Raises:
+            ValueError: If transactions list is empty.
         """
         start_time = time.time()
-        
-        # Check the conformity of the input data format
-        if isinstance(transactions, list):
-            transactions_list = transactions
-        else:
-            raise TypeError("Data format not respected! Only List[set] format is accepted.")
-        
-        self.n_transactions = len(transactions_list)
-        
-        print(f"\nApplying Eclat algorithm with:")
-        print(f"- Minimum support: {self.min_support} ({self.min_support*100}%)")
-        print(f"- Minimum confidence: {self.min_confidence} ({self.min_confidence*100}%)")
-        if transactions_list:
-            print(f"Number of valid transactions: {self.n_transactions}")
-        else:
-            return self
+        if not transactions:
+            raise ValueError("transactions must not be empty.")
 
-        # Find frequent itemsets
-        self._fit_eclat(transactions_list)
+        self._n_transactions = len(transactions)
+        self._frequent_itemsets = {}
 
-        # Generate association rules
-        self._generate_rules()
+        # Build vertical representation: item -> set of transaction indices
+        vertical: dict = defaultdict(set)
+        for tid, transaction in enumerate(transactions):
+            for item in transaction:
+                vertical[frozenset([item])].add(tid)
 
-        elapsed_time = time.time() - start_time
+        # Filter single items by min_support
+        min_count = self.min_support * self._n_transactions
+        freq_1 = {
+            item: tids
+            for item, tids in vertical.items()
+            if len(tids) >= min_count
+        }
 
-        print(f"\nExecution time: {elapsed_time:.2f} seconds")
+        # Record 1-itemsets
+        for item, tids in freq_1.items():
+            self._frequent_itemsets[item] = len(tids) / self._n_transactions
+
+        # Recursive depth-first enumeration
+        self._eclat_recursive(list(freq_1.items()))
+
+        self._execution_time = time.time() - start_time
         return self
 
-    def _fit_eclat(self, transactions):
+    def get_frequent_itemsets(self) -> pd.DataFrame:
         """
-        Implementation of the frequent itemset extraction phase.
-        
-        Args:
-            transactions: List of transactions (each transaction is a set of items)
-        """
-        # Get all unique items in the transactions
-        all_items = set(chain(*transactions))
-        
-        # Store frequent items of size 1
-        self.frequent_itemsets[1] = self.get_single_items_TIDset(all_items, transactions)
-        
-        # Generate itemsets of increasing size
-        k = 1
-        while self.frequent_itemsets.get(k):            
-            k += 1
-            candidates = self._generate_candidates(k)
-            
-            if not candidates:
-                break
-                
-            # Calculate TIDsets for the new candidates
-            level_frequent = {}
-            for candidate in candidates:
-                subsets = [frozenset(subset) for subset in combinations(candidate, k-1)]
-                if all(subset in self.frequent_itemsets[k-1] for subset in subsets):
-                    # Intersection of TIDsets of subsets
-                    TIDset = set.intersection(*[self.frequent_itemsets[k-1][subset] for subset in subsets])
-                    
-                    # Check support
-                    if len(TIDset) / self.n_transactions >= self.min_support:
-                        level_frequent[candidate] = TIDset
-            
-            if level_frequent:
-                self.frequent_itemsets[k] = level_frequent
-            else:
-                break
+        Return mined frequent itemsets as a DataFrame.
 
-    def get_single_items_TIDset(self, items, transactions):
-        """Build TIDsets for individual items"""
-        single_items_TIDsets = {}
-        for item in items:
-            TIDset = set()
-            for tid, transaction in enumerate(transactions):
-                if item in transaction:
-                    TIDset.add(tid)
-            
-            # Check if the item meets the minimum support
-            if len(TIDset) / self.n_transactions >= self.min_support:
-                single_items_TIDsets[frozenset([item])] = TIDset
-
-        return single_items_TIDsets
-    
-    def _generate_candidates(self, k):
-        """
-        Generate candidates of size k from frequent itemsets of size k-1.
+        Returns:
+            pd.DataFrame: DataFrame with columns 'itemsets' (frozenset), 'support' (float),
+                and 'length' (int). Sorted by itemset length then support.
         
-        Args:
-            k: Size of candidates to generate
+        Raises:
+            RuntimeError: If fit() has not been called yet.
+        """
+        if not self._frequent_itemsets:
+            raise RuntimeError("Call fit() before get_frequent_itemsets().")
+
+        records = [
+            {"itemsets": itemset, "support": support}
+            for itemset, support in self._frequent_itemsets.items()
+        ]
+        df = pd.DataFrame(records)
+        df["length"] = df["itemsets"].apply(len)
+        return df.sort_values(["length", "support"], ascending=[True, False]).reset_index(drop=True)
+
+    @property
+    def n_transactions(self) -> int:
+        """Number of transactions seen during fit()."""
+        return self._n_transactions
+
+    @property
+    def execution_time(self) -> float:
+        """Execution time (in seconds) of the last fit() call."""
+        return self._execution_time
+
+    def _eclat_recursive(self, prefix_class: list[tuple]) -> None:
+        """
+        Recursively extend each itemset in prefix_class by intersecting
+        tidsets with every subsequent item in the same equivalence class.
+
+        Args: 
+            prefix_class : list of (frozenset, set) pairs
+            Each pair is (itemset, tidset).
             
         Returns:
-            Set of generated candidates
+            None
         """
-        candidates = set()
-        prev_frequent = self.frequent_itemsets.get(k-1, {})
-        
-        for itemset1, itemset2 in combinations(prev_frequent.keys(), 2):
-            # Join itemsets having k-2 elements in common
-            union = itemset1.union(itemset2)
-            if len(union) == k:
-                # Check that all subsets of size k-1 are frequent
-                if all(frozenset(subset) in prev_frequent for subset in combinations(union, k-1)):
-                    candidates.add(union)
-        
-        return candidates
+        min_count = self.min_support * self._n_transactions
 
-    def _generate_rules(self):
-        """
-        Generate association rules from frequent itemsets.
-        """
-        
-        # Go through all frequent itemsets of size > 1
-        for k in range(2, len(self.frequent_itemsets) + 1):
-            if k not in self.frequent_itemsets:
-                continue
-                
-            for itemset, TIDset in self.frequent_itemsets[k].items():
-                itemset_support = len(TIDset) / self.n_transactions
-                
-                # Generate all possible rules from this itemset
-                for i in range(1, k):
-                    for antecedent_items in combinations(itemset, i):
-                        antecedent = frozenset(antecedent_items)
-                        consequent = itemset.difference(antecedent)
-                        
-                        # Calculate confidence
-                        antecedent_support = len(self.frequent_itemsets[len(antecedent)][antecedent]) / self.n_transactions
-                        confidence = itemset_support / antecedent_support
-                        
-                        if confidence >= self.min_confidence:
-                            # Calculate lift
-                            consequent_support = len(self.frequent_itemsets[len(consequent)][consequent]) / self.n_transactions
-                            lift = confidence / consequent_support
-                            
-                            # Add the rule to the list
-                            self.rules_.append({
-                                'antecedent': antecedent,
-                                'consequent': consequent,
-                                'support': itemset_support,
-                                'confidence': confidence,
-                                'lift': lift
-                            })
+        for i in range(len(prefix_class)):
+            itemset_i, tids_i = prefix_class[i]
+            next_level = []
+
+            for j in range(i + 1, len(prefix_class)):
+                itemset_j, tids_j = prefix_class[j]
+
+                # Compute support of the union via tidset intersection
+                new_tids = tids_i & tids_j
+                if len(new_tids) >= min_count:
+                    new_itemset = itemset_i | itemset_j
+                    self._frequent_itemsets[new_itemset] = (
+                        len(new_tids) / self._n_transactions
+                    )
+                    next_level.append((new_itemset, new_tids))
+
+            if next_level:
+                self._eclat_recursive(next_level)
 
 
-    def get_frequent_itemsets(self):
-        """
-        Retrieve the discovered frequent itemsets.
-        
-        Returns:
-            dict: Dictionary of frequent itemsets where keys are sizes
-                and values are sets of itemsets
-        """
-        return self.frequent_itemsets
-    
-    def get_rules(self):
-        """
-        Accessor to retrieve the generated association rules.
-        
-        Returns:
-            List of association rules
-        """
-        return self.rules_
+# Backward-compatible alias (keeps existing imports working).
+Eclat = ECLAT
