@@ -15,6 +15,7 @@ class CategoricalEncoder:
         
     Args:
         encoding_type (str): Type of encoding to apply. Options: 'onehot', 'label', 'ordinal', 'frequency', 'target'. Default is 'onehot'.
+            ('onehot' is deprecated . It will be removed soon. Use OneHotEncoder instead)
         target_column (str): Name of the target column (required for target encoding). Default is None.
     """
     
@@ -111,23 +112,30 @@ class OneHotEncoder:
         Args:
             handle_unknown (str):
                 - "ignore" : unknown categories are encoded as all-zero rows
+                Ex : If in train_set we have categories likes Green and Red , if we got new categories like Blue it'll be encode as 0 0
                 - "error" : raise an error when unknown categories appear during transform
         """
         if handle_unknown not in {"ignore", "error"}:
             raise ValueError("handle_unknown must be either 'ignore' or 'error'")
 
         self.handle_unknown = handle_unknown
+        # To store categories
         self.categories_ = {}
+        # To store feature_names
         self.feature_names_ = []
 
-    def fit(self, X):
+    def fit(self, X : pd.DataFrame):
         """
         Learn categories for each categorical column in the training data.
+        Args:
+            X (pd.DataFrame) : Features in the dataset
         """
         X = X.copy()
+        #In case it pass no-object or numerical categories
         for column in X.select_dtypes(include=['object', 'category']).columns:
             self.categories_[column] = sorted(X[column].dropna().unique())
 
+        # create column names
         self.feature_names_ = [
             f"{column}_{category}"
             for column in X.select_dtypes(include=['object', 'category']).columns
@@ -136,7 +144,7 @@ class OneHotEncoder:
 
         return self
 
-    def transform(self, X):
+    def transform(self, X : pd.DataFrame):
         """
         Transform dataset using learned categories.
         """
@@ -152,6 +160,7 @@ class OneHotEncoder:
 
             categories = self.categories_[column]
             for category in categories:
+                # Transformation in OneHot
                 encoded[f"{column}_{category}"] = (X[column] == category).astype(int)
 
             if self.handle_unknown == "error":
