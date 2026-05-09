@@ -1,6 +1,6 @@
 from typing import List, Tuple, Optional
 from optimizers import UPDATE_WEIGHTS_METHODS
-from activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
+from activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS, _softmax
 from initialization import initialize_weights
 from data_split import split_train_validation
 import numpy as np
@@ -160,7 +160,7 @@ class MLPClassifier:
         layer_inputs.append(last_layer_input)
         
         # Use softmax for output layer
-        output_activation = self._softmax(last_layer_input)
+        output_activation = _softmax(last_layer_input)
         activations.append(output_activation)
         
         return activations, layer_inputs
