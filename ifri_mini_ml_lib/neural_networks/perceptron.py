@@ -1,6 +1,6 @@
 import numpy as np
 
-from data_split import split_train_validation
+from .data_split import split_train_validation
 
 
 class Perceptron:
