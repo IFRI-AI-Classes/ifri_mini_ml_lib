@@ -4,7 +4,7 @@ from ..preprocessing.preparation.splitting import DataSplitter
 
 
 # Data splitting function for training and validation sets
-def split_train_validation(model, X: np.ndarray, y: np.ndarray, validation_fraction: int,  seed = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def split_train_validation( X: np.ndarray, y: np.ndarray, validation_fraction: int,  seed = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Split data into training and validation sets
     
