@@ -1,5 +1,5 @@
 import re 
-import string 
+
 
 class Tokenizer:
 
@@ -73,7 +73,7 @@ class Tokenizer:
 
 
 
-if __name__ == "__main__":
+
     t = Tokenizer()
 
     

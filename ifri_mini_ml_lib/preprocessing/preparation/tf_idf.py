@@ -57,3 +57,18 @@ class TF_IDF:
         self.fit(corpus)
         return self.transform(corpus)
 
+
+corpus = [
+    ["le", "chat", "mange", "le", "poisson"],
+    ["le", "chien", "court", "dans", "jardin"],
+    ["le", "dragon", "vit", "dans", "forêt", "magique"],
+]
+
+tfidf = TF_IDF()
+matrix = tfidf.fit_transform(corpus)
+
+print("Vocabulaire:", tfidf.vocabulary_)
+print("IDF:", tfidf.idf_)
+print("Matrice TF-IDF:")
+for row in matrix:
+    print([round(x, 3) for x in row])
