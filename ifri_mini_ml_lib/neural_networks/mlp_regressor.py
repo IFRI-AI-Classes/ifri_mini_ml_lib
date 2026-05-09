@@ -1,8 +1,8 @@
 from typing import List, Tuple, Optional
-from optimizers import UPDATE_WEIGHTS_METHODS
-from activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
-from initialization import initialize_weights
-from data_split import split_train_validation
+from .optimizers import UPDATE_WEIGHTS_METHODS
+from .activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
+from .initialization import initialize_weights
+from .data_split import split_train_validation
 import numpy as np
 
 
