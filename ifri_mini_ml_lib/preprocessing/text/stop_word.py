@@ -23,6 +23,7 @@ class StopWordRemover:
     """
 
     BUILTIN_STOPWORDS = {
+        #ajouter les stop words anglais
         "english": {
             "the", "a", "an", "is", "it", "in", "on", "at", "to",
             "for", "of", "and", "or", "but", "not", "with", "this",
@@ -33,8 +34,17 @@ class StopWordRemover:
             "from", "by", "as", "if", "so", "up", "out", "about",
             "into", "than", "then", "when", "there", "been", "me"
         },
-        # TODO : ajouter les stop words français
-        # "french": { ... }
+        # ajouter les stop words français
+       "french": {
+          "le", "la", "les", "de", "du", "des", "un", "une",
+          "et", "est", "en", "au", "aux", "ce", "qui", "que",
+          "pour", "sur", "dans", "par", "avec", "il", "elle",
+          "nous", "vous", "ils", "elles", "je", "tu", "on",
+          "se", "sa", "son", "ses", "mon", "ma", "mes", "ton",
+          "ta", "tes", "leur", "leurs", "y", "ne", "pas", "plus",
+          "très", "bien", "comme", "aussi", "mais", "ou", "donc",
+          "car", "si", "à", "été", "être", "avoir", "fait"
+       },
     }
 
     def __init__(self, language="english", custom_stopwords=None):
@@ -49,7 +59,8 @@ class StopWordRemover:
         """
         self.language = language
         self.stopwords = set(self.BUILTIN_STOPWORDS.get(language, set()))
-        # TODO : intégrer custom_stopwords dans self.stopwords
+        if custom_stopwords:
+          self.stopwords = self.stopwords.union(set(custom_stopwords))
 
     def fit(self, X=None, y=None):
         """

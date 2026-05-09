@@ -64,3 +64,30 @@ def test_langue_inconnue():
     remover = StopWordRemover(language="arabic")
     tokens = ["le", "film", "est", "bon"]
     assert remover.transform(tokens) == tokens
+
+
+
+@pytest.fixture
+def remover_fr():
+    return StopWordRemover(language="french")
+
+
+def test_suppression_basique_francais(remover_fr):
+    """Teste la suppression de stop words en français"""
+    tokens = ["le", "film", "est", "vraiment", "excellent"]
+    result = remover_fr.transform(tokens)
+    assert "le" not in result
+    assert "est" not in result
+    assert "film" in result
+    assert "excellent" in result
+
+
+def test_custom_stopwords():
+    """Teste l'ajout de stop words personnalisés"""
+    remover = StopWordRemover(language="english", custom_stopwords=["film", "movie"])
+    tokens = ["the", "film", "is", "great"]
+    result = remover.transform(tokens)
+    assert "film" not in result
+    assert "great" in result
+
+    
