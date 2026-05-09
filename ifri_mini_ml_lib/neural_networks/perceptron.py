@@ -1,6 +1,6 @@
 import numpy as np
 
-from data_split import split_train_validation
+from .data_split import split_train_validation
 
 
 class Perceptron:
@@ -94,7 +94,7 @@ class Perceptron:
         X = X.reshape(-1, 1)
 
 
-      # Validation checks
+    # Validation checks
 
     if X.shape[0] != y.shape[0]:
         raise ValueError("Number of samples in X and y must be the same.")
