@@ -266,6 +266,8 @@ class MLPClassifier:
         encoder = OneHotEncoder()
 
         encoder.fit(y)
+        self._label_encoder = encoder
+        self.classes_ = encoder.classes_
         y_one_hot = encoder.transform(y)
         n_outputs = y_one_hot.shape[1]
         
