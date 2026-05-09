@@ -25,11 +25,11 @@ class Perceptron:
   
   Examples
   --------
-  Create an `Self@PerceptronClassifier` object
+  Create an `Self@Perceptron` object
 
   ```
-  from perceptron_classifier import PerceptronClassifier
-  pctBC = PerceptronClassifier(learning_rate=0.1, n_iter=1000)
+  from perceptro import Perceptron
+  pctBC = Perceptron(learning_rate=0.1, n_iter=1000)
   ```
 
   ```
@@ -46,9 +46,9 @@ class Perceptron:
 
   """
 
-  def __init__(self,lr=0.001, n_iter=1000, early_stopping=True, patience=10, validation_split=0.2, shuffle=True, random_state=None):
+  def __init__(self, lr=0.001, n_iter=1000, early_stopping=True, patience=10, validation_split=0.2, shuffle=True, random_state=None):
     """
-    Create an `Self@PerceptronClassifier` object
+    Create an `Self@Perceptron` object
     """
     self.lr = lr
     self.n_iter = n_iter
