@@ -1,8 +1,8 @@
 from typing import List, Tuple, Optional
-from optimizers import UPDATE_WEIGHTS_METHODS
-from activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS, _softmax
-from initialization import initialize_weights
-from data_split import split_train_validation
+from .optimizers import UPDATE_WEIGHTS_METHODS
+from .activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS, _softmax
+from .initialization import initialize_weights
+from .data_split import split_train_validation
 import numpy as np
 from ifri_mini_ml_lib.preprocessing.preparation.encoding import OneHotEncoder
 
@@ -266,6 +266,8 @@ class MLPClassifier:
         encoder = OneHotEncoder()
 
         encoder.fit(y)
+        self._label_encoder = encoder
+        self.classes_ = encoder.classes_
         y_one_hot = encoder.transform(y)
         n_outputs = y_one_hot.shape[1]
         
