@@ -7,6 +7,16 @@ class Perceptron:
   """
   **Perceptron for *`binary classification`***
   
+  History
+  -------
+  - 1958: Frank Rosenblatt introduced the perceptron as a binary classifier.
+  - 1969: Minsky and Papert's book "Perceptrons" highlighted limitations of single-layer perceptrons, leading to a decline in interest.
+  - 1980s: The backpropagation algorithm enabled training of multi-layer perceptrons, revitalizing interest in neural networks.
+  - 2010s: Advances in computing power and data availability led to the resurgence of deep learning, with multi-layer perceptrons (MLPs) becoming a fundamental building block for more complex architectures.
+  - 2020s: Perceptrons and MLPs continue to be widely used for various applications, including image recognition, natural language processing, and more.  
+
+  Source: https://en.wikipedia.org/wiki/Perceptron
+  
   Parameters
   -----------
     learning_rate : float
