@@ -1,6 +1,5 @@
 import re 
 
-
 class Tokenizer:
 
     def __init__(self, lowercase=True, handle_apostrophes=True, handle_contractions=True, remove_punctuation=True ,min_token_length=1):
@@ -71,25 +70,5 @@ class Tokenizer:
     def tokenize_corpus(self, corpus):
         return [self.tokenize(doc) for doc in corpus]
 
-
-
-
-    t = Tokenizer()
-
-    
-    print(t.tokenize("i can't have john's money and she won't take it's place"))
-
-
-    print(t.tokenize("l'élève va à l'école et c'est très bien"))
-
-    corpus = [
-        "I can't do this ",
-        "John's car is amazing",
-        "l'intelligence artificielle c'est fascinant"
-    ]
-    print(t.tokenize_corpus(corpus))
-
-    t2 = Tokenizer(handle_contractions=False, min_token_length=3)
-    print(t2.tokenize("i can't stop thinking about it "))
 
 
