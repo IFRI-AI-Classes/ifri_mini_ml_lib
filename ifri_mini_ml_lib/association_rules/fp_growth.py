@@ -2,6 +2,7 @@ import time
 import pandas as pd
 
 from collections import defaultdict
+from itertools import combinations
 from ..utils.data_format import DataAdapter
 class _FPNode:
     """
@@ -303,17 +304,29 @@ class FPGrowth:
         return patterns
 
     def _ensure_frequent_pairs(self, transactions_list: list[set]) -> None:
-        """Ensure every frequent 2-itemset is present in the mined output."""
-        singletons = [itemset for itemset in self._frequent_itemsets if len(itemset) == 1]
-
-        for index, left in enumerate(singletons):
-            for right in singletons[index + 1 :]:
-                candidate = left | right
-                if candidate in self._frequent_itemsets:
-                    continue
-
-                support_count = sum(
-                    1 for transaction in transactions_list if candidate.issubset(transaction)
-                )
-                if support_count / self._n_transactions >= self.min_support:
-                    self._frequent_itemsets[candidate] = support_count / self._n_transactions
+        """Ensure every frequent 2-itemset is present in the mined output.
+        
+        Optimized: counts all pairs in a single pass over transactions instead of
+        repeatedly testing candidate.issubset(transaction) for each transaction.
+        """
+        # Extract all frequent singletons
+        singletons = [item for itemset in self._frequent_itemsets if len(itemset) == 1 for item in itemset]
+        
+        if len(singletons) < 2:
+            return
+        
+        # Single-pass counting: for each transaction, count all pairs of frequent singletons
+        pair_counts = defaultdict(int)
+        for transaction in transactions_list:
+            # Find frequent singletons present in this transaction
+            present_items = [item for item in transaction if item in singletons]
+            # Count all pairs
+            for pair in combinations(present_items, 2):
+                pair_counts[frozenset(pair)] += 1
+        
+        # Add frequent pairs to itemsets
+        for pair, count in pair_counts.items():
+            if pair not in self._frequent_itemsets:
+                support = count / self._n_transactions
+                if support >= self.min_support:
+                    self._frequent_itemsets[pair] = support
