@@ -184,3 +184,27 @@ class OneHotEncoder:
 
     def fit_transform(self, X):
         return self.fit(X).transform(X)
+    
+    
+if __name__ == "__main__":
+    # Tests unitaires pour l'encodage One hot
+     
+    color_name_train = pd.DataFrame({"Color" : ["Green" , "Blue" , "Red" , "Yellow" ]})
+    color_name_test = pd.DataFrame({"Color" : ["Blue" , "Green"]})
+    
+    encoder = OneHotEncoder()
+    encoding_values = encoder.fit_transform(color_name_train)
+    
+    print(f"Results of OneHotEncoder for train\n{encoding_values}")
+    
+    #       Color_Blue  Color_Green  Color_Red  Color_Yellow
+    #0           0            1          0             0
+    #1           1            0          0             0
+    #2           0            0          1             0
+    #3           0            0          0             1
+
+    print(f"Results of OneHotEncoder for test\n{encoder.transform(color_name_test)}")
+
+    #   Color_Blue  Color_Green  Color_Red  Color_Yellow
+    #0           1            0          0             0
+    #1           0            1          0             0
