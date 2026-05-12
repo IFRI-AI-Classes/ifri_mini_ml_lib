@@ -56,7 +56,7 @@ class Perceptron:
 
   """
 
-  def __init__(self, lr=0.001, n_iter=1000, early_stopping=True, patience=10, validation_split=0.2, shuffle=True, random_state=None):
+  def __init__(self, lr=0.001, n_iter=1000, early_stopping=False, patience=10, validation_split=0.2, shuffle=True, random_state=None):
     """
     Create an `Self@Perceptron` object
     """
