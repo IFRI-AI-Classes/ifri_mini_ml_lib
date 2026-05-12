@@ -20,8 +20,8 @@ def rbf_kernel(X, Y, gamma=1.0):
     Returns:
         np.ndarray: Kernel matrix of shape (n_samples_X, n_samples_Y).
     """
-    diff = X[:, np.newaxis, :] - Y  # (n,m,d)
-    sq_distances = np.sum(diff**2, axis=2)  # (n,m)
+    diff = X[:, np.newaxis, :] - Y  # Broadcasting builds all pairwise differences without explicit Python loops. (n,m,d)
+    sq_distances = np.sum(diff**2, axis=2)  # Squared Euclidean distance is the quantity used by the RBF kernel. (n,m)
     return np.exp(-gamma * sq_distances)
 
 
@@ -43,7 +43,7 @@ def smo(K, y, C, tol=1e-3, max_iter=100):
     b = 0
     
     for _ in range(max_iter):
-        errors = (alphas * y) @ K + b - y
+        errors = (alphas * y) @ K + b - y  # Current dual residuals for every training sample.
         
         vi = y * errors
         violations = np.concatenate([
@@ -54,11 +54,11 @@ def smo(K, y, C, tol=1e-3, max_iter=100):
         if len(violations) == 0:
             break
             
-        i = violations[np.argmax(np.abs(vi[violations]))]
+        i = violations[np.argmax(np.abs(vi[violations]))]  # Pick the worst violator so each step focuses on the largest error.
         
         diff_errors = np.abs(errors[i] - errors)
         diff_errors[i] = 0
-        j = np.argmax(diff_errors)
+        j = np.argmax(diff_errors)  # Choose a second point with the most different prediction error.
         
         eta = K[i,i] + K[j,j] - 2*K[i,j]
         if eta <= 0:
@@ -75,8 +75,8 @@ def smo(K, y, C, tol=1e-3, max_iter=100):
             continue
             
         alpha_j_new = alphas[j] + y[j] * (errors[i] - errors[j]) / eta
-        alpha_j_new = np.clip(alpha_j_new, L, H)
-        alpha_i_new = alphas[i] + y[i] * y[j] * (alphas[j] - alpha_j_new)
+        alpha_j_new = np.clip(alpha_j_new, L, H)  # Clip the updated coefficient so it stays inside the feasible box.
+        alpha_i_new = alphas[i] + y[i] * y[j] * (alphas[j] - alpha_j_new)  # Recover the paired coefficient from the equality constraint.
         
         b1 = b - errors[i] - y[i]*(alpha_i_new - alphas[i])*K[i,i] - y[j]*(alpha_j_new - alphas[j])*K[i,j]
         b2 = b - errors[j] - y[i]*(alpha_i_new - alphas[i])*K[i,j] - y[j]*(alpha_j_new - alphas[j])*K[j,j]
