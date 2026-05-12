@@ -1,19 +1,19 @@
 class StopWordRemover:
     """
-    Supprime les stop words d'une liste de tokens.
+    Removes stop words from a list of tokens.
 
     Description:
-        Les stop words sont des mots très fréquents dans une langue
-        qui n'apportent pas de valeur informative pour l'analyse de texte
-        (ex: "le", "la", "de", "et" en français).
-        Cette classe permet de les identifier et les retirer d'une liste
-        de tokens avant vectorisation.
+        Stop words are very common words in a language
+        that do not provide significangit addt informational value
+        for text analysis (e.g., "the", "is", "and" in English).
+        This class identifies and removes them from a list
+        of tokens before vectorization.
 
     Args:
-        language (str): Langue des stop words. Options: 'french', 'english'.
-                        Default est 'english'.
-        custom_stopwords (list, optional): Mots supplémentaires à considérer
-                                           comme stop words. Default est None.
+        language (str): Stop words language. Options: 'french', 'english'.
+                        Default is 'english'.
+        custom_stopwords (list, optional): Additional words to consider
+                                           as stop words. Default is None.
 
     Examples:
         >>> remover = StopWordRemover(language='english')
@@ -23,7 +23,7 @@ class StopWordRemover:
     """
 
     BUILTIN_STOPWORDS = {
-        #ajouter les stop words anglais
+        # Add English stop words
         "english": {
             "the", "a", "an", "is", "it", "in", "on", "at", "to",
             "for", "of", "and", "or", "but", "not", "with", "this",
@@ -34,42 +34,43 @@ class StopWordRemover:
             "from", "by", "as", "if", "so", "up", "out", "about",
             "into", "than", "then", "when", "there", "been", "me"
         },
-        # ajouter les stop words français
-       "french": {
-          "le", "la", "les", "de", "du", "des", "un", "une",
-          "et", "est", "en", "au", "aux", "ce", "qui", "que",
-          "pour", "sur", "dans", "par", "avec", "il", "elle",
-          "nous", "vous", "ils", "elles", "je", "tu", "on",
-          "se", "sa", "son", "ses", "mon", "ma", "mes", "ton",
-          "ta", "tes", "leur", "leurs", "y", "ne", "pas", "plus",
-          "très", "bien", "comme", "aussi", "mais", "ou", "donc",
-          "car", "si", "à", "été", "être", "avoir", "fait"
-       },
+
+        # Add French stop words
+        "french": {
+            "le", "la", "les", "de", "du", "des", "un", "une",
+            "et", "est", "en", "au", "aux", "ce", "qui", "que",
+            "pour", "sur", "dans", "par", "avec", "il", "elle",
+            "nous", "vous", "ils", "elles", "je", "tu", "on",
+            "se", "sa", "son", "ses", "mon", "ma", "mes", "ton",
+            "ta", "tes", "leur", "leurs", "y", "ne", "pas", "plus",
+            "très", "bien", "comme", "aussi", "mais", "ou", "donc",
+            "car", "si", "à", "été", "être", "avoir", "fait"
+        },
     }
 
     def __init__(self, language="english", custom_stopwords=None):
         """
-        Initialise le StopWordRemover.
+        Initializes the StopWordRemover.
 
         Args:
-            language (str): Langue cible ('english' supporté pour l'instant).
-            custom_stopwords (list, optional): À implémenter — liste de mots
-                                               supplémentaires à traiter comme
-                                               stop words.
+            language (str): Target language ('english' or 'french').
+            custom_stopwords (list, optional): Additional words
+                                               to treat as stop words.
         """
         self.language = language
         self.stopwords = set(self.BUILTIN_STOPWORDS.get(language, set()))
+
         if custom_stopwords:
-          self.stopwords = self.stopwords.union(set(custom_stopwords))
+            self.stopwords = self.stopwords.union(set(custom_stopwords))
 
     def fit(self, X=None, y=None):
         """
-        Aucun apprentissage nécessaire pour cette classe.
-        Retourne self pour compatibilité avec les pipelines.
+        No training is required for this class.
+        Returns self for pipeline compatibility.
 
         Args:
-            X: Ignoré.
-            y: Ignoré.
+            X: Ignored.
+            y: Ignored.
 
         Returns:
             self
@@ -78,47 +79,68 @@ class StopWordRemover:
 
     def transform(self, tokens):
         """
-        Supprime les stop words d'une liste de tokens.
+        Removes stop words from a list of tokens.
 
         Description:
-            Accepte soit une liste simple de tokens (un seul document),
-            soit une liste de listes (plusieurs documents).
+            Accepts either a single list of tokens (one document)
+            or a list of token lists (multiple documents).
 
         Args:
-            tokens (list): Liste de tokens (str) ou liste de listes de tokens.
+            tokens (list): List of tokens (str) or list of token lists.
 
         Returns:
-            list: Tokens filtrés, sans les stop words.
+            list: Filtered tokens without stop words.
         """
         if not tokens:
             return []
-        # Cas : liste de documents
+
+        # Case: list of documents
         if isinstance(tokens[0], list):
             return [
                 [t for t in doc if t.lower() not in self.stopwords]
                 for doc in tokens
             ]
-        # Cas : document unique
+
+        # Case: single document
         return [t for t in tokens if t.lower() not in self.stopwords]
 
     def fit_transform(self, tokens, y=None):
         """
-        Ajuste et transforme en une seule étape.
+        Fits and transforms in a single step.
 
         Args:
-            tokens (list): Liste de tokens ou liste de listes de tokens.
-            y: Ignoré.
+            tokens (list): List of tokens or list of token lists.
+            y: Ignored.
 
         Returns:
-            list: Tokens filtrés sans les stop words.
+            list: Filtered tokens without stop words.
         """
         return self.fit().transform(tokens)
 
-    def get_stopwords(self):
+    def get_builtin_stopwords(self, language=None):
         """
-        Retourne l'ensemble des stop words utilisés.
+        Returns the built-in stop words.
+
+        Args:
+            language (str, optional): Target language.
+                                      If provided, returns stop words
+                                      for that language only.
 
         Returns:
-            set: Ensemble des stop words actifs.
+            dict or set:
+                - Full dictionary of built-in stop words if no language is provided.
+                - Set of stop words for the specified language otherwise.
+        """
+        if language:
+            return self.BUILTIN_STOPWORDS.get(language, set())
+
+        return self.BUILTIN_STOPWORDS
+
+    def get_stopwords(self):
+        """
+        Returns the set of active stop words.
+
+        Returns:
+            set: Active stop words set.
         """
         return self.stopwords
