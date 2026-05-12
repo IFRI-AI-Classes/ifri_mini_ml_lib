@@ -1,3 +1,4 @@
+import math
 import time
 import pandas as pd
 
@@ -48,6 +49,7 @@ class _FPTree:
         for item in transaction:
             if item in node.children:
                 node.children[item].increment(count)
+                self.header[item][0] += count  # Update header support count   
             else:
                 child = _FPNode(item=item, count=count, parent=node)
                 node.children[item] = child
@@ -152,7 +154,7 @@ class FPGrowth:
 
         self._n_transactions = len(transactions_list)
         self._frequent_itemsets = {}
-        min_count = int(self.min_support * self._n_transactions)
+        min_count = math.ceil(self.min_support * self._n_transactions)
 
         # Pass 1: count single-item frequencies
         item_counts: dict = defaultdict(int)
@@ -183,7 +185,6 @@ class FPGrowth:
 
         # Mine the tree
         self._mine_tree(tree, frozenset(), min_count)
-        self._ensure_frequent_pairs(transactions_list)
 
         self._execution_time = time.time() - start_time
         return self
@@ -271,11 +272,7 @@ class FPGrowth:
                     if filtered_path:
                         cond_tree.insert_transaction(filtered_path, count)
 
-                for cond_item in sorted(frequent_items, key=lambda x: (-frequent_items[x], str(x))):
-                    newer_prefix = new_prefix | frozenset([cond_item])
-                    self._frequent_itemsets[newer_prefix] = (
-                        frequent_items[cond_item] / self._n_transactions
-                    )
+                self._mine_tree(cond_tree, new_prefix, min_count)
 
     @staticmethod
     def _build_cond_patterns(tree: _FPTree, item) -> list[tuple]:
@@ -303,30 +300,3 @@ class FPGrowth:
             node = node.node_link
         return patterns
 
-    def _ensure_frequent_pairs(self, transactions_list: list[set]) -> None:
-        """Ensure every frequent 2-itemset is present in the mined output.
-        
-        Optimized: counts all pairs in a single pass over transactions instead of
-        repeatedly testing candidate.issubset(transaction) for each transaction.
-        """
-        # Extract all frequent singletons
-        singletons = [item for itemset in self._frequent_itemsets if len(itemset) == 1 for item in itemset]
-        
-        if len(singletons) < 2:
-            return
-        
-        # Single-pass counting: for each transaction, count all pairs of frequent singletons
-        pair_counts = defaultdict(int)
-        for transaction in transactions_list:
-            # Find frequent singletons present in this transaction
-            present_items = [item for item in transaction if item in singletons]
-            # Count all pairs
-            for pair in combinations(present_items, 2):
-                pair_counts[frozenset(pair)] += 1
-        
-        # Add frequent pairs to itemsets
-        for pair, count in pair_counts.items():
-            if pair not in self._frequent_itemsets:
-                support = count / self._n_transactions
-                if support >= self.min_support:
-                    self._frequent_itemsets[pair] = support
