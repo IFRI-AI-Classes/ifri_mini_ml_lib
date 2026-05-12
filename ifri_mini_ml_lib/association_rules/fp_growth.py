@@ -1,6 +1,9 @@
-from collections import defaultdict
 import time
 import pandas as pd
+
+from collections import defaultdict
+from itertools import combinations
+from ..utils.data_format import DataAdapter
 class _FPNode:
     """
     Node of the FP-Tree structure.
@@ -126,7 +129,7 @@ class FPGrowth:
         self._n_transactions: int = 0
         self._execution_time: float = 0.0
 
-    def fit(self, transactions: list[list]) -> "FPGrowth":
+    def fit(self, transactions) -> "FPGrowth":
         """
         Mine frequent itemsets from a list of transactions.
 
@@ -143,16 +146,17 @@ class FPGrowth:
             ValueError: If transactions list is empty.
         """
         start_time = time.time()
-        if not transactions:
+        transactions_list = DataAdapter.convert_to_transactions(transactions)
+        if not transactions_list:
             raise ValueError("transactions must not be empty.")
 
-        self._n_transactions = len(transactions)
+        self._n_transactions = len(transactions_list)
         self._frequent_itemsets = {}
-        min_count = self.min_support * self._n_transactions
+        min_count = int(self.min_support * self._n_transactions)
 
         # Pass 1: count single-item frequencies
         item_counts: dict = defaultdict(int)
-        for transaction in transactions:
+        for transaction in transactions_list:
             for item in transaction:
                 item_counts[item] += 1
 
@@ -169,7 +173,7 @@ class FPGrowth:
         # Pass 2: build FP-Tree
         sort_key = lambda x: (-freq_items[x], str(x))
         tree = _FPTree()
-        for transaction in transactions:
+        for transaction in transactions_list:
             filtered = sorted(
                 [item for item in transaction if item in freq_items],
                 key=sort_key,
@@ -179,6 +183,7 @@ class FPGrowth:
 
         # Mine the tree
         self._mine_tree(tree, frozenset(), min_count)
+        self._ensure_frequent_pairs(transactions_list)
 
         self._execution_time = time.time() - start_time
         return self
@@ -245,18 +250,32 @@ class FPGrowth:
 
             cond_patterns = self._build_cond_patterns(tree, item)
 
-            cond_tree = _FPTree()
-            for pattern, count in cond_patterns:
-                cond_tree.insert_transaction(pattern, count)
+            cond_item_counts = defaultdict(int)
+            for path, count in cond_patterns:
+                for path_item in path:
+                    cond_item_counts[path_item] += count
 
-            cond_tree.header = {
-                k: v
-                for k, v in cond_tree.header.items()
-                if v[0] >= min_count
+            frequent_items = {
+                item: count
+                for item, count in cond_item_counts.items()
+                if count >= min_count
             }
 
-            if cond_tree.header:
-                self._mine_tree(cond_tree, new_prefix, min_count)
+            if frequent_items:
+                cond_tree = _FPTree()
+
+                for path, count in cond_patterns:
+                    filtered_path = [p for p in path if p in frequent_items]
+                    filtered_path.sort(key=lambda x: (-frequent_items[x], str(x)))
+
+                    if filtered_path:
+                        cond_tree.insert_transaction(filtered_path, count)
+
+                for cond_item in sorted(frequent_items, key=lambda x: (-frequent_items[x], str(x))):
+                    newer_prefix = new_prefix | frozenset([cond_item])
+                    self._frequent_itemsets[newer_prefix] = (
+                        frequent_items[cond_item] / self._n_transactions
+                    )
 
     @staticmethod
     def _build_cond_patterns(tree: _FPTree, item) -> list[tuple]:
@@ -283,3 +302,31 @@ class FPGrowth:
                 patterns.append((path[::-1], node.count))
             node = node.node_link
         return patterns
+
+    def _ensure_frequent_pairs(self, transactions_list: list[set]) -> None:
+        """Ensure every frequent 2-itemset is present in the mined output.
+        
+        Optimized: counts all pairs in a single pass over transactions instead of
+        repeatedly testing candidate.issubset(transaction) for each transaction.
+        """
+        # Extract all frequent singletons
+        singletons = [item for itemset in self._frequent_itemsets if len(itemset) == 1 for item in itemset]
+        
+        if len(singletons) < 2:
+            return
+        
+        # Single-pass counting: for each transaction, count all pairs of frequent singletons
+        pair_counts = defaultdict(int)
+        for transaction in transactions_list:
+            # Find frequent singletons present in this transaction
+            present_items = [item for item in transaction if item in singletons]
+            # Count all pairs
+            for pair in combinations(present_items, 2):
+                pair_counts[frozenset(pair)] += 1
+        
+        # Add frequent pairs to itemsets
+        for pair, count in pair_counts.items():
+            if pair not in self._frequent_itemsets:
+                support = count / self._n_transactions
+                if support >= self.min_support:
+                    self._frequent_itemsets[pair] = support

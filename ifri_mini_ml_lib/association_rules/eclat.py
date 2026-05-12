@@ -1,7 +1,9 @@
-from itertools import combinations
-from collections import defaultdict
 import time
 import pandas as pd
+
+from itertools import combinations
+from collections import defaultdict
+from ..utils.data_format import DataAdapter
 
 
 class ECLAT:
@@ -62,7 +64,7 @@ class ECLAT:
         self._n_transactions: int = 0
         self._execution_time: float = 0.0
 
-    def fit(self, transactions: list[list]) -> "ECLAT":
+    def fit(self, transactions) -> "ECLAT":
         """
         Mine frequent itemsets from a list of transactions using vertical data format.
 
@@ -76,15 +78,16 @@ class ECLAT:
             ValueError: If transactions list is empty.
         """
         start_time = time.time()
-        if not transactions:
+        transactions_list = DataAdapter.convert_to_transactions(transactions)
+        if not transactions_list:
             raise ValueError("transactions must not be empty.")
 
-        self._n_transactions = len(transactions)
+        self._n_transactions = len(transactions_list)
         self._frequent_itemsets = {}
 
         # Build vertical representation: item -> set of transaction indices
         vertical: dict = defaultdict(set)
-        for tid, transaction in enumerate(transactions):
+        for tid, transaction in enumerate(transactions_list):
             for item in transaction:
                 vertical[frozenset([item])].add(tid)
 

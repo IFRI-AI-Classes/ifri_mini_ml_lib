@@ -5,7 +5,7 @@ from .data_split import split_train_validation
 
 class Perceptron:
   """
-  **Perceptron for *`binary classification`***
+  **Perceptron class for *`binary classification`***
   
   History
   -------
@@ -19,10 +19,20 @@ class Perceptron:
   
   Parameters
   -----------
-    learning_rate : float
+    lr : float
       The learning rate ( 𝜂 ) controls the size of the steps that the model takes when it adjusts its weights.
     n_iter : int
-      maximum iteration
+      Maximum iteration.
+    early_stopping : bool, default=True
+        
+    patience : int, default=10
+        
+    validation_split : float, default=0.2
+        
+    shuffle : bool, default=True
+        
+    random_state : int, default=None
+        
   
   Attributes
   ----------
@@ -32,45 +42,94 @@ class Perceptron:
     bias : float
       bias ∈ R.
       Constant term that allows shifting of the activation function to control the threshold for firing.
+    trained_epochs : int
+      ...
   
   Examples
   --------
-  Create an `Self@Perceptron` object
 
+  Create, train and test an `Perceptron` model with various data
   ```
-  from perceptro import Perceptron
-  pctBC = Perceptron(learning_rate=0.1, n_iter=1000)
+  import numpy as np
+  from ifri_mini_ml_lib.neural_networks.perceptron import Perceptron
+  
+  # EXAMPLES WITH SOME LOGIC GATES [INPUT]
+  # DATA - `BINARY CLASS_`|
+  #         x1  x2        |
+  X_BIN = [ [0, 0],
+            [0, 1],
+            [1, 0],
+            [1, 1]]
+  X_BIN_V = np.where(np.array(X_BIN)==0, 1, 0)
+
+  Y_AND = [0, 0, 0, 1]  # y
+  Y_OR =  [0, 1, 1, 1]  # y
+  Y_XOR = [0, 1, 1, 0]  # y
+
+  pctBC = Perceptron(early_stopping=False, patience=5)
   ```
 
+  Train & Test
+  - AND gates
   ```
-  ''' Simple python demo '''
-  Z : list[float] # z : float
-  y : list[int|float]
-  for z in Z:
-    y[i] = 1 if z >= 0 else 0
+  >>> pctBC.fit(X=X_BIN, y=Y_AND) # AND gates
+  >>> pctBC.predict(X=X_BIN_V)
+  [1 0 0 0]
   ```
+  - OR gates
+  ```
+  >>> pctBC.fit(X=X_BIN, y=Y_OR) # OR gates
+  >>> pctBC.predict(X=X_BIN_V)
+  [1 1 1 0]
+  ```
+  - XOR gates [1]
+  ```
+  >>> pctBC.fit(X=X_BIN, y=Y_XOR) # XOR gates
+  >>> pctBC.predict(X=X_BIN)
+  [1 1 1 1]
+  ```
+  - XOR gates [2]
+  ```
+  >>> pctBC.fit(X=X_BIN, y=Y_XOR) # XOR gates
+  >>> pctBC.predict(X=X_BIN_V)
+  [0 0 0 0]
+  ```
+  ***NOTE*** : The model cannot accurately predict XOR gates.
+  
+  Perceptron limits
+  -----------------
+  The XOR problem is a classic example of non-linearly separable problems.\n\n
+  `xor` function : [`XOR(x1, x2) = AND(NOT(AND(x1, x2), OR(x1, x2)))`](https://ichi.pro/fr/perceptrons-fonctions-logiques-et-probleme-xor-61342067554570#:~:text=la%20fonction%20XOR%3F-,SOLUTION%3A,-def%20XOR_net()
+  ***REASONS*** : Datasets only made of {0, 1} are not linearly separable. \n\n
+    To understand why a single-layer perceptron cannot solve the XOR problem, it is also essential to understand the XOR logical function.\n\n
+    The XOR function is a logical function with two variables, AND (x1, x2), which is a function with two variables with binary inputs and outputs. 
+    A single-layer perceptron, which computes a weighted sum of the inputs and applies a step function, cannot solve non-linearly separable problems like XOR.
+  ***CONCLUSION*** : 
+    The XOR problem highlights the limitations of single-layer perceptron models and led to the development of more complex neural network architectures, such as the multilayer perceptron (MLP), which includes one or more hidden layers between the input and output layers. 
+    These hidden layers allow the network to learn non-linear decision boundaries by transforming the input space into a higher-dimensional space where the classes become linearly separable.
   
   References
   ----------
-  - https://www.geeksforgeeks.org/deep-learning/what-is-perceptron-the-simplest-artificial-neural-network/
+  To learn more about ``Perceptron``, consult these references
+  - [What is Perceptron - GeeksforGeeks](https://www.geeksforgeeks.org/deep-learning/what-is-perceptron-the-simplest-artificial-neural-network/)
+  - [Deep Learning : Perceptrons simples et multicouches](https://eric.univ-lyon2.fr/ricco/cours/slides/reseaux_neurones_perceptron.pdf)
+  - [Perceptrons, fonctions logiques et problème XOR](https://ichi.pro/fr/perceptrons-fonctions-logiques-et-probleme-xor-61342067554570)
 
   """
 
-  def __init__(self, lr=0.001, n_iter=1000, early_stopping=False, patience=10, validation_split=0.2, shuffle=True, random_state=None):
-    """
-    Create an `Self@Perceptron` object
-    """
-    self.lr = lr
-    self.n_iter = n_iter
-    self.early_stopping = early_stopping
-    self.patience = patience
-    self.validation_fraction = validation_split
-    self.shuffle = shuffle
-    self.weights : np.ndarray
-    self.bias : float # b ∈ R
-    self.random_state = random_state
+  def __init__(self, lr=0.001, n_iter=1000, early_stopping=True, patience=10, validation_split=0.2, shuffle=True, random_state=None):
+    self._lr = lr
+    self._n_iter = n_iter
+    self._early_stopping = early_stopping
+    self._patience = patience
+    self._validation_fraction = validation_split
+    self._shuffle = shuffle
+    self._random_state = random_state
+
+    self._weights : np.ndarray
+    self._bias : float # b ∈ R
     self.trained_epochs = 0
-    self.trained = False
+    self._trained = False
 
   def fit(self, X:list|np.ndarray, y:list|np.ndarray):
     """
@@ -112,48 +171,48 @@ class Perceptron:
     if X.shape[1] == 0:
         raise ValueError("Input data must have at least one feature.")
 
-    if self.lr <= 0:
+    if self._lr <= 0:
         raise ValueError("Learning rate must be positive.")
 
-    if self.n_iter <= 0:
+    if self._n_iter <= 0:
         raise ValueError("Number of iterations must be positive.")
 
-    if self.early_stopping and (
-      self.patience <= 0 or
-      self.validation_fraction <= 0 or
-      self.validation_fraction >= 1
+    if self._early_stopping and (
+      self._patience <= 0 or
+      self._validation_fraction <= 0 or
+      self._validation_fraction >= 1
     ):
       raise ValueError("Invalid early stopping parameters.")
 
 
     # Random seed for reproducibility
-    rng = np.random.default_rng(self.random_state)
+    rng = np.random.default_rng(self._random_state)
 
 
     # Train / Validation split
-    if self.early_stopping:
-      X_train, y_train, X_val, y_val = split_train_validation( X, y, seed=self.random_state, validation_fraction=self.validation_fraction)
+    if self._early_stopping:
+      X_train, y_train, X_val, y_val = split_train_validation( X, y, seed=self._random_state, validation_fraction=self._validation_fraction)
     else:
       X_train, y_train = X, y
       X_val, y_val = None, None
 
 
     # Init parameters
-    self.weights = rng.standard_normal(size=X_train.shape[1]) * 0.01
-    self.bias = 0.0
+    self._weights = rng.standard_normal(size=X_train.shape[1]) * 0.01
+    self._bias = 0.0
 
-    if self.early_stopping:
+    if self._early_stopping:
       best_error = float('inf')
-      best_weights = self.weights.copy()
-      best_bias = self.bias
+      best_weights = self._weights.copy()
+      best_bias = self._bias
       no_improve = 0
 
 
     # Training loop
 
-    for epoch in range(self.n_iter):
+    for epoch in range(self._n_iter):
 
-      if self.shuffle:
+      if self._shuffle:
         idx = rng.permutation(X_train.shape[0])
         X_shuffled = X_train[idx]
         y_shuffled = y_train[idx]
@@ -161,41 +220,41 @@ class Perceptron:
         X_shuffled, y_shuffled = X_train, y_train
 
       # forward pass (train)
-      y_pred = np.dot(X_shuffled, self.weights) + self.bias
+      y_pred = np.dot(X_shuffled, self._weights) + self._bias
       y_pred_class = np.where(y_pred >= 0, 1, 0)
       error = y_shuffled - y_pred_class
 
       # update
-      self.weights += self.lr * np.dot(X_shuffled.T, error)
-      self.bias += self.lr * np.sum(error)
+      self._weights += self._lr * np.dot(X_shuffled.T, error)
+      self._bias += self._lr * np.sum(error)
 
       # Early stopping 
 
-      if self.early_stopping and X_val is not None:
+      if self._early_stopping and X_val is not None:
 
         # validation loss
-        y_val_pred = np.dot(X_val, self.weights) + self.bias
+        y_val_pred = np.dot(X_val, self._weights) + self._bias
         y_val_pred_class = np.where(y_val_pred >= 0, 1, 0)
         val_error = np.mean( y_val != y_val_pred_class ) # classification error
 
         # check improvement
         if val_error < best_error :
           best_error = val_error
-          best_weights = self.weights.copy()
-          best_bias = self.bias
+          best_weights = self._weights.copy()
+          best_bias = self._bias
           no_improve = 0
         else:
           no_improve += 1
         
-        if no_improve >= self.patience:
+        if no_improve >= self._patience:
           break
       self.trained_epochs = epoch + 1
 
     # Restore best parameters
-    if self.early_stopping:
-      self.weights = best_weights
-      self.bias = best_bias
-    self.trained = True
+    if self._early_stopping:
+      self._weights = best_weights
+      self._bias = best_bias
+    self._trained = True
   
   def predict(self, X:list|np.ndarray):
     """
@@ -214,7 +273,7 @@ class Perceptron:
         If the model has not been trained yet, or if the input data is invalid (e.g., wrong number of features).
     """
 
-    if not self.trained:
+    if not self._trained:
       raise ValueError("The model must be trained before making predictions.")
 
     # Convert input
@@ -223,10 +282,10 @@ class Perceptron:
         X = X.reshape(-1, 1)
 
     # verify input shape
-    if X.shape[1] != self.weights.shape[0]:
-        raise ValueError(f"Input data must have {self.weights.shape[0]} features.")
+    if X.shape[1] != self._weights.shape[0]:
+        raise ValueError(f"Input data must have {self._weights.shape[0]} features.")
     
-    y_reg = np.dot(X, self.weights) + self.bias
+    y_reg = np.dot(X, self._weights) + self._bias
     y_pred = np.where(y_reg >= 0, 1, 0)
     return y_pred
 
@@ -247,7 +306,7 @@ class Perceptron:
       accuracy : float
           Model accuracy
       """
-      if not self.trained:
+      if not self._trained:
           raise ValueError("The model must be trained before calculating its score.")
           
       y_pred = self.predict(X)

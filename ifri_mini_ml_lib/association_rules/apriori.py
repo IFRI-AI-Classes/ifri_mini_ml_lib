@@ -1,7 +1,9 @@
-from itertools import combinations
-from collections import defaultdict
 import time
 import pandas as pd
+
+from itertools import combinations
+from collections import defaultdict
+from ..utils.data_format import DataAdapter
 
 
 class Apriori:
@@ -64,7 +66,7 @@ class Apriori:
         self._n_transactions: int = 0
         self._execution_time: float = 0.0
 
-    def fit(self, transactions: list[list]) -> "Apriori":
+    def fit(self, transactions) -> "Apriori":
         """
         Mine frequent itemsets from a list of transactions.
 
@@ -79,11 +81,12 @@ class Apriori:
             ValueError: If transactions list is empty.
         """
         start_time = time.time()
-        if not transactions:
+        encoded = DataAdapter.convert_to_transactions(transactions)
+        if not encoded:
             raise ValueError("transactions must not be empty.")
 
         # Convert once to frozensets for fast subset checks
-        encoded = [frozenset(t) for t in transactions]
+        encoded = [frozenset(t) for t in encoded]
         self._n_transactions = len(encoded)
         self._frequent_itemsets = {}
 
