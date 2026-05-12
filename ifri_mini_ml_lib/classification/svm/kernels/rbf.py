@@ -73,8 +73,8 @@ def rbf_kernel(X, Y, gamma=1.0):
     Returns:
         np.ndarray: Kernel matrix of shape (n_samples_X, n_samples_Y).
     """
-    diff = X[:, np.newaxis, :] - Y
-    sq_distances = np.sum(diff**2, axis=2)
+    diff = X[:, np.newaxis, :] - Y  # (n,m,d)
+    sq_distances = np.sum(diff**2, axis=2)  # (n,m)
     return np.exp(-gamma * sq_distances)
 
 
