@@ -23,28 +23,82 @@ class StopWordRemover:
     """
 
     BUILTIN_STOPWORDS = {
-        # Add English stop words
+
         "english": {
-            "the", "a", "an", "is", "it", "in", "on", "at", "to",
-            "for", "of", "and", "or", "but", "not", "with", "this",
-            "that", "was", "are", "be", "have", "has", "had", "do",
-            "does", "did", "will", "would", "could", "should", "may",
-            "might", "shall", "can", "i", "you", "he", "she", "we",
-            "they", "my", "your", "his", "her", "its", "our", "their",
-            "from", "by", "as", "if", "so", "up", "out", "about",
-            "into", "than", "then", "when", "there", "been", "me"
+            # Articles & determiners
+            "a", "an", "the", "this", "that", "these", "those",
+            "each", "every", "either", "neither", "any", "all",
+            "both", "few", "more", "most", "other", "some", "such",
+            "no", "own", "same", "than", "too", "very",
+            # Personal pronouns
+            "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
+            "you", "your", "yours", "yourself", "yourselves",
+            "he", "him", "his", "himself", "she", "her", "hers", "herself",
+            "it", "its", "itself", "they", "them", "their", "theirs",
+            "themselves", "what", "which", "who", "whom",
+            # Auxiliary verbs
+            "is", "are", "was", "were", "be", "been", "being",
+            "have", "has", "had", "having", "do", "does", "did", "doing",
+            "will", "would", "could", "should", "may", "might",
+            "shall", "can", "need", "dare", "ought", "used",
+            # Prepositions & conjunctions
+            "at", "by", "for", "in", "of", "on", "to", "up",
+            "as", "into", "through", "during", "before", "after",
+            "above", "below", "between", "out", "off", "over",
+            "under", "again", "further", "then", "once",
+            "and", "but", "or", "nor", "so", "yet",
+            "if", "because", "while", "although", "though",
+            "unless", "until", "since", "when", "where", "how",
+            # Common adverbs
+            "not", "with", "about", "against", "from", "there",
+            "here", "why", "than", "just", "now", "also",
+            "only", "same", "down", "however", "therefore",
+            # Common verbs (low informational value)
+            "get", "got", "go", "going", "gone", "went",
+            "make", "made", "know", "think", "see", "come",
+            "want", "look", "use", "find", "give", "tell",
+            "work", "call", "try", "ask", "seem", "feel",
+            "leave", "put", "mean", "keep", "let", "begin",
+            "show", "hear", "play", "run", "move", "live",
+            "believe", "hold", "bring", "happen", "write",
+            "provide", "sit", "stand", "lose", "pay", "meet",
+            "include", "continue", "set", "turn", "follows",
         },
 
-        # Add French stop words
         "french": {
-            "le", "la", "les", "de", "du", "des", "un", "une",
-            "et", "est", "en", "au", "aux", "ce", "qui", "que",
-            "pour", "sur", "dans", "par", "avec", "il", "elle",
-            "nous", "vous", "ils", "elles", "je", "tu", "on",
-            "se", "sa", "son", "ses", "mon", "ma", "mes", "ton",
-            "ta", "tes", "leur", "leurs", "y", "ne", "pas", "plus",
-            "très", "bien", "comme", "aussi", "mais", "ou", "donc",
-            "car", "si", "à", "été", "être", "avoir", "fait"
+            # Articles & déterminants
+            "le", "la", "les", "un", "une", "des", "du", "de",
+            "cet", "cette", "ces", "mon", "ma", "mes", "ton", "ta",
+            "tes", "son", "sa", "ses", "notre", "votre", "leur",
+            "nos", "vos", "leurs", "quel", "quelle", "quels", "quelles",
+            "tout", "toute", "tous", "toutes", "autre", "autres",
+            "même", "mêmes", "chaque", "plusieurs", "certains",
+            "certaines", "quelques", "aucun", "aucune",
+            # Pronoms personnels
+            "je", "me", "moi", "tu", "te", "toi", "il", "lui",
+            "elle", "nous", "vous", "ils", "elles", "on", "se",
+            "soi", "y", "en", "qui", "que", "quoi", "dont", "où",
+            "celui", "celle", "ceux", "celles", "ce", "ceci", "cela",
+            # Verbes auxiliaires & copules
+            "est", "sont", "était", "étaient", "être", "été",
+            "avoir", "ai", "as", "avons", "avez", "ont", "avait",
+            "avaient", "eu", "fait", "faire", "ferai", "fera",
+            "sera", "seront", "serait", "seraient",
+            # Prépositions & conjonctions
+            "à", "au", "aux", "de", "du", "des", "en", "par",
+            "pour", "sur", "sous", "dans", "avec", "sans", "entre",
+            "vers", "chez", "contre", "dès", "depuis", "pendant",
+            "avant", "après", "selon", "malgré", "sauf",
+            "et", "ou", "mais", "donc", "or", "ni", "car",
+            "si", "que", "quand", "comme", "lorsque", "puisque",
+            "parce", "bien", "ainsi", "afin",
+            # Adverbes courants
+            "ne", "pas", "plus", "très", "aussi", "trop",
+            "bien", "mal", "encore", "déjà", "toujours", "jamais",
+            "souvent", "parfois", "ici", "là", "comment", "pourquoi",
+            "oui", "non", "peut", "peu", "beaucoup", "moins",
+            "même", "alors", "ainsi", "donc", "cependant",
+            "toutefois", "pourtant", "néanmoins", "enfin",
         },
     }
 
