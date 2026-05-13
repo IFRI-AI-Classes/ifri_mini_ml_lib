@@ -18,13 +18,114 @@ import numpy as np
 
 __all__ = ["LinearSVM"]
 
+class LinearSolver:
+    """
+    Optimization Solver for Linear SVM with Pegasos Algorithm.
+
+    Description:
+        Implements the Pegasos algorithm which solves the primal optimization problem
+        of linear soft-margin SVM via stochastic sub-gradient descent.
+        
+    Args:
+        C (float):
+            Regularization parameter (inverse of λ = 1/C).
+            Controls the bias-variance trade-off:
+            - High C   → weak regularization, smaller margin, less bias
+            - Low C    → strong regularization, larger margin, more bias
+            Default: 1.0
+
+        max_iter (int):
+            Number of passes over the data (epochs).
+            Default: 1000
+
+        tol (float):
+            Convergence tolerance. Training stops if the variation of the loss
+            function between two epochs is less than tol.
+            Default: 1e-4
+
+        random_state (int or None):
+            Seed for the random number generator for reproducibility.
+            Default: None
+
+    Attributes:
+        w_ (np.ndarray):
+            Weight vector of shape (n_features,)
+
+        b_ (float):
+            Bias term
+
+        loss_history_ (list of float):
+            History of the hinge loss function at each epoch.
+
+    """
+
+    def __init__(self, C: float = 1.0, max_iter: int = 1000,
+                 tol: float = 1e-4, random_state=None):
+        self.C = C
+        self.max_iter = max_iter
+        self.tol = tol
+        self.random_state = random_state
+        self.w_ = None
+        self.b_ = None
+        self.loss_history_ = []
+
+    def solve(self, X: np.ndarray, y: np.ndarray):
+        if self.random_state is not None:
+            np.random.seed(self.random_state)
+
+        n_samples, n_features = X.shape
+        lam = 1.0 / self.C
+        prev_loss = float('inf')
+
+        w = np.zeros(n_features)
+        b = 0.0
+        loss_history = []
+
+        for epoch in range(1, self.max_iter + 1):
+            indices = np.random.permutation(n_samples)
+
+            for t, i in enumerate(indices, start=1):
+                t_global = (epoch - 1) * n_samples + t
+                eta = 1.0 / (lam * t_global)
+
+                margin = y[i] * (np.dot(w, X[i]) + b)
+
+                if margin < 1:
+                    w = (1 - eta * lam) * w + eta * y[i] * X[i]
+                    b += eta * y[i]
+                else:
+                    w = (1 - eta * lam) * w
+
+                norm_w = np.linalg.norm(w)
+                proj_radius = 1.0 / np.sqrt(lam)
+                if norm_w > proj_radius:
+                    w *= proj_radius / norm_w
+
+            epoch_loss = self._hinge_loss(X, y, w, b, lam)
+            loss_history.append(epoch_loss)
+
+            if abs(prev_loss - epoch_loss) < self.tol:
+                break
+            prev_loss = epoch_loss
+
+        self.w_ = w
+        self.b_ = b
+        self.loss_history_ = loss_history
+        return w, b
+
+    def _hinge_loss(self, X: np.ndarray, y: np.ndarray, w: np.ndarray, 
+                    b: float, lam: float) -> float:
+        margins = y * (X.dot(w) + b)
+        hinge = np.maximum(0, 1 - margins)
+        regularization = (lam / 2.0) * np.dot(w, w)
+        return float(regularization + np.mean(hinge))
 
 class LinearSVM:
     """
     Linear Support Vector Machine (SVM) classifier.
 
-    Implements binary and multiclass classification using gradient descent
-    on the primal SVM objective with hinge loss. Multiclass problems are
+    Implements binary and multiclass classification using the Pegasos algorithm
+    for optimization on the primal SVM objective with hinge loss. Multiclass problems are
     handled with a One-vs-Rest (OvR) strategy.
 
     The primal optimization problem being solved is:
@@ -36,14 +137,15 @@ class LinearSVM:
     training error tolerance.
 
     Args:
-        learning_rate (float): Step size for gradient descent (default: 0.001).
         C (float): Regularization parameter. Smaller values = stronger
             regularization. Larger values = fewer misclassifications
             tolerated (default: 1.0).
-        n_iters (int): Number of gradient descent iterations (default: 1000).
+        n_iters (int): Number of Pegasos iterations (default: 1000).
+        tol (float): Convergence tolerance (default: 1e-4).
+        random_state (int or None): Random seed for reproducibility (default: None).
 
     Example:
-        >>> model = LinearSVM(learning_rate=0.01, C=1.0, n_iters=1000)
+        >>> model = LinearSVM(C=1.0, n_iters=1000)
         >>> model.fit([[1, 2], [2, 3], [5, 5], [6, 6]], [-1, -1, 1, 1])
         >>> model.predict([[4, 4]])
         [1]
@@ -51,13 +153,15 @@ class LinearSVM:
 
     def __init__(
         self,
-        learning_rate: float = 0.001,
         C: float = 1.0,
         n_iters: int = 1000,
+        tol: float = 1e-4,
+        random_state = None,
     ) -> None:
-        self.learning_rate = learning_rate
         self.C = C
         self.n_iters = n_iters
+        self.tol = tol
+        self.random_state = random_state
 
         self.w = None           # weight vector (binary) or list of vectors (OvR)
         self.b = None           # bias term (binary) or list of floats (OvR)
@@ -71,9 +175,7 @@ class LinearSVM:
         """
         Train a single binary SVM for labels in {-1, +1}.
 
-        Applies gradient descent on the hinge loss. For each sample:
-        - If y_i(w^T x_i + b) >= 1  -> only apply weight decay (regularization)
-        - Otherwise                  -> apply hinge loss gradient update
+        Uses the Pegasos algorithm for optimization.
 
         Args:
             X (np.ndarray): Training data of shape [n_samples, n_features].
@@ -82,26 +184,9 @@ class LinearSVM:
         Returns:
             tuple: (weights, bias) — the trained parameters.
 
-        Example:
-            >>> w, b = model._fit_binary(np.array([[1,2],[3,4]]), np.array([-1, 1]))
         """
-        n_samples, n_features = X.shape
-        w = np.zeros(n_features)
-        b = 0.0
-
-        for _ in range(self.n_iters):
-            for idx, x_i in enumerate(X):
-                # Functional margin for this sample
-                margin = y[idx] * (np.dot(x_i, w) + b)
-
-                if margin >= 1:
-                    # Sample correctly classified outside margin: only regularize
-                    w -= self.learning_rate * w
-                else:
-                    # Margin violated: hinge loss gradient update
-                    w -= self.learning_rate * (w - self.C * y[idx] * x_i)
-                    b += self.learning_rate * self.C * y[idx]
-
+        solver = LinearSolver(C=self.C, max_iter=self.n_iters, tol=self.tol, random_state=self.random_state)
+        w, b = solver.solve(X, y)
         return w, b
 
     def _decision_scores(
@@ -233,7 +318,7 @@ class LinearSVM:
 
         Args:
             X (Union[List, np.ndarray]): Test data of shape [n_samples, n_features].
-            y (Union[List, np.ndarray]): True labels of shape [n_samples].
+            y (v&Union[List, np.ndarray]): True labels of shape [n_samples].
 
         Returns:
             float: Accuracy score between 0.0 and 1.0.
@@ -251,6 +336,5 @@ class LinearSVM:
 
     def __repr__(self) -> str:
         return (
-            f"LinearSVM(learning_rate={self.learning_rate}, "
-            f"C={self.C}, n_iters={self.n_iters})"
+            f"LinearSVM(C={self.C}, n_iters={self.n_iters}, tol={self.tol}, random_state={self.random_state})"
         )
