@@ -182,7 +182,7 @@ class Apriori:
         """
         prev_list = sorted([sorted(fs) for fs in freq_prev])
         freq_set = set(freq_prev.keys())
-        candidates = []
+        candidates = set()
 
         for i in range(len(prev_list)):
             for j in range(i + 1, len(prev_list)):
@@ -192,11 +192,11 @@ class Apriori:
                     if len(candidate) == k and self._has_frequent_subsets(
                         candidate, freq_set, k
                     ):
-                        candidates.append(candidate)
+                        candidates.add(candidate)
                 else:
                     break  # sorted order; no more shared prefix possible
 
-        return candidates
+        return list(candidates)
 
     @staticmethod
     def _has_frequent_subsets(
