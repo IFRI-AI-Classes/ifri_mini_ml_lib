@@ -12,12 +12,14 @@ Available methods:
 """
 from .iqr import IQR
 #from .isolation import IsolationForest
-from .z_score import Z_Score
+from .z_score import zscore_detection, ZScoreDetector, modified_zscore_detection
 
 
 __all__ = [
     "IQR",
     "IsolationForest",
-    "Z_Score"
+    "zscore_detection",
+    "ZScoreDetector",
+    "modified_zscore_detection",
 ]
 
