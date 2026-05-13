@@ -8,10 +8,10 @@ Available methods:
     - IQR: Robust anomaly detection using the Interquartile Range.
     - zscore_detection: Classic Z-score method (mean/std based).
     - modified_zscore_detection: Robust Z-score method (median/MAD based).
-    - IsolationForest: Tree-based anomaly detection (Implementation pending).
+    - IsolationForest: Tree-based anomaly detection.
 """
 from .iqr import IQR
-#from .isolation import IsolationForest
+from .isolation_forest import IsolationForest
 from .z_score import zscore_detection, ZScoreDetector, modified_zscore_detection
 
 
@@ -22,4 +22,3 @@ __all__ = [
     "ZScoreDetector",
     "modified_zscore_detection",
 ]
-
