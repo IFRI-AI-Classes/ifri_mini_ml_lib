@@ -10,20 +10,14 @@ Available methods:
     - modified_zscore_detection: Robust Z-score method (median/MAD based).
     - IsolationForest: Tree-based anomaly detection (Implementation pending).
 """
-
-from .z_score import zscore_detection, modified_zscore_detection, summary_anomalies
 from .iqr import IQR
+from .isolation import IsolationForest
+from .z_score import Z_Score
 
-# IsolationForest implementation is pending in isolation.py
-try:
-    from .isolation import IsolationForest
-except (ImportError, AttributeError):
-    IsolationForest = None
 
 __all__ = [
-    "zscore_detection",
-    "modified_zscore_detection",
-    "summary_anomalies",
     "IQR",
     "IsolationForest",
+    "Z_Score"
 ]
+

@@ -11,6 +11,7 @@ MIN_DATA_POINTS = 5
 MAD_TO_STD_FACTOR = 0.6745
 """float: Conversion factor from MAD to standard deviation for normal distribution"""
 
+
 # PRINCIPAL FUNCTION : CLASIC Z-SCORE DETECTION
 def zscore_detection(
     data: Union[List[float], np.ndarray],
@@ -18,10 +19,13 @@ def zscore_detection(
     axis: Optional[int] = None,
     return_zscore: bool = False
     ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+
+
     """
     Detects anomalies in a dataset using the Z-score.
     
     The Z-score measures how many standard deviations a value is from the 
+
     sample mean. A value is considered an anomaly when |Z| > threshold.
     Supports both 1D arrays and 2D matrices; for 2D data, statistics can be 
     computed globally or along the specified axis.
@@ -42,6 +46,7 @@ def zscore_detection(
     ----------
     data : list or numpy.ndarray
         Array of numerical values to analyze.
+
         - 1D : a flat list or 1-D array of scalar values.
         - 2D : a matrix of shape (n_samples, n_features).
         Must contain at least {MIN_DATA_POINTS} elements.
@@ -62,9 +67,8 @@ def zscore_detection(
             - 0    : per-column statistics (recommended for ML feature matrices,
                      where each column is an independent feature).
             - 1    : per-row statistics.
-    
-    return_zscore : bool, default = False
-        If True, also returns the calculated Z-scores.
+
+        Must contain at least {MIN_DATA_POINTS} elements.
     
     Returns
     -------
@@ -82,35 +86,13 @@ def zscore_detection(
         - If the standard deviation is zero (all values are identical -> Z-score undefined)
         - If *axis* is not 0, 1 or None when *data* is 2D.
 
+
     Examples
     --------
-    Basic 1D detection :
-    
     >>> data = [10, 12, 11, 10, 13, 100, 12, 11]
     >>> anomalies = zscore_detection(data)
     >>> anomalies
     array([False, False, False, False, False, True, False, False])
-    
-    1D with Z-scores returned :
-    
-    >>> anomalies, zscores = zscore_detection(data, return_zscore=True)
-    >>> print(f"Z-scores : {zscores.round(2)}")
-    Z-scores : [-0.47 -0.19 -0.33 -0.47 -0.05  3.88 -0.19 -0.33]
-    
-    2D per-column detection (axis=0) — recommended for feature matrices :
- 
-    >>> matrix = np.array([[10,   5, 1],
-    ...                    [12,   6, 1],
-    ...                    [11, 200, 1],
-    ...                    [10,   5, 1],
-    ...                    [11,   6, 1]])
-    >>> anomalies = zscore_detection(matrix, axis=0)
-    >>> anomalies
-    array([[False, False, False],
-           [False, False, False],
-           [False,  True, False],
-           [False, False, False],
-           [False, False, False]])
            
     Notes
     -----
@@ -138,62 +120,60 @@ def zscore_detection(
     """
     
     # 1. PARAMETER VALIDATION (Robust Validation)
-    # Type check and conversion
+    # Conversion and type validation
     if isinstance(data, list):
-        data = np.array(data, dtype=float)
-    elif isinstance(data, np.ndarray):
-        data = data.astype(float)
-    else:
+        data = np.array(data)
+    elif not isinstance(data, np.ndarray):
         raise TypeError(f"data must be a list or numpy.ndarray, received {type(data)}")
     
     # Size verification
-    if data.size < MIN_DATA_POINTS:
+    if len(data) < MIN_DATA_POINTS:
         raise ValueError(
             f"Insufficient data: at least {MIN_DATA_POINTS} points required, "
-            f"received {data.size}"
+            f"received {len(data)}"
         )
     
-    # Threshold check
+    # Validation of threshold
     if not isinstance(threshold, (int, float)) or threshold <= 0:
-        raise ValueError(f"threshold must be a strictly positive number, received {threshold}")
+        raise ValueError(f"threshold must be a positive number, received {threshold}")
     
-    # Axis check for 2D arrays
-    if data.ndim == 2 and axis not in (0, 1, None):
-        raise ValueError(f"For 2D data, axis must be 0, 1 or None; received {axis!r}.")
+    #Calcul of mean and standard deviation
+    mean = np.mean(data)      # μ (mean)
+    std = np.std(data)        # σ (standard deviation)
     
-    # 2. Calcul of statistics and z-score
-    if data.ndim == 1:
-        mean = np.mean(data)
-        std = np.std(data, ddof=1) 
+    # Particular cases  : all values are identical → std = 0 → impossible to detect anomalies
+    if std == 0:
+        raise ValueError(
+            f"Standard deviation is zero: all values are identical ({mean}). "
+            "Impossible to detect anomalies with Z-score."
+        )
     
-        if std == 0:
-            raise ValueError(
-                f"Standard deviation is zero: all values are identical ({mean}). "
-                "Impossible to detect anomalies with Z-score."
-            )
-        z_scores = (data - mean) / std
-        
-    else:
-        # 2D case : statistics computed alon the chosen axis
-        mean =np.mean(data, axis = axis, keepdims = True)
-        std = np.std(data, axis = axis, keepdims = True, ddof = 1)
-        
-        if np.any(std == 0):
-            raise ValueError("Standard deviation is zero on at least one column or row."
-                             "Please verify that your data does not contain constant features.")
-            
-        z_scores = (data - mean) / std
+    # Calcul of Z-scores and anomaly detection
+    z_scores = (data - mean) / std
     
-    # 3.ANOMALY DETECTION
+    # Absolute value then comparison with the threshold
     anomalies = np.abs(z_scores) > threshold
     
-    # 4. RETURN 
     if return_zscore:
         return anomalies, z_scores
     return anomalies
 
 
+
+"""Now ,it's important to note that the classic Z-score is sensitive to the presence of anomalies in the data,
+because the mean and standard deviation can be heavily influenced by extreme values.
+For this reason, a more robust version of the Z-score, called the Modified Z-score,
+is often recommended when the data may already contain anomalies or when the distribution is not perfectly normal.
+The Modified Z-score is based on the median and the Median Absolute Deviation (MAD),
+which are more robust statistics that are less affected by outliers.
+The mathematical formula for the Modified Z-score is :
+    M_i = 0.6745 × (x_i - median) / MAD
+    
+    where MAD = Median(|x_i - median|)
+    and 0.6745 is a factor that makes the MAD comparable to the standard deviation for normal distributions."""
+
 # SECONDARY FUNCTION : MODIFIED Z-SCORE (ROBUST)
+
 def modified_zscore_detection(
     data: Union[List[float], np.ndarray],
     threshold: float = 3.5,
@@ -204,6 +184,7 @@ def modified_zscore_detection(
     
     Unlike the classic Z-score, this version is ROBUST against
     the presence of outliers in the training data.
+
     
     Mathematical formula :
         M_i = 0.6745 × (x_i - median) / MAD
@@ -219,9 +200,12 @@ def modified_zscore_detection(
     ----------
     data : list or numpy.ndarray
         Array of numerical values to analyze.
+        Must contain at least {MIN_DATA_POINTS} elements.
+    
     threshold : float, default = 3.5
         Detection threshold. The value 3.5 is recommended by the literature
         (Iglewicz & Hoaglin, 1993).
+    
     return_zscore : bool, default = False
         If True, also returns the Modified Z-scores.
     
@@ -229,6 +213,7 @@ def modified_zscore_detection(
     -------
     anomalies : numpy.ndarray (bool)
         Array of booleans where True indicates an anomaly.
+
     mz_scores : numpy.ndarray (float), optional
         Returned only if return_zscore=True.
     
@@ -243,7 +228,8 @@ def modified_zscore_detection(
     -----
     This method is particularly recommended when :
         - The data already contains potential anomalies
-        - The underlying distribution is not perfectly Gaussian
+        - The underlying distribution is not perfectly Gaussia
+        - The distribution is not perfectly normal
         - The sample size is small (< 30 points)
     
     Reference
@@ -255,16 +241,14 @@ def modified_zscore_detection(
     # Validation of parameters (same as in zscore_detection, but adapted to the context of median/MAD)
     if isinstance(data, list):
         data = np.array(data)
-    elif isinstance(data, np.ndarray):
-        data = data.astype(float)
-    else:
+    elif not isinstance(data, np.ndarray):
         raise TypeError(f"data must be a list or numpy.ndarray, received {type(data)}")
     
-    if data.size < MIN_DATA_POINTS:
+    if len(data) < MIN_DATA_POINTS:
         raise ValueError(f"Insufficient data: need at least {MIN_DATA_POINTS} points")
     
     if not isinstance(threshold, (int, float)) or threshold <= 0:
-        raise ValueError(f"threshold must be a strictly positive number, received {threshold}")
+        raise ValueError(f"threshold must be a positive number, received {threshold}")
     
     # Robust statistics : median and MAD
     median = np.median(data)
@@ -285,67 +269,6 @@ def modified_zscore_detection(
         return anomalies, mz_scores
     return anomalies
 
-
-
-# UTILITY FUNCTION: SUMMARY OF ANOMALIES
-
-def summary_anomalies(
-    data: Union[List[float], np.ndarray],
-    anomalies: np.ndarray
-) -> dict:
-    """
-    Generates a statistical summary of the detected anomalies.
-    
-    Works with both 1D arrays and 2D matrices.The summary reports global
-    counts regardless of the data dimensionality. 
-    
-    Parameters
-    ----------
-    data : list or numpy.ndarray
-        The original data.
-    anomalies : numpy.ndarray (bool)
-        The detected anomalies (True for anomalies).
-    
-    Returns
-    -------
-    Dictionary containing :
-        - count : number of anomalies
-        - percentage : percentage of anomalies
-        - indices : positions of anomalies
-            For 1D data -> list of indices of anomalous points.
-            For 2D data -> list of two arrays [row_indices, col_indices].
-        - values : values of anomalies
-        - min_anomaly : minimum value among the anomalies
-        - max_anomaly : maximum value among the anomalies
-    
-    Example
-    -------
-    >>> data = [10, 12, 11, 100]
-    >>> anomalies = zscore_detection(data)
-    >>> summary = summary_anomalies(data, anomalies)
-    >>> print(f"{summary['count']} anomalies detected")
-    1 anomalies detected
-    
-    See Also
-    --------
-    zscore_detection : classic Z-score anomaly detector.
-    modified_zscore_detection : robust Z-score anomaly detector.
-    """
-    
-    if isinstance(data, list):
-        data = np.array(data)
-    
-    anomaly_indices = np.where(anomalies)
-    anomaly_values = data[anomaly_indices]
-    
-    return {
-        'count': len(anomaly_indices),
-        'percentage': round((np.sum(anomalies) / data.size) * 100, 2),
-        'indices': [arr.tolist() for arr in anomaly_indices],
-        'values': anomaly_values.tolist(),
-        'min_anomaly': float(np.min(anomaly_values)) if len(anomaly_values) > 0 else None,
-        'max_anomaly': float(np.max(anomaly_values)) if len(anomaly_values) > 0 else None,
-    }
     
 # class ZScoreDetector
 
@@ -546,3 +469,4 @@ class ZScoreDetector:
             return anomalies, z_scores
         
         return anomalies
+

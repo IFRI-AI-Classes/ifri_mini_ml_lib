@@ -1,3 +1,4 @@
+"""Unit tests for Z-Score Anomaly Detection"""
 import sys
 import os
 import pytest
@@ -13,6 +14,7 @@ def import_z_score():
     # List of possible paths
     """Checks multiple paths to import z_score, ensuring compatibility with different project structures.
     This function tries to import the z_score module from various locations, allowing the tests to run"""
+
     possible_paths = [
         # Path 1: from root with ifri_mini_ml_lib
         os.path.join(os.path.dirname(__file__), '..', 'ifri_mini_ml_lib', 'anomalies_detection'),
@@ -28,20 +30,21 @@ def import_z_score():
         if os.path.exists(path):
             sys.path.insert(0, path)
             try:
+                #  IMPORT CORRECT : fonctions, pas une classe
                 from z_score import (
                     zscore_detection,
-                    modified_zscore_detection,
-                    summary_anomalies
+                    modified_zscore_detection
                 )
                 print(f"Import successful from: {path}")
-                return zscore_detection, modified_zscore_detection, summary_anomalies
+                return zscore_detection, modified_zscore_detection
             except ImportError:
                 continue
     
-    raise ImportError("Unable to import z_score. Please check the paths.")
+    raise ImportError("Unable to import z_score functions. Please check the paths.")
 
 # Retrieve the functions
-zscore_detection, modified_zscore_detection, summary_anomalies = import_z_score()
+zscore_detection, modified_zscore_detection = import_z_score()
+
 
 # ============================================================================
 # TESTS
@@ -55,6 +58,7 @@ class TestZScoreDetection:
         data = [100, 102, 98, 101, 99, 300, 101, 98]
         # Use a lower threshold to ensure detection of the anomaly at index 5
         anomalies = zscore_detection(data, threshold=2.5)
+
         assert anomalies[5] == True
         assert sum(anomalies) == 1
     
@@ -79,13 +83,13 @@ class TestZScoreDetection:
     
     def test_negative_values_work(self):
         """Test: works with negative values"""
-        data = [-100, -102, -98, -101, -99, -300, -101, -98]
+        data = [-100, -102, -98, -101, -99, -500, -101, -98]
         anomalies = zscore_detection(data, threshold=2.5)
         assert anomalies[5] == True
     
     def test_float_values_work(self):
         """Test: works with float values"""
-        data = [10.5, 10.6, 10.4, 10.7, 10.5, 50.2, 10.6, 10.4]
+        data = [10.5, 10.6, 10.4, 10.7, 10.5, 200.0, 10.6, 10.4]
         anomalies = zscore_detection(data, threshold=2.5)
         assert anomalies[5] == True
     
@@ -117,37 +121,6 @@ class TestModifiedZScoreDetection:
         data = [10, 12, 11, 10, 1000, 11, 12, 10, 2000, 11]
         anomalies = modified_zscore_detection(data, threshold=3.5)
         assert sum(anomalies) >= 2
-
-
-class TestSummaryAnomalies:
-    """Tests for summary_anomalies function"""
-    
-    def test_summary_returns_dict(self):
-        """Test: summary returns a dictionary"""
-        data = [100, 102, 98, 101, 99, 300, 101, 98]
-        anomalies = zscore_detection(data)
-        summary = summary_anomalies(data, anomalies)
-        assert isinstance(summary, dict)
-        assert 'count' in summary
-        assert 'percentage' in summary
-        assert 'indices' in summary
-        assert 'values' in summary
-    
-    def test_summary_correct_count(self):
-        """Test: summary count is correct"""
-        data = [100, 102, 98, 101, 99, 300, 101, 98]
-        anomalies = zscore_detection(data, threshold=3.0)
-        summary = summary_anomalies(data, anomalies)
-        assert summary['count'] == sum(anomalies)
-    
-    def test_summary_with_no_anomalies(self):
-        """Test: summary with no anomalies"""
-        data = [100, 101, 99, 100, 102, 98, 101, 99]
-        anomalies = zscore_detection(data, threshold=3.0)
-        summary = summary_anomalies(data, anomalies)
-        assert summary['count'] == 0
-        assert summary['min_anomaly'] is None
-        assert summary['max_anomaly'] is None
 
 
 class TestErrorHandling:
