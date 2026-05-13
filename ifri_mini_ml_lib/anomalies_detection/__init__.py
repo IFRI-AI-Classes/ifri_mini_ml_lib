@@ -11,7 +11,7 @@ Available methods:
     - IsolationForest: Tree-based anomaly detection (Implementation pending).
 """
 from .iqr import IQR
-from .isolation import IsolationForest
+#from .isolation import IsolationForest
 from .z_score import Z_Score
 
 
