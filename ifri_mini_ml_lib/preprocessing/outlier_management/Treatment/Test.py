@@ -3,8 +3,8 @@ import pandas as pd
 from univariate_treatment import Univariate_Treatment
 from multivariate_treatment import Multivariate_Treatment
 
-def ok(msg):   print(f"  ✅  {msg}")
-def fail(msg): print(f"  ❌  {msg}")
+def ok(msg):   print(f"  YES:  {msg}")
+def fail(msg): print(f"   NO: {msg}")
 
 def assert_true(cond, msg):
     if cond: ok(msg)
