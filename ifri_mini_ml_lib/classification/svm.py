@@ -3,9 +3,9 @@ Support Vector Machine (SVM) Module.
 
 This unified module provides:
     - BaseSVM: Abstract base class for all SVM models
-    - LinearSVM: Linear SVM with Pegasos optimization (binary and multiclass)
-    - SVMClassifier: Binary RBF SVM with SMO optimization
-    - SVMClassifierOvO: Multiclass RBF SVM with One-vs-One strategy
+    - SVMLinear: Linear SVM with Pegasos optimization (binary and multiclass)
+    - SVMRBF: Binary RBF SVM with SMO optimization
+    - SVMRBFOvO: Multiclass RBF SVM with One-vs-One strategy
 
 References:
     - Cortes, C., & Vapnik, V. (1995). Support-vector networks.
@@ -21,7 +21,17 @@ from typing import List, Union
 
 import numpy as np
 
-__all__ = ["BaseSVM", "LinearSVM", "SVMClassifier", "SVMClassifierOvO", "rbf_kernel", "smo"]
+__all__ = [
+    "BaseSVM",
+    "SVMLinear",
+    "SVMRBF",
+    "SVMRBFOvO",
+    "rbf_kernel",
+    "smo",
+    # popular aliases
+    "SVMLinear",
+    "SVMRBF",
+]
 
 
 # ─── Abstract Base Class ───────────────────────────────────────────────
@@ -51,7 +61,7 @@ class BaseSVM(ABC):
 
         Correct usage via a subclass:
 
-        >>> svm = LinearSVM(C=1.0)
+        >>> svm = SVMLinear(C=1.0)
         >>> svm.fit(X_train, y_train)
         >>> svm.predict(X_test)
 
@@ -133,7 +143,7 @@ class BaseSVM(ABC):
             float: Accuracy between 0.0 (0%) and 1.0 (100%).
 
         Examples:
-            >>> svm = LinearSVM(C=1.0)
+            >>> svm = SVMLinear(C=1.0)
             >>> svm.fit(X_train, y_train)
             >>> acc = svm.score(X_test, y_test)
             >>> print(f"Accuracy: {acc:.2%}")
@@ -270,7 +280,7 @@ class LinearSolver:
         return float(regularization + np.mean(hinge))
 
 
-class LinearSVM:
+class SVMLinear(BaseSVM):
     """
     Linear Support Vector Machine (SVM) classifier.
 
@@ -295,7 +305,7 @@ class LinearSVM:
         random_state (int or None): Random seed for reproducibility (default: None).
 
     Example:
-        >>> model = LinearSVM(C=1.0, n_iters=1000)
+        >>> model = SVMLinear(C=1.0, n_iters=1000)
         >>> model.fit([[1, 2], [2, 3], [5, 5], [6, 6]], [-1, -1, 1, 1])
         >>> model.predict([[4, 4]])
         [1]
@@ -308,6 +318,7 @@ class LinearSVM:
         tol: float = 1e-4,
         random_state = None,
     ) -> None:
+        super().__init__()
         self.C = C
         self.n_iters = n_iters
         self.tol = tol
@@ -366,7 +377,7 @@ class LinearSVM:
         self,
         X: Union[List, np.ndarray],
         y: Union[List, np.ndarray],
-    ) -> "LinearSVM":
+    ) -> "SVMLinear":
         """
         Train the Linear SVM model.
 
@@ -380,13 +391,13 @@ class LinearSVM:
                 Can be integers, strings, or any comparable type.
 
         Returns:
-            LinearSVM: The fitted model instance (allows method chaining).
+            SVMLinear: The fitted model instance (allows method chaining).
 
         Raises:
             ValueError: If X or y are empty, or have incompatible shapes.
 
         Example:
-            >>> model = LinearSVM()
+            >>> model = SVMLinear()
             >>> model.fit([[1, 2], [2, 3], [5, 5], [6, 6]], [-1, -1, 1, 1])
         """
         X_arr = np.array(X, dtype=float)
@@ -419,6 +430,8 @@ class LinearSVM:
                 self.w.append(w)
                 self.b.append(b)
 
+        # mark fitted
+        self.is_fitted_ = True
         return self
 
     def predict(self, X: Union[List, np.ndarray]) -> List:
@@ -439,10 +452,8 @@ class LinearSVM:
             >>> model.predict([[4, 4]])
             [1]
         """
-        if self.w is None:
-            raise RuntimeError(
-                "Model is not fitted yet. Call 'fit' before 'predict'."
-            )
+        # ensure model was fitted
+        self._check_is_fitted()
         if X is None or len(X) == 0:
             raise ValueError("Input data for prediction cannot be empty.")
 
@@ -480,13 +491,12 @@ class LinearSVM:
             >>> model.score([[1, 2], [5, 5]], [-1, 1])
             1.0
         """
-        y_arr = np.array(y)
-        predictions = np.array(self.predict(X))
-        return float(np.mean(predictions == y_arr))
+        # use BaseSVM.score to keep behaviour consistent and label normalization
+        return super().score(X, y)
 
     def __repr__(self) -> str:
         return (
-            f"LinearSVM(C={self.C}, n_iters={self.n_iters}, tol={self.tol}, random_state={self.random_state})"
+            f"SVMLinear(C={self.C}, n_iters={self.n_iters}, tol={self.tol}, random_state={self.random_state})"
         )
 
 
@@ -579,7 +589,7 @@ def smo(K, y, C, tol=1e-3, max_iter=100):
     return alphas, b
 
 
-class SVMClassifier:
+class SVMRBF(BaseSVM):
     """Binary SVM classifier trained with an RBF kernel and SMO."""
 
     def __init__(self, C=1.0, gamma=1.0):
@@ -589,6 +599,7 @@ class SVMClassifier:
             C (float): Regularization parameter.
             gamma (float): RBF kernel parameter.
         """
+        super().__init__()
         self.C = C
         self.gamma = gamma
         self.support_vectors = None
@@ -605,15 +616,17 @@ class SVMClassifier:
         self.support_alphas = alphas[support_indices]
         self.support_labels = y[support_indices]
         self.b = b
+        self.is_fitted_ = True
 
     def predict(self, X):
         """Predict class labels for a batch of samples."""
+        self._check_is_fitted()
         K = rbf_kernel(self.support_vectors, X, self.gamma)
         scores = (self.support_alphas * self.support_labels) @ K + self.b
         return np.sign(scores)
 
 
-class SVMClassifierOvO:
+class SVMRBFOvO(BaseSVM):
     """One-vs-one multi-class wrapper around the binary RBF SVM."""
 
     def __init__(self, C=1.0, gamma=1.0):
@@ -623,6 +636,7 @@ class SVMClassifierOvO:
             C (float): Regularization parameter for each binary classifier.
             gamma (float): RBF kernel parameter.
         """
+        super().__init__()
         self.C = C
         self.gamma = gamma
         self.classifiers = {}
@@ -637,9 +651,10 @@ class SVMClassifierOvO:
             X_pair = X[mask]
             y_binary = np.where(y[mask] == c1, 1, -1)
             
-            clf = SVMClassifier(C=self.C, gamma=self.gamma)
+            clf = SVMRBF(C=self.C, gamma=self.gamma)
             clf.fit(X_pair, y_binary)
             self.classifiers[(c1, c2)] = clf
+        self.is_fitted_ = True
     
     def predict_one(self, x):
         """Predict a single sample by majority vote."""
@@ -654,4 +669,11 @@ class SVMClassifierOvO:
     
     def predict(self, X):
         """Predict class labels for a batch of samples."""
+        self._check_is_fitted()
         return np.array([self.predict_one(x) for x in X])
+
+
+# --- Popular aliases for backward compatibility and common naming -----
+SVMLinear = SVMLinear
+SVMRBF = SVMRBF
+
