@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from typing import Optional, Tuple, Set, List, Literal
 
 from .kmeans import KMeans
 from ifri_mini_ml_lib.utils.tools import _euclidean_distance
@@ -22,7 +23,12 @@ class HierarchicalClustering:
     >>> hierarchical.plot_clusters(data, labels)
     """
 
-    def __init__(self, n_clusters=None, linkage='single', method='agglomerative'):
+    def __init__(
+        self,
+        n_clusters: Optional[int] = None,
+        linkage: Literal['single', 'complete', 'average'] = 'single',
+        method: Literal['agglomerative', 'divisive'] = 'agglomerative'
+    ) -> None:
 
         self.n_clusters = n_clusters
         self.linkage = linkage
@@ -30,7 +36,11 @@ class HierarchicalClustering:
         self.labels = None
         self.linked_matrix = None  # Adding a variable to store the linkage matrix
 
-    def fit_predict(self, data, kmeans=None):
+    def fit_predict(
+        self,
+        data: np.ndarray,
+        kmeans: Optional[KMeans] = None
+    ) -> np.ndarray:
         """
         Performs hierarchical clustering on the given data.
 
@@ -49,7 +59,7 @@ class HierarchicalClustering:
 
         return self.labels
 
-    def _agglomerative_clustering(self, data):
+    def _agglomerative_clustering(self, data: np.ndarray) -> np.ndarray:
         """
         Implements agglomerative (bottom-up) hierarchical clustering.
         """
@@ -169,7 +179,7 @@ class HierarchicalClustering:
 
         return cluster1, cluster2
 
-    def _compute_distance_matrix(self, data):
+    def _compute_distance_matrix(self, data: np.ndarray) -> np.ndarray:
         """
         Description:
         ------------
@@ -190,7 +200,13 @@ class HierarchicalClustering:
                 distances[i, j] = distances[j, i] = _euclidean_distance(data[i], data[j])
         return distances
 
-    def _compute_linkage_distance(self, cluster1, cluster2, distances, linkage='single'):
+    def _compute_linkage_distance(
+        self,
+        cluster1: Set[int],
+        cluster2: Set[int],
+        distances: np.ndarray,
+        linkage: Literal['single', 'complete', 'average'] = 'single'
+    ) -> float:
         """
         Description:
         ------------
@@ -236,7 +252,7 @@ class HierarchicalClustering:
             raise ValueError("Critère de linkage non reconnu. Choisissez 'single', 'complete' ou 'average'.")
         
 
-    def plot_dendrogram(self, labels=None):
+    def plot_dendrogram(self, labels: Optional[List[str]] = None) -> None:
         """
         Plots a dendrogram based on the linkage matrix constructed during hierarchical clustering.
         The main branches corresponding to the final clusters are colored differently for better visualization.
@@ -326,7 +342,7 @@ class HierarchicalClustering:
         plt.show()
 
 
-    def plot_clusters(self, data):
+    def plot_clusters(self, data: np.ndarray) -> None:
         """
         Plots a scatter plot of the data points colored by their cluster labels,
         supporting 1D, 2D, and 3D data. For higher dimensions, PCA is applied to reduce to 3D.
