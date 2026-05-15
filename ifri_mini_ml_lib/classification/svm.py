@@ -181,9 +181,3 @@ class SVM:
         y = np.array(y)
         predictions = self.predict(X)
         return float(np.mean(predictions == y))
-
-    def __repr__(self) -> str:
-        return (
-            f"SVM(kernel='{self.kernel}', C={self.C}, gamma={self.gamma}, "
-            f"max_iter={self.max_iter}, tol={self.tol}, random_state={self.random_state})"
-        )
