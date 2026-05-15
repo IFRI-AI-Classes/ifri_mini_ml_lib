@@ -673,7 +673,3 @@ class SVMRBFOvO(BaseSVM):
         return np.array([self.predict_one(x) for x in X])
 
 
-# --- Popular aliases for backward compatibility and common naming -----
-SVMLinear = SVMLinear
-SVMRBF = SVMRBF
-
