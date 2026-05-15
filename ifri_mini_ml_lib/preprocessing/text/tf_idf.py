@@ -173,7 +173,7 @@ class TFIDFVectorizer:
     #  IDF
     # ------------------------------------------------------------------
 
-    def _compute_idf(self, corpus: list) -> dict:
+    def _compute_idf(self, corpus: list):
         """
         Computes the Inverse Document Frequency for each term in the corpus.
 
@@ -209,7 +209,7 @@ class TFIDFVectorizer:
                 idf[term] = math.log((N + 1) / (freq + 1)) + 1
             else:
                 idf[term] = math.log(N / freq)
-        return idf
+        return idf, df
 
     # ------------------------------------------------------------------
     #  Normalisation L2
