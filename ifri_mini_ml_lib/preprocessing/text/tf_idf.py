@@ -79,6 +79,8 @@ class TFIDFVectorizer:
         sublinear_tf: bool = False,
         ngram_range: tuple = (1, 1),
         binary: bool = False,
+        min_df: int = 1,
+        max_features: int = None,
     ):
         """
         Initializes the TFIDFVectorizer with the desired configuration.
@@ -95,6 +97,8 @@ class TFIDFVectorizer:
         self.sublinear_tf = sublinear_tf
         self.ngram_range = ngram_range
         self.binary = binary
+        self.min_df = min_df
+        self.max_features = max_features
         self.vocabulary_ = {}
         self.idf_ = {}
 
@@ -265,17 +269,22 @@ class TFIDFVectorizer:
         Returns:
             None
         """
-        unique_terms = set()
-        for doc in corpus:
-            ngrams = self._generate_ngrams(doc)
-            unique_terms.update(ngrams)
+        expanded_corpus = [self._generate_ngrams(doc) for doc in corpus]
 
-        for index, term in enumerate(sorted(unique_terms)):
+        idf_temp, df = self._compute_idf(expanded_corpus)
+
+        terms_valides = {term for term, freq in df.items() if freq >= self.min_df}
+
+        if self.max_features is not None:
+            terms_valides = set(
+                sorted(terms_valides, key=lambda t: idf_temp.get(t, 0), reverse=True)
+                [:self.max_features]
+            )
+
+        for index, term in enumerate(sorted(terms_valides)):
             self.vocabulary_[term] = index
 
-        # IDF is computed on n-gram-expanded documents
-        expanded_corpus = [self._generate_ngrams(doc) for doc in corpus]
-        self.idf_ = self._compute_idf(expanded_corpus)
+        self.idf_ = {term: idf_temp[term] for term in self.vocabulary_}
 
     # ------------------------------------------------------------------
     #  Transform
