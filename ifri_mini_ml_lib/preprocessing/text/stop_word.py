@@ -111,6 +111,8 @@ class StopWordRemover:
             custom_stopwords (list, optional): Additional words
                                                to treat as stop words.
         """
+        if language not in self.BUILTIN_STOPWORDS:
+            raise ValueError(f"Language '{language}' not supported. Choose from {list(self.BUILTIN_STOPWORDS.keys())}")
         self.language = language
         self.stopwords = set(self.BUILTIN_STOPWORDS.get(language, set()))
 
