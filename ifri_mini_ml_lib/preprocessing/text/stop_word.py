@@ -4,7 +4,7 @@ class StopWordRemover:
 
     Description:
         Stop words are very common words in a language
-        that do not provide significangit addt informational value
+        that do not provide significant informational value
         for text analysis (e.g., "the", "is", "and" in English).
         This class identifies and removes them from a list
         of tokens before vectorization.
