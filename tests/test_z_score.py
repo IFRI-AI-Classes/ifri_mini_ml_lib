@@ -160,8 +160,8 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Quick test
-    data = [100, 102, 98, 101, 99, 300, 101, 98]
-    anomalies = zscore_detection(data, threshold=3.0)
+    data = [100, 102, 98, 101, 99, 500, 101, 98]
+    anomalies = modified_zscore_detection(data, threshold=2.5)
     
     print(f"Data: {data}")
     print(f"Anomalies: {anomalies}")
