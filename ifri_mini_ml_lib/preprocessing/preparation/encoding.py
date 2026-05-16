@@ -99,9 +99,7 @@ class CategoricalEncoder:
         return self.transform(X)
 
 class OrdinalEncoder:
-    """
-    Professional Ordinal Encoder for the IFRI LIB library.
-    
+    """    
     Encodes categorical features as an integer array (0 to n_categories - 1). 
     Supports mixed data types and provides flexible strategies for handling unknown values 
     encountered during transformation.
