@@ -1,9 +1,7 @@
-from . import stop_word
-from . import test_stopwords
-from . import tf_idf
+from .stop_word import StopWordRemover
+from .tf_idf import TFIDFVectorizer
 
 __all__ = [
-    "stop_word",
-    "test_stopwords", 
-    "tf_idf"
+    "StopWordRemover",
+    "TFIDFVectorizer"
 ]
