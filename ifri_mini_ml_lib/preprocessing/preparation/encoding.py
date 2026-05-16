@@ -123,6 +123,8 @@ class OneHotEncoder:
         self.categories_ = {}
         # To store feature_names
         self.feature_names_ = []
+        # Flag to track if encoder has been fitted
+        self.fitted_ = False
 
     def fit(self, X : pd.DataFrame):
         """
@@ -142,13 +144,15 @@ class OneHotEncoder:
             for category in self.categories_[column]
         ]
 
+        # Mark encoder as fitted
+        self.fitted_ = True
         return self
 
     def transform(self, X : pd.DataFrame):
         """
         Transform dataset using learned categories.
         """
-        if not self.categories_:
+        if not self.fitted_:
             raise ValueError("The encoder has not been fit yet. Call fit() before transform().")
 
         X = X.copy()
