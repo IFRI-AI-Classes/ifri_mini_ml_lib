@@ -24,14 +24,14 @@ class DecisionTreeRegressor:
     def fit(self, X, y, depth=0):
         n_samples = X.shape[0]
 
-        # Conditions d'arrêt
+        # Stop conditions
         if (n_samples < self.min_samples_split or
             (self.max_depth is not None and depth >= self.max_depth) or
             len(np.unique(y)) == 1):
             self.tree = self._leaf_value(y)
             return self.tree
 
-        # Meilleur split
+        # Best split
         best_feature, best_threshold, best_gain = self._best_split(X, y)
 
         if best_feature is None or best_gain < self.min_impurity_decrease:
@@ -58,7 +58,7 @@ class DecisionTreeRegressor:
         best_gain = -np.inf
         best_feature, best_threshold = None, None
 
-        # Sélection aléatoire des features (pour Random Forest)
+        # Random feature selection (for Random Forest)
         n_features = X.shape[1]
         if self.max_features is not None:
             feature_indices = np.random.choice(n_features,
@@ -89,13 +89,13 @@ class DecisionTreeRegressor:
         return best_feature, best_threshold, best_gain
 
     def _mse(self, y):
-        """Calcule le MSE d'un noeud."""
+        """Calculate the MSE of a node."""
         if len(y) == 0:
             return 0
         return np.mean((y - np.mean(y)) ** 2)
 
     def _variance_reduction(self, y, left_mask, right_mask):
-        """Calcule la réduction de variance d'un split."""
+        """Calculate the variance reduction of a split."""
         n = len(y)
         n_left  = np.sum(left_mask)
         n_right = np.sum(right_mask)
@@ -103,12 +103,12 @@ class DecisionTreeRegressor:
                                 n_right/n * self._mse(y[right_mask]))
 
     def _leaf_value(self, y):
-        """Retourne la moyenne des y — valeur de la feuille."""
+        """Returns the average of the y — values ​​from the leaf."""
         return np.mean(y)
 
     def predict(self, X):
         if self.tree is None:
-            raise ValueError("Le modèle doit être entraîné avant de faire des prédictions.")
+            raise ValueError("The model needs to be trained before it can make predictions.")
         return np.array([self._predict_single(x) for x in X])
 
     def _predict_single(self, x, tree=None):
