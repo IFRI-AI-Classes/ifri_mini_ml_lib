@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from typing import Optional, Tuple, Set, List, Literal
+from typing import Optional, Set, List, Literal
 
 from .kmeans import KMeans
 from ifri_mini_ml_lib.utils.tools import _euclidean_distance
@@ -34,7 +34,8 @@ class HierarchicalClustering:
         self.linkage = linkage
         self.method = method
         self.labels = None
-        self.linked_matrix = None  # Adding a variable to store the linkage matrix
+        self.linkage_matrix = None  # Stores the linkage matrix used for dendrogram plotting
+        self.linked_matrix = None  # Backward-compatible alias for the linkage matrix
 
     def fit_predict(
         self,
@@ -110,6 +111,7 @@ class HierarchicalClustering:
 
         # Store the linkage matrix as a numpy array (for dendrogram plotting)
         self.linkage_matrix = np.array(linkage_matrix)
+        self.linked_matrix = self.linkage_matrix
 
         # Assign labels: for each cluster, assign the same label to all its points
         labels = np.zeros(len(data), dtype=int)
