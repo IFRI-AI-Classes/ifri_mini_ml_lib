@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 import numpy as np
 
 from .data_split import split_train_validation
@@ -191,7 +192,7 @@ class Perceptron:
 
     # Train / Validation split
     if self._early_stopping:
-      X_train, y_train, X_val, y_val = split_train_validation( X, y, seed=self._random_state, validation_fraction=self._validation_fraction)
+      X_train, X_val, y_train, y_val = split_train_validation( X, y, seed=self._random_state, validation_fraction=self._validation_fraction)
     else:
       X_train, y_train = X, y
       X_val, y_val = None, None
