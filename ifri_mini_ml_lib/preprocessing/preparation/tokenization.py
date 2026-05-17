@@ -70,7 +70,6 @@ class Tokenizer:
 
     def __init__(
         self,
-        lowercase: bool = True,
         handle_apostrophes: bool = True,
         handle_contractions: bool = True,
         remove_punctuation: bool = True,
@@ -86,11 +85,16 @@ class Tokenizer:
             remove_punctuation (bool): Whether to remove punctuation characters.
             min_token_length (int): Minimum token length to retain after splitting.
         """
-        self.lowercase = lowercase
+        self.lowercase = True
         self.handle_apostrophes = handle_apostrophes
         self.handle_contractions = handle_contractions
         self.remove_punctuation = remove_punctuation
         self.min_token_length = min_token_length
+
+        self._contraction_pattern = re.compile(
+            r'\b(' + '|'.join(re.escape(k) for k in self.CONTRACTION_MAP.keys()) + r')\b',
+            re.IGNORECASE
+        )
 
 
     # ------------------------------------------------------------------
@@ -179,10 +183,9 @@ class Tokenizer:
         Returns:
             str: Text with all recognised contractions expanded.
         """
-        for contraction, expansion in self.CONTRACTION_MAP.items():
-            # re.escape ensures that punctuation in the key (e.g. apostrophe)
-            # is treated as a literal character, not a regex metacharacter.
-            text = re.sub(re.escape(contraction), expansion, text)
+        text = self._contraction_pattern.sub(
+            lambda m: self.CONTRACTION_MAP[m.group(0).lower()], text
+        )
 
         # Special case 1 — pronoun + 's → pronoun + is
         text = re.sub(self._PRONOUN_PATTERN + r"'s", r"\1 is", text)
@@ -228,4 +231,6 @@ class Tokenizer:
         """
         return re.sub(r"[^a-zA-ZÀ-ÿ0-9\s]", " ", text)
     
+
+
 

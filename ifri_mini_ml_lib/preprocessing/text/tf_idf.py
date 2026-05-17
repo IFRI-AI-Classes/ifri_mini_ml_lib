@@ -1,5 +1,6 @@
 import math
 import numpy as np  
+from collections import Counter
 
 
 class TFIDFVectorizer:
@@ -154,21 +155,19 @@ class TFIDFVectorizer:
         Returns:
             dict: Mapping of term → TF score for the given document.
         """
-        tf = {}
+        counts = Counter(doc)
         total = len(doc)
-        for term in doc:
-            tf[term] = tf.get(term, 0) + 1
 
-        for term in tf:
+        tf = {}
+        for term, count in counts.items():
             if self.binary:
                 tf[term] = 1
             elif self.sublinear_tf:
-                tf[term] = 1 + math.log(tf[term])
+                tf[term] = 1 + math.log(count)
             else:
-                tf[term] = tf[term] / total
+                tf[term] = count / total
 
         return tf
-
     # ------------------------------------------------------------------
     #  IDF
     # ------------------------------------------------------------------
@@ -215,7 +214,7 @@ class TFIDFVectorizer:
     #  Normalisation L2
     # ------------------------------------------------------------------
 
-    def _normalize_l2(self, matrix: list) -> list:
+    def _normalize_l2(self, matrix: np.ndarray) -> np.ndarray:
         """
         Applies L2 normalization to each row of the TF-IDF matrix.
 
@@ -235,15 +234,9 @@ class TFIDFVectorizer:
         Returns:
             list[list[float]]: Matrix with each row normalized to unit length.
         """
-        normalized = []
-        for row in matrix:
-            norm = math.sqrt(sum(x ** 2 for x in row))
-            if norm == 0:
-                normalized.append(row[:])
-            else:
-                normalized.append([x / norm for x in row])
-        return normalized
-
+        norms = np.sqrt((matrix ** 2).sum(axis=1, keepdims=True))
+        norms[norms == 0] = 1
+        return matrix / norms
     # ------------------------------------------------------------------
     #  Fit
     # ------------------------------------------------------------------
@@ -290,7 +283,7 @@ class TFIDFVectorizer:
     #  Transform
     # ------------------------------------------------------------------
 
-    def transform(self, corpus: list) -> list:
+    def transform(self, corpus: list) -> np.ndarray:
         """
         Converts tokenized documents into TF-IDF vectors using the learned vocabulary.
 
@@ -316,12 +309,14 @@ class TFIDFVectorizer:
         for doc in corpus:
             ngrams = self._generate_ngrams(doc)
             tf = self._compute_tf(ngrams)
-            scores = [0.0] * len(self.vocabulary_)
+            scores = np.zeros(len(self.vocabulary_))
             for term, freq in tf.items():
                 if term in self.vocabulary_:
                     idx = self.vocabulary_[term]
                     scores[idx] = freq * self.idf_.get(term, 0)
             matrix.append(scores)
+        
+        matrix = np.array(matrix)
 
         if self.norm == "l2":
             matrix = self._normalize_l2(matrix)
