@@ -85,10 +85,14 @@ def build_itree(X, current_depth, height_limit):
         return node
 
     # ── Choisir l'axe de coupure ──
-    while axis_min == axis_max : 
-        axis      = np.random.randint(0, d)
-        axis_min  = X[:, axis].min()
-        axis_max  = X[:, axis].max()
+    axis     = np.random.randint(0, d)
+    axis_min = X[:, axis].min()
+    axis_max = X[:, axis].max()
+
+    while axis_min == axis_max:
+        axis     = np.random.randint(0, d)
+        axis_min = X[:, axis].min()
+        axis_max = X[:, axis].max()
 
     # ── Choisir la valeur de coupure ──
     cut_value         = np.random.uniform(axis_min, axis_max)
