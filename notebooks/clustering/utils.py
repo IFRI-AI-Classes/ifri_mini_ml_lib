@@ -126,7 +126,7 @@ def plot_hierarchical_feature_comparison(
     ax.set_xlabel(feature_names[0], fontsize=11)
     ax.set_ylabel(feature_names[1], fontsize=11)
     ax.set_title(
-        f"Clustering hiérarchique\nlinkage={linkage}, k={k} | Silhouette = {silhouette_score:.3f}",
+        f"Hierarchical clustering\nlinkage={linkage}, k={k} | Silhouette = {silhouette_score:.3f}",
         fontsize=11,
     )
     ax.legend(fontsize=9)
@@ -148,7 +148,7 @@ def plot_hierarchical_feature_comparison(
         )
     ax2.set_xlabel(feature_names[0], fontsize=11)
     ax2.set_ylabel(feature_names[1], fontsize=11)
-    ax2.set_title("Vérité terrain (espèces réelles)", fontsize=11)
+    ax2.set_title("Ground truth (actual species)", fontsize=11)
     ax2.legend(fontsize=9)
     ax2.spines[["top", "right"]].set_visible(False)
 
@@ -189,14 +189,14 @@ def plot_hierarchical_method_comparison(results):
         ax.set_xlabel(result["xlabel"])
         ax.set_ylabel(result["ylabel"])
         ax.set_title(
-            f"{result['title']}\nSilhouette = {result['silhouette']:.3f} | Temps = {result['elapsed']:.3f}s",
+            f"{result['title']}\nSilhouette = {result['silhouette']:.3f} | Time = {result['elapsed']:.3f}s",
             fontsize=11,
         )
         ax.legend(fontsize=9)
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(
-        "Clustering hiérarchique — Iris (50 points, k=3, complete linkage)",
+        "Hierarchical clustering - Iris (50 samples, k=3, complete linkage)",
         fontsize=12,
         fontweight="bold",
     )
@@ -233,7 +233,7 @@ def plot_hierarchical_linkage_comparison(X, results):
         ax.spines[["top", "right"]].set_visible(False)
 
     fig.suptitle(
-        "Impact du critère de linkage sur le clustering",
+        "Impact of the linkage criterion on clustering",
         fontsize=12,
         fontweight="bold",
     )
