@@ -19,9 +19,7 @@ from ifri_mini_ml_lib.association_rules.fp_growth import FPGrowth
 from ifri_mini_ml_lib.association_rules.association_rules import AssociationRules
 
 
-# =========================================================
 # PREPROCESSING
-# =========================================================
 
 def prepare_mlxtend_data(transactions):
     """
@@ -39,9 +37,7 @@ def prepare_mlxtend_data(transactions):
     )
 
 
-# =========================================================
 # IFRI IMPLEMENTATIONS
-# =========================================================
 
 def run_apriori(data, min_support, min_conf, min_lift):
 
@@ -100,9 +96,7 @@ def run_fpgrowth(data, min_support, min_conf, min_lift):
     return assoc.generate_rules(frequent_itemsets)
 
 
-# =========================================================
 # MLXTEND IMPLEMENTATIONS
-# =========================================================
 
 def run_mlxtend_apriori(df, min_support, min_conf, min_lift):
 
@@ -142,9 +136,9 @@ def run_mlxtend_fpgrowth(df, min_support, min_conf, min_lift):
     return rules.reset_index(drop=True)
 
 
-# =========================================================
+
 # MEMORY PROFILING
-# =========================================================
+
 
 def run_with_memory(model_func, data, params):
     """
@@ -167,9 +161,7 @@ def run_with_memory(model_func, data, params):
     return result, peak_memory
 
 
-# =========================================================
 # BENCHMARK CORE
-# =========================================================
 
 def evaluate_model(
     model_name,
@@ -193,24 +185,21 @@ def evaluate_model(
     confidences = []
     lifts = []
 
-    # =====================================================
+    
     # WARM-UP RUN
-    # =====================================================
 
     try:
         model_func(data, **params)
     except Exception:
         pass
 
-    # =====================================================
+    
     # BENCHMARK RUNS
-    # =====================================================
 
     for _ in range(n_runs):
 
-        # =============================================
+        
         # TIME + MEMORY
-        # =============================================
 
         if measure_memory:
 
@@ -234,9 +223,8 @@ def evaluate_model(
 
             peak_memory = np.nan
 
-        # =============================================
+        
         # STORE METRICS
-        # =============================================
 
         exec_time = end - start
 
@@ -246,9 +234,8 @@ def evaluate_model(
 
         rule_counts.append(len(result))
 
-        # =============================================
+        
         # RULE METRICS
-        # =============================================
 
         if not result.empty:
 
@@ -264,9 +251,8 @@ def evaluate_model(
                     result["lift"].mean()
                 )
 
-    # =====================================================
+    
     # FINAL RESULTS
-    # =====================================================
 
     return {
 
@@ -304,9 +290,8 @@ def evaluate_model(
     }
 
 
-# =========================================================
+
 # GLOBAL BENCHMARK
-# =========================================================
 
 def benchmark_all(
     transactions,
@@ -322,15 +307,13 @@ def benchmark_all(
 
     results = []
 
-    # =====================================================
+    
     # PREPARE DATA
-    # =====================================================
 
     mlxtend_data = prepare_mlxtend_data(transactions)
 
-    # =====================================================
+    
     # MODELS
-    # =====================================================
 
     models = [
 
@@ -365,9 +348,8 @@ def benchmark_all(
         )
     ]
 
-    # =====================================================
+    
     # BENCHMARK LOOP
-    # =====================================================
 
     for name, func, data in models:
 
@@ -384,15 +366,13 @@ def benchmark_all(
 
         results.append(result)
 
-    # =====================================================
+    
     # FINAL DATAFRAME
-    # =====================================================
 
     results_df = pd.DataFrame(results)
 
-    # =====================================================
+    
     # SPEEDUP
-    # =====================================================
 
     baseline_time = results_df.iloc[0]["avg_time_sec"]
 
@@ -400,9 +380,8 @@ def benchmark_all(
         baseline_time / results_df["avg_time_sec"]
     )
 
-    # =====================================================
+    
     # EFFICIENCY SCORE
-    # =====================================================
 
     results_df["efficiency_score"] = (
         results_df["avg_lift"] /
@@ -412,9 +391,8 @@ def benchmark_all(
     return results_df
 
 
-# =========================================================
+
 # PLOT RESULTS
-# =========================================================
 
 def plot_results(df):
 
@@ -424,9 +402,8 @@ def plot_results(df):
         figsize=(18, 12)
     )
 
-    # =====================================================
+    
     # EXECUTION TIME
-    # =====================================================
 
     axes[0, 0].bar(
         df["model"],
@@ -442,9 +419,8 @@ def plot_results(df):
         rotation=20
     )
 
-    # =====================================================
+    
     # MEMORY
-    # =====================================================
 
     axes[0, 1].bar(
         df["model"],
@@ -460,9 +436,8 @@ def plot_results(df):
         rotation=20
     )
 
-    # =====================================================
+    
     # RULE COUNT
-    # =====================================================
 
     axes[1, 0].bar(
         df["model"],
@@ -478,9 +453,8 @@ def plot_results(df):
         rotation=20
     )
 
-    # =====================================================
+    
     # SPEEDUP
-    # =====================================================
 
     axes[1, 1].bar(
         df["model"],
@@ -501,9 +475,8 @@ def plot_results(df):
     plt.show()
 
 
-# =========================================================
+
 # RULE SET COMPARISON
-# =========================================================
 
 def compare_rule_sets(rules1, rules2):
     """
@@ -543,9 +516,8 @@ def compare_rule_sets(rules1, rules2):
     }
 
 
-# =========================================================
+
 # SCALABILITY BENCHMARK
-# =========================================================
 
 def benchmark_scalability(
     model_name,
@@ -605,9 +577,8 @@ def benchmark_scalability(
     return pd.DataFrame(results)
 
 
-# =========================================================
+
 # SCALABILITY PLOT
-# =========================================================
 
 def plot_scalability(df):
 

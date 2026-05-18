@@ -71,6 +71,18 @@ def _tanh_derivative( x: np.ndarray) -> np.ndarray:
     return 1 - np.power(np.tanh(x), 2)
 
 
+def _linear( x: np.ndarray) -> np.ndarray:
+    """
+    Linear activation function 
+    """
+    return x
+
+def _linear_derivative( x: np.ndarray) -> np.ndarray:
+    """
+    Derivative of linear function
+    """
+    return np.ones_like(x)
+
 # Dictionary of activation functions and their derivatives
 
 ACTIVATIONS = {
@@ -79,6 +91,7 @@ ACTIVATIONS = {
     'tanh': _tanh,
     'leaky_relu': _leaky_relu,
     'softmax': _softmax,
+    'linear': _linear,
 }
 
 DERIVATIVES = {
@@ -87,14 +100,12 @@ DERIVATIVES = {
     'tanh': _tanh_derivative,
     'leaky_relu': _leaky_relu_derivative,
     'softmax': _softmax_derivative,
+    'linear': _linear_derivative,
 }
 
 # Allowed activations for regression and classification tasks
 
-TASK_ACTIVATIONS = {
-    "regression": {"sigmoid", "relu", "tanh", "leaky_relu"},
-    "classification": {"sigmoid", "relu", "tanh", "leaky_relu", "softmax"},
-}
+
 
 class Activation:
     """
