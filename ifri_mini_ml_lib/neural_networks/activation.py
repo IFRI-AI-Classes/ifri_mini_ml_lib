@@ -102,12 +102,6 @@ DERIVATIVES = {
     'linear': _linear_derivative,
 }
 
-# Allowed activations for regression and classification tasks
-TASK_ACTIVATIONS = {
-    "regression": {"sigmoid", "relu", "tanh", "leaky_relu"},
-    "classification": {"sigmoid", "relu", "tanh", "leaky_relu", "softmax"},
-}
-
 
 class Activation:
     """

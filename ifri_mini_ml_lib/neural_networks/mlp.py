@@ -1,8 +1,8 @@
 from typing import List, Tuple, Optional,Dict, Any
 
-from .resolver import resolve_config, validate_config, build_loss_kwargs
+from .resolver import resolve_config, validate_config, build_loss_kwargs,TASK_CONFIG
 from .optimizers import UPDATE_WEIGHTS_METHODS
-from .activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
+from .activation import ACTIVATIONS, DERIVATIVES
 from .initialization import initialize_weights
 from .data_split import split_train_validation
 from .loss import LOSS_FUNCTIONS
@@ -124,8 +124,8 @@ class MLP:
         if random_state is not None:
             np.random.seed(random_state)
 
-        if task not in TASK_ACTIVATIONS:
-            raise ValueError(f"Unsupported task '{task}'. Supported tasks: {list(TASK_ACTIVATIONS.keys())}")
+        if task not in TASK_CONFIG:
+            raise ValueError(f"Unsupported task '{task}'. Supported tasks: {list(TASK_CONFIG.keys())}")
         
         if hidden_activation not in ACTIVATIONS:
             raise ValueError(f"Unsupported hidden activation '{hidden_activation}'. Supported: {list(ACTIVATIONS.keys())}")
