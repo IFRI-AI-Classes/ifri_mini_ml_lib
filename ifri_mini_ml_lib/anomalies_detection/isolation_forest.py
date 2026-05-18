@@ -57,57 +57,64 @@ class Node:
         self.is_leaf   = False
 
 
-def build_itree(X, current_depth, height_limit):
+def build_itree(X, current_depth, height_limit, rng):
     
     """
     Recursively builds an iTree on the subset X.
+
+    Description:
+        At each internal node, only the features with a non-zero range
+        (i.e. where points are not all identical) are considered as
+        candidate split axes. A split axis and a split value are then
+        chosen uniformly at random among those candidates. If no such
+        feature exists, or if the depth limit is reached, or if the
+        subset contains a single point, the node becomes a leaf.
 
     Args:
         X (np.ndarray): Current node points of shape (n, d).
         current_depth (int): Current depth in the tree.
         height_limit (int): Maximum allowed depth.
+        rng (np.random.Generator): Random number generator for reproducibility.
 
     Returns:
         Node: Root node of the constructed subtree.
     
     Examples:
-        >>> tree = build_itree(X_sample, current_depth=0, height_limit=8)
+        >>> rng = np.random.default_rng(42)
+        >>> tree = build_itree(X_sample, current_depth=0, height_limit=8, rng=rng)
     """
-    
     
     node = Node()
     n, d  = X.shape
 
-    # ── Cas d'arrêt ──
-    if current_depth >= height_limit or n <= 1 or np.all(X == X[0]):
+    # ── Compute the range of each feature ──
+    ranges      = X.max(axis=0) - X.min(axis=0)   # shape (d,)
+    valid_axes  = np.where(ranges > 0)[0]          # indices of splittable axes
+
+    # ── Stopping conditions ──
+    if current_depth >= height_limit or n <= 1 or len(valid_axes) == 0:
         node.is_leaf = True
         node.size    = n
         return node
 
-    # ── Choisir l'axe de coupure ──
-    axis     = np.random.randint(0, d)
-    axis_min = X[:, axis].min()
-    axis_max = X[:, axis].max()
+    # ── Choose the split axis among valid axes ──
+    axis      = rng.choice(valid_axes)
+    axis_min  = X[:, axis].min()
+    axis_max  = X[:, axis].max()
 
-    while axis_min == axis_max:
-        axis     = np.random.randint(0, d)
-        axis_min = X[:, axis].min()
-        axis_max = X[:, axis].max()
-
-
-    # ── Choisir la valeur de coupure ──
-    cut_value         = np.random.uniform(axis_min, axis_max)
+    # ── Choose the split value ──
+    cut_value        = rng.uniform(axis_min, axis_max)
     node.feature     = axis
     node.threshold   = cut_value
 
-    # ── Partitionner l'espace ──
+    # ── Partition the space ──
     goes_left   = X[:, axis] < cut_value
     X_left      = X[goes_left]
     X_right     = X[~goes_left]
 
-    # ── Récursion sur chaque sous-espace ──
-    node.left  = build_itree(X_left,  current_depth + 1, height_limit)
-    node.right = build_itree(X_right, current_depth + 1, height_limit)
+    # ── Recurse on each subspace ──
+    node.left  = build_itree(X_left,  current_depth + 1, height_limit, rng)
+    node.right = build_itree(X_right, current_depth + 1, height_limit, rng)
 
     return node
     
@@ -134,19 +141,14 @@ def path_length(x, node, current_depth):
     if node.is_leaf:
         return current_depth + c(node.size)
 
-    # ── Nœud interne : suivre la coupure (lignes 4-8) ───────────────
+    # ── Internal node: follow the split ──
     if x[node.feature] < node.threshold:
         return path_length(x, node.left,  current_depth + 1)
     else:
         return path_length(x, node.right, current_depth + 1)
 
 
-
-
-
-
 class IsolationForest:
-    
     
     """
     Isolation Forest algorithm for anomaly detection.
@@ -162,24 +164,29 @@ class IsolationForest:
         n_trees (int, optional): Number of isolation trees. Default is 100.
         sample_size (int, optional): Sub-sample size used to build each tree. Default is 256.
         contamination (float, optional): Expected proportion of anomalies in the data. Default is 0.1.
+        random_state (int or None, optional): Seed for the random number generator.
+            Set to an integer for fully reproducible results. Default is None.
 
     Attributes:
         trees (list): List of fitted iTrees (Node roots).
         c_sample_size (float): Normalization constant c(sample_size).
         threshold (float): Decision threshold computed during fit.
+        rng (np.random.Generator): Internal random number generator.
 
     Examples:
-        >>> model = IsolationForest(n_trees=100, sample_size=256, contamination=0.1)
+        >>> model = IsolationForest(n_trees=100, sample_size=256, contamination=0.1, random_state=42)
         >>> model.fit(X_train)
         >>> scores = model.anomaly_score(X_test)
         >>> labels = model.predict(X_test)
     """
     
-    def __init__(self, n_trees=100, sample_size=256, contamination=0.1):
+    def __init__(self, n_trees=100, sample_size=256, contamination=0.1, random_state=None):
         self.n_trees       = n_trees
         self.sample_size   = sample_size
         self.contamination = contamination
+        self.random_state  = random_state
         self.trees         = []
+        self.rng           = np.random.default_rng(random_state)
     
     def fit(self, X):
         
@@ -190,6 +197,12 @@ class IsolationForest:
             Constructs n_trees isolation trees, each trained on a random
             sub-sample of size sample_size. Also computes the decision
             threshold based on the contamination rate.
+
+            Note on the threshold: it is calibrated on the training data,
+            which may include anomalies. If the true contamination rate is
+            unknown or uncertain, prefer using anomaly_score() directly and
+            selecting the threshold via external validation (e.g. a labeled
+            validation set or a precision-recall curve).
 
         Args:
             X (array-like): Training data of shape (n_samples, n_features).
@@ -203,33 +216,37 @@ class IsolationForest:
         X = np.array(X)
         n = X.shape[0]
 
-        height_limit     = int(np.ceil(np.log2(self.sample_size)))
+        height_limit       = int(np.ceil(np.log2(self.sample_size)))
         self.c_sample_size = c(self.sample_size)
 
-        sample_size = min(self.sample_size, n)  # calculé une fois
+        sample_size = min(self.sample_size, n)  
+        
 
-        for i in range(self.n_trees):
-            sample_idx = np.random.choice(n, size=sample_size, replace=False)
+        for _ in range(self.n_trees):
+            sample_idx = self.rng.choice(n, size=sample_size, replace=False)
             X_sample   = X[sample_idx]
-            tree       = build_itree(X_sample, current_depth=0, height_limit=height_limit)
+            tree       = build_itree(X_sample, current_depth=0, height_limit=height_limit, rng=self.rng)
             self.trees.append(tree)
         
-        scores        = self.anomaly_score(X)
+        scores         = self.anomaly_score(X)
         self.threshold = np.percentile(scores, 100 * (1 - self.contamination))
         
         return self
         
         
-    def anomaly_score(self,X):
-        
+    def anomaly_score(self, X):
         
         """
         Computes the anomaly score for each point in X.
 
         Description:
-            For each point, computes the average path length across all
-            trees and normalizes it using c(sample_size). A score close
-            to 1 indicates an anomaly, close to 0.5 indicates a normal point.
+            For each point, computes the path length across all trees and
+            collects the results in a matrix of shape (n_samples, n_trees).
+            The average path length E[h(x)] is then computed across trees
+            in a single NumPy operation. The final score is normalized using
+            c(sample_size) so that it lies in [0, 1].
+            A score close to 1 indicates an anomaly, close to 0.5 indicates
+            a normal point.
 
         Args:
             X (array-like): Input data of shape (n_samples, n_features).
@@ -238,24 +255,21 @@ class IsolationForest:
             np.ndarray: Anomaly scores of shape (n_samples,), values in [0, 1].
         """
         
-        
         X = np.array(X)
-        scores = []
-        
-        for x in X:
-            # Calculer h(x) dans chaque arbre
-            depths = [path_length(x, tree, current_depth=0) for tree in self.trees]
 
-            # E[h(x)] : moyenne sur tous les arbres
-            E_h = np.mean(depths)
+        # Depth matrix: shape (n_samples, n_trees)
+        all_depths = np.array(
+            [[path_length(x, tree, current_depth=0) for x in X]
+            for tree in self.trees]
+        ).T  # → (n_samples, n_trees)
 
-            # Score final : s(x, ψ) = 2^( -E[h(x)] / c(ψ) )
-            score = 2 ** (-E_h / self.c_sample_size)
-            scores.append(score)
+        # E[h(x)]: average path length across all trees
+        E_h = all_depths.mean(axis=1)   # shape (n_samples,)
 
-        return np.array(scores)
+        # Final score: s(x, ψ) = 2^( -E[h(x)] / c(ψ) )
+        return 2 ** (-E_h / self.c_sample_size)
     
-    def predict(self,X):
+    def predict(self, X):
         """
         Classifies each point as anomaly (1) or normal (0).
 
@@ -272,5 +286,5 @@ class IsolationForest:
                         1 = anomaly, 0 = normal.
         """
         
-        scores    = self.anomaly_score(X)
+        scores = self.anomaly_score(X)
         return (scores >= self.threshold).astype(int)
