@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Hierarchical clustering hero illustration</title>
+  <desc id="desc">A compact overview showing sample points merging into clusters and the dendrogram that summarizes the hierarchy.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#eef2ff"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .title { font: 700 30px sans-serif; fill: #0f172a; }
+      .sub { font: 500 16px sans-serif; fill: #475569; }
+      .small { font: 700 13px sans-serif; fill: #475569; letter-spacing: 0.12em; text-transform: uppercase; }
+      .label { font: 700 18px sans-serif; fill: #0f172a; }
+      .note { font: 600 14px sans-serif; fill: #64748b; }
+      .frame { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.5; rx: 26; }
+      .axis { stroke: #cbd5e1; stroke-width: 2; }
+      .merge { stroke: url(#ink); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .lite { stroke: #cbd5e1; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .cut { stroke: #2563eb; stroke-width: 3.5; stroke-dasharray: 10 8; }
+      .pointA { fill: #dbeafe; stroke: #3b82f6; stroke-width: 4; }
+      .pointB { fill: #dcfce7; stroke: #22c55e; stroke-width: 4; }
+      .pointC { fill: #fef3c7; stroke: #f59e0b; stroke-width: 4; }
+      .pointD { fill: #fee2e2; stroke: #ef4444; stroke-width: 4; }
+      .chip { fill: #0f172a; opacity: 0.06; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="520" rx="34" fill="url(#bg)"/>
+  <rect x="30" y="30" width="1140" height="460" rx="28" class="frame" filter="url(#shadow)"/>
+
+  <text x="66" y="84" class="title">Hierarchical clustering</text>
+  <text x="66" y="113" class="sub">Start with single points, merge the closest groups, and read the final tree as a dendrogram.</text>
+
+  <g transform="translate(66,148)">
+    <rect x="0" y="0" width="470" height="262" rx="24" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="24" y="34" class="small">Agglomerative merging</text>
+    <text x="24" y="62" class="note">Small groups form first, then larger clusters.</text>
+
+    <line x1="54" y1="212" x2="416" y2="212" class="axis"/>
+    <line x1="60" y1="212" x2="60" y2="78" class="axis"/>
+
+    <circle cx="92" cy="178" r="12" class="pointA"/>
+    <circle cx="142" cy="160" r="12" class="pointA"/>
+    <circle cx="214" cy="186" r="12" class="pointB"/>
+    <circle cx="282" cy="150" r="12" class="pointB"/>
+    <circle cx="338" cy="174" r="12" class="pointC"/>
+    <circle cx="392" cy="132" r="12" class="pointD"/>
+
+    <path d="M92 178 L92 212" class="lite"/>
+    <path d="M142 160 L142 212" class="lite"/>
+    <path d="M214 186 L214 212" class="lite"/>
+    <path d="M282 150 L282 212" class="lite"/>
+    <path d="M338 174 L338 212" class="lite"/>
+    <path d="M392 132 L392 212" class="lite"/>
+
+    <path d="M92 178 L116 178 L116 142 L142 142 L142 160" class="merge"/>
+    <path d="M214 186 L214 154 L282 154 L282 150" class="merge"/>
+    <path d="M338 174 L338 126 L392 126 L392 132" class="merge"/>
+    <path d="M129 142 L129 112 L248 112" class="merge"/>
+    <path d="M248 112 L248 84 L366 84" class="merge"/>
+
+    <circle cx="248" cy="112" r="9" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+    <circle cx="366" cy="84" r="9" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+
+    <text x="86" y="238" class="note">points</text>
+    <text x="210" y="238" class="note">merges</text>
+    <text x="338" y="238" class="note">clusters</text>
+  </g>
+
+  <g transform="translate(592,148)">
+    <rect x="0" y="0" width="542" height="262" rx="24" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="24" y="34" class="small">Dendrogram</text>
+    <text x="24" y="62" class="note">Cut the tree at a height to get the final partition.</text>
+
+    <line x1="64" y1="212" x2="474" y2="212" class="axis"/>
+    <line x1="76" y1="212" x2="76" y2="78" class="axis"/>
+
+    <path d="M116 212 L116 176" class="merge"/>
+    <path d="M174 212 L174 156" class="merge"/>
+    <path d="M240 212 L240 182" class="merge"/>
+    <path d="M314 212 L314 134" class="merge"/>
+    <path d="M392 212 L392 164" class="merge"/>
+    <path d="M448 212 L448 118" class="merge"/>
+
+    <path d="M116 176 L174 176" class="merge"/>
+    <path d="M240 182 L314 182" class="merge"/>
+    <path d="M314 134 L392 134" class="merge"/>
+    <path d="M174 156 L208 156 L208 120 L272 120" class="merge"/>
+    <path d="M272 120 L272 92 L448 92" class="merge"/>
+
+    <circle cx="116" cy="212" r="10" class="pointA"/>
+    <circle cx="174" cy="212" r="10" class="pointA"/>
+    <circle cx="240" cy="212" r="10" class="pointB"/>
+    <circle cx="314" cy="212" r="10" class="pointB"/>
+    <circle cx="392" cy="212" r="10" class="pointC"/>
+    <circle cx="448" cy="212" r="10" class="pointD"/>
+
+    <circle cx="272" cy="120" r="9" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+    <circle cx="448" cy="92" r="9" fill="#ffffff" stroke="#2563eb" stroke-width="4"/>
+
+    <line x1="84" y1="150" x2="460" y2="150" class="cut"/>
+    <text x="364" y="142" class="small" fill="#2563eb">cut</text>
+  </g>
+
+  <rect x="66" y="438" width="1068" height="22" rx="11" class="chip"/>
+</svg>

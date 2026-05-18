@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+  <title id="title">Hierarchical clustering linkage comparison</title>
+  <desc id="desc">A compact three-panel illustration showing single, complete and average linkage with minimal labels.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+    <style>
+      .title { font: 700 24px sans-serif; fill: #0f172a; }
+      .sub { font: 500 14px sans-serif; fill: #64748b; }
+      .panel { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.5; rx: 22; }
+      .label { font: 700 16px sans-serif; fill: #0f172a; }
+      .hint { font: 600 13px sans-serif; fill: #64748b; }
+      .line { stroke: #0f172a; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .axis { stroke: #cbd5e1; stroke-width: 2; }
+      .a { fill: #dbeafe; stroke: #3b82f6; stroke-width: 4; }
+      .b { fill: #dcfce7; stroke: #22c55e; stroke-width: 4; }
+      .c { fill: #fef3c7; stroke: #f59e0b; stroke-width: 4; }
+      .d { fill: #fee2e2; stroke: #ef4444; stroke-width: 4; }
+      .dash { stroke: #2563eb; stroke-width: 2.5; stroke-dasharray: 7 7; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="380" rx="30" fill="url(#bg)"/>
+  <text x="48" y="54" class="title">Linkage changes the shape of the hierarchy</text>
+  <text x="48" y="80" class="sub">Single connects the nearest points, complete uses the farthest ones, and average sits between the two.</text>
+
+  <g transform="translate(40,110)">
+    <rect class="panel" x="0" y="0" width="350" height="230"/>
+    <text x="22" y="30" class="label">single</text>
+    <text x="22" y="52" class="hint">nearest points</text>
+    <line x1="26" y1="178" x2="324" y2="178" class="axis"/>
+    <circle cx="70" cy="144" r="11" class="a"/>
+    <circle cx="126" cy="130" r="11" class="a"/>
+    <circle cx="212" cy="150" r="11" class="b"/>
+    <circle cx="282" cy="122" r="11" class="b"/>
+    <path d="M70 144 L96 144 L96 116 L126 116 L126 130" class="line"/>
+    <path d="M212 150 L212 118 L282 118 L282 122" class="line"/>
+    <path d="M111 116 L111 84 L248 84" class="line"/>
+    <text x="254" y="76" class="hint">chain</text>
+  </g>
+
+  <g transform="translate(425,110)">
+    <rect class="panel" x="0" y="0" width="350" height="230"/>
+    <text x="22" y="30" class="label">complete</text>
+    <text x="22" y="52" class="hint">farthest points</text>
+    <line x1="26" y1="178" x2="324" y2="178" class="axis"/>
+    <circle cx="70" cy="144" r="11" class="a"/>
+    <circle cx="126" cy="130" r="11" class="a"/>
+    <circle cx="212" cy="150" r="11" class="b"/>
+    <circle cx="282" cy="122" r="11" class="b"/>
+    <path d="M70 144 L96 144 L96 116 L126 116 L126 130" class="line"/>
+    <path d="M212 150 L212 118 L282 118 L282 122" class="line"/>
+    <path d="M111 116 L111 74 L248 74" class="line"/>
+    <line x1="111" y1="74" x2="248" y2="74" class="dash"/>
+    <text x="252" y="76" class="hint">compact</text>
+  </g>
+
+  <g transform="translate(810,110)">
+    <rect class="panel" x="0" y="0" width="350" height="230"/>
+    <text x="22" y="30" class="label">average</text>
+    <text x="22" y="52" class="hint">mean distance</text>
+    <line x1="26" y1="178" x2="324" y2="178" class="axis"/>
+    <circle cx="70" cy="144" r="11" class="a"/>
+    <circle cx="126" cy="130" r="11" class="a"/>
+    <circle cx="212" cy="150" r="11" class="b"/>
+    <circle cx="282" cy="122" r="11" class="b"/>
+    <path d="M70 144 L96 144 L96 116 L126 116 L126 130" class="line"/>
+    <path d="M212 150 L212 118 L282 118 L282 122" class="line"/>
+    <path d="M111 116 L111 80 L248 80" class="line"/>
+    <text x="254" y="82" class="hint">balance</text>
+  </g>
+</svg>
