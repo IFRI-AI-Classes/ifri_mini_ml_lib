@@ -3,13 +3,13 @@ from typing import Union, List, Tuple, Optional
 
 # MODULE CONSTANTS
 DEFAULT_THRESHOLD = 3.0
-"""float: Default threshold for Z-score anomaly detection (commonly set to 3.0 for normal distributions)"""
+"""float : Default threshold for Z-score anomaly detection (commonly set to 3.0 for normal distributions)"""
 
 MIN_DATA_POINTS = 5
-"""int:Minimum number of data points required to perform Z-score detection (to ensure meaningful statistics)"""
+"""int : Minimum number of data points required to perform Z-score detection (to ensure meaningful statistics)"""
 
 MAD_TO_STD_FACTOR = 0.6745
-"""float: Conversion factor from MAD to standard deviation for normal distribution"""
+"""float : Conversion factor from MAD to standard deviation for normal distribution"""
 
 
 # modified_zscore_detection function
@@ -19,63 +19,33 @@ def modified_zscore_detection(
     threshold: float = 3.5,
     return_zscore: bool = False
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    
     """
-    Detects anomalies with the Modified Z-score (based on median and MAD).
-    
-    Unlike the classic Z-score, this version is ROBUST against
-    the presence of outliers in the training data.
+    Detects anomalies using the Modified Z-score method.
 
-    
-    Mathematical formula :
-        M_i = 0.6745 × (x_i - median) / MAD
+    Description:
+        Computes anomaly scores based on the median and the
+        Median Absolute Deviation (MAD). Unlike the classic
+        Z-score, this method is robust to outliers.
+
+    Args:
+        data (list or np.ndarray): Input numerical data.
+        threshold (float, optional): Detection threshold.
+            Default is 3.5.
+        return_zscore (bool, optional): If True, also returns
+            the Modified Z-scores. Default is False.
+
+    Returns:
+        np.ndarray: Boolean array where True indicates anomalies.
+
+        tuple (optional):
+            anomalies (np.ndarray): Boolean anomaly mask.
+            mz_scores (np.ndarray): Modified Z-scores.
+
+    Examples:
+        >>> data = [10, 12, 11, 10, 13, 100, 12, 11]
+        >>> anomalies = modified_zscore_detection(data)
         
-        where MAD = Median(|x_i - median|)
-        and 0.6745 is a factor that makes the MAD comparable to the standard deviation
-    
-    Why is this version better ?
-        - The median is not affected by extreme values
-        - The MAD is more robust to outliers than the standard deviation
-    
-    Parameters
-    ----------
-    data : list or numpy.ndarray
-        Array of numerical values to analyze.
-        Must contain at least {MIN_DATA_POINTS} elements.
-    
-    threshold : float, default = 3.5
-        Detection threshold. The value 3.5 is recommended by the literature
-        (Iglewicz & Hoaglin, 1993).
-    
-    return_zscore : bool, default = False
-        If True, also returns the Modified Z-scores.
-    
-    Returns
-    -------
-    anomalies : numpy.ndarray (bool)
-        Array of booleans where True indicates an anomaly.
-
-    mz_scores : numpy.ndarray (float), optional
-        Returned only if return_zscore=True.
-    
-    Examples
-    --------
-    >>> data = [10, 12, 11, 10, 13, 100, 12, 11]
-    >>> anomalies = modified_zscore_detection(data, threshold=3.5)
-    >>> anomalies
-    array([False, False, False, False, False, True, False, False])
-    
-    Notes
-    -----
-    This method is particularly recommended when :
-        - The data already contains potential anomalies
-        - The underlying distribution is not perfectly Gaussia
-        - The distribution is not perfectly normal
-        - The sample size is small (< 30 points)
-    
-    Reference
-    ---------
-    Iglewicz, B., & Hoaglin, D. C. (1993). 
-    "How to Detect and Handle Outliers". ASQC Quality Press.
     """
     
     # Validation of parameters (same as in zscore_detection, but adapted to the context of median/MAD)
@@ -113,62 +83,31 @@ def modified_zscore_detection(
 # class ZScoreDetector
 
 class ZScoreDetector:
+    
     """
-    Anomaly detector based on the Z-score, following a fit/predict pattern.
-    
-    Workflow
-    --------
-        1. fit(X_train)      : learn μ and σ from clean reference data.
-        2. predict(X_new)    : flag anomalies in new data using learned stats.
-        
-    Parameters
-    ----------
-    threshold : float, default = 3.0
-        Decision boundary above which |Z| flags a point as an anomaly.
-        Recommanded values :
-            - 2.5 : sensitive detection (higher recall, more false positives)
-            - 3.0 : standard            (retains 99.7% of Gaussian data)
-            - 4.0 : conservative        (lower recall, fewer false positives)
-            
-    axis : int or None, default = None
-        Axis along which statistics are computed for 2D data.
-            - None : global statistics across the entire matrix.
-            - 0    : per-column statistics (recommanded).
-            - 1    : per- row statistics.
-        Ignored for 1D data.
-        
-    Attributes
-    ----------
-    mean_ : float or numpy.ndarray or None
-        Sample mean learned during fit(). None before fit() is called.
-    std_ : float or numpy.ndarray or None
-        Sample standard deviation (ddof = 1) learned during fit().
-        None before fit() is called.
-    is_fitted_ : bool
-    True once fit() has been successfully called.
-        
-    Examples
-    --------
-    Basic usage on 1D data :
-    
-    >>> X_train = [100, 102, 98, 101, 99, 103, 97, 101, 100, 102]
-    >>> X_new   = [101, 99, 350, 98]
-    >>> detector = ZScoreDetector(threshold=3.0)
-    >>> detector.fit(X_train)
-    >>> anomalies = detector.predict(X_new)
-    >>> anomalies
-    array([False, False,  True, False])
+    Z-score based anomaly detector.
 
-    2D usage with per-column statistics (axis=0) :
+    Description:
+        Learns the mean and standard deviation from training
+        data and detects anomalies using Z-scores.
+        Points with |Z| greater than the threshold are
+        classified as anomalies.
 
-    >>> X_train = np.array([[37, 70], [36, 72], [37, 68],
-    ...                     [36, 71], [37, 69]])
-    >>> X_new   = np.array([[37, 71], [42, 180]])
-    >>> detector = ZScoreDetector(threshold=3.0, axis=0)
-    >>> detector.fit(X_train)
-    >>> detector.predict(X_new)
-    array([[False, False],
-           [ True,  True]])
+    Args:
+        threshold (float, optional): Detection threshold.
+            Default is 3.0.
+        axis (int or None, optional): Axis used to compute
+            statistics for 2D data. Default is None.
+
+    Attributes:
+        mean_ (float or np.ndarray): Learned mean values.
+        std_ (float or np.ndarray): Learned standard deviations.
+        is_fitted_ (bool): True if fit() has been called.
+
+    Examples:
+        >>> detector = ZScoreDetector(threshold=3.0)
+        >>> detector.fit(X_train)
+        >>> anomalies = detector.predict(X_test)
     """
     
     def __init__(self, 
@@ -184,36 +123,25 @@ class ZScoreDetector:
     def fit(self,
             X_train: Union[List[float], np.ndarray]
             ) -> 'ZScoreDetector':
-        """
-        Learn the mean and standard deviation from clean training data.
-        Parameters
-        ----------
-        X_train : list or numpy.ndarray
-            Reference data considered free of anomalies.
-            - 1D : flat array of scalar values.
-            - 2D : matrix of shape (n_samples, n_features).
-            Must contain at least MIN_DATA_POINTS elements.
-            
-        Returns
-        -------
-        self : ZScoreDetector
-            The fitted detector (allows method chaining).
-            
-        Raises
-        ------
-        TypeError
-            If X_train is not a list or numpy.ndarray.
-        ValueError
-            - If X_train contains fewer than MIN_DATA_POINTS elements.
-            - If the standard deviation is zero (constant feature or data);
         
-        Examples
-        --------
-        >>> detector = ZScoreDetector(threshold = 3.0)
-        >>> detector.fit([100, 102, 98, 101, 99, 103, 97, 101, 100, 102])
-        >>> detector.is_fitted_
-        True
         """
+        Learns the mean and standard deviation from training data.
+
+        Description:
+            Computes the statistics required for Z-score anomaly
+            detection on future data.
+
+        Args:
+            X_train (list or np.ndarray): Training data of shape
+                (n_samples,) or (n_samples, n_features).
+
+        Returns:
+            self: The fitted ZScoreDetector instance.
+
+        Examples:
+            >>> detector.fit([100, 102, 98, 101, 99])
+        """
+        
         if isinstance(X_train, list):
             X_train = np.array(X_train, dtype = float)
         elif isinstance(X_train, np.ndarray):
@@ -252,37 +180,27 @@ class ZScoreDetector:
                 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         
         """
-        Detect anomalies in new data using the statistics learned during fit(). 
-        
-        Parameters
-        ----------
-        X_new : list or numpy.ndarray
-            New data to evaluate.
-            Must have the same number of features (columns) as X_train.
-        return_zscore : bool, default = False
-            If True, also returns the computed Z-scores.
+        Detects anomalies in new data using Z-scores.
 
-        Returns
-        -------
-        anomalies : numpy.ndarray of bool
-            Boolean mask where True indicates an anomaly.
-        z_scores : numpy.ndarray of float, optional
-            Returned only if return_zscore = True.
+        Description:
+            Computes Z-scores using the statistics learned during
+            fit(). Values whose absolute Z-score exceeds the
+            threshold are classified as anomalies.
 
-        Raises
-        ------
-        RuntimeError
-            If predict() is called before fit().
-        TypeError
-            If X_new is not a list or numpy.ndarray.
+        Args:
+            X_new (list or np.ndarray): Input data to evaluate.
+            return_zscore (bool, optional): If True, also returns
+                the computed Z-scores. Default is False.
 
-        Examples
-        --------
-        >>> detector = ZScoreDetector( threshold = 3.0)
-        >>> detector.fit([100, 102, 98, 101, 99, 103, 97, 101, 100, 102])
-        >>> detector.predict([101, 350, 99])
-        array([False,  True, False])
-        
+        Returns:
+            np.ndarray: Boolean array where True indicates anomalies.
+
+            tuple (optional):
+                anomalies (np.ndarray): Boolean anomaly mask.
+                z_scores (np.ndarray): Computed Z-scores.
+
+        Examples:
+            >>> detector.predict([101, 350, 99])
         """
         
         # Check fitted
