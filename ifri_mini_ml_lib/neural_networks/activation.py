@@ -1,7 +1,6 @@
 # Importations
 import numpy as np
 from typing import List, Tuple
-from ..preprocessing.preparation.splitting import DataSplitter
 
 
 # Activation functions and their derivatives

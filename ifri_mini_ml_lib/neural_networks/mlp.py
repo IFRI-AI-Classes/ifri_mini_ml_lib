@@ -2,12 +2,12 @@ from typing import List, Tuple, Optional,Dict, Any
 
 from .resolver import resolve_config, validate_config, build_loss_kwargs
 from .optimizers import UPDATE_WEIGHTS_METHODS
-from .activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS, ALLOWED_OUTPUTS, DEFAULT_OUTPUT_ACTIVATIONS, _softmax
+from .activation import ACTIVATIONS, DERIVATIVES, TASK_ACTIVATIONS
 from .initialization import initialize_weights
 from .data_split import split_train_validation
 from .loss import LOSS_FUNCTIONS
 import numpy as np
-from ifri_mini_ml_lib.preprocessing.preparation.encoding import OneHotEncoder
+from ..preprocessing.preparation.encoding import OneHotEncoder
 
 class MLP:
     """
