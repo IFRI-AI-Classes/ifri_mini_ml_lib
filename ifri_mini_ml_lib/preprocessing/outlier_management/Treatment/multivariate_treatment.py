@@ -71,37 +71,6 @@ class Multivariate_Treatment :
 
         return df_imputed
         
-        
-    def winsorize(self, lower_quantile=0.05, upper_quantile=0.95):
-        """
-        Caps extreme values column by column using quantile bounds.
-        In the multivariate context, the same capping is applied consistently
-        across all numeric columns, preserving the structure of the dataset.
-
-        Args:
-            lower_quantile (float): lower bound quantile. Defaults to 0.05
-            upper_quantile (float): upper bound quantile. Defaults to 0.95
-
-        Returns:
-            DataFrame with all numeric columns capped
-        """
-        df_capped = self.dataframe.copy()
-
-        for column in self._get_numeric_columns():
-            lower_bound = df_capped[column].quantile(lower_quantile)
-            upper_bound = df_capped[column].quantile(upper_quantile)
-
-            # clip() brings values outside the bounds back to the bound value
-            df_capped[column] = df_capped[column].clip(
-                lower=lower_bound,
-                upper=upper_bound
-            )
-
-            print(f"Column '{column}' → capped to "
-                  f"[{lower_bound:.2f}, {upper_bound:.2f}]")
-
-        return df_capped
-    
     
     
     def impute_knn(self, outlier_indices, n_neighbors=5):
@@ -199,27 +168,21 @@ class Multivariate_Treatment :
         Main entry point for multivariate outlier treatment.
 
         Args:
-            method (str): one of 'remove', 'winsorize',
-                          'impute_median', 'impute_knn'
+            method (str): one of 'remove','impute_median', 'impute_knn'
             outlier_indices: required for 'remove', 'impute_median', 'impute_knn'
             **kwargs: additional arguments passed to the chosen method
-                      e.g. n_neighbors=5 for impute_knn
-                           lower_quantile, upper_quantile for winsorize
 
         Returns:
             Treated DataFrame
         """
-        if method == "remove":
-            return self.remove_outliers(outlier_indices)
-        elif method == "winsorize":
-            return self.winsorize(**kwargs)
-        elif method == "impute_median":
-            return self.impute_median(outlier_indices)
-        elif method == "impute_knn":
-            return self.impute_knn(outlier_indices, **kwargs)
-        else:
+        dispatch = {
+            "remove":        lambda: self.remove_outliers(outlier_indices),
+            "impute_median": lambda: self.impute_median(outlier_indices),
+            "impute_knn":    lambda: self.impute_knn(outlier_indices, **kwargs),
+        }
+        if method not in dispatch:
             raise ValueError(
                 f"Unknown method '{method}'. "
-                f"Available methods: 'remove', 'winsorize', "
-                f"'impute_median', 'impute_knn'"
+                f"Available: {list(dispatch.keys())}"
             )
+        return dispatch[method]()
