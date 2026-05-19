@@ -44,7 +44,7 @@ class Univariate_Treatment:
     
     
     #------Second Method--------
-    def winsorize(self, lower_quantile=0.05, upper_quantile=0.95):
+    def winsorize(self,outlier_indices, lower_quantile=0.05, upper_quantile=0.95):
         """
         Winsorize principle:
         We choose percentiles:
@@ -64,11 +64,14 @@ class Univariate_Treatment:
         """ 
         
         df_capped = self.dataframe.copy()
+        
+        # Compute bounds on inliers only ,  outliers excluded
+        inlier_mask = ~df_capped.index.isin(outlier_indices)
 
         for column in self._get_numeric_columns():
             # Compute the lower and upper bounds for this column
-            lower_bound = df_capped[column].quantile(lower_quantile)
-            upper_bound = df_capped[column].quantile(upper_quantile)
+            lower_bound = df_capped.loc[inlier_mask, column].quantile(lower_quantile)
+            upper_bound = df_capped.loc[inlier_mask, column].quantile(upper_quantile)
 
             # clip() is a pandas method whose replaces values below lower_bound with lower_bound
             # and values above upper_bound with upper_bound
@@ -216,38 +219,20 @@ class Univariate_Treatment:
             
             
     def treat(self, method, outlier_indices=None, **kwargs):
-        """
-        Main entry point for outlier treatment.
-        Calls the appropriate method based on the chosen strategy.
-
-        Args:
-            method (str): one of 'remove', 'winsorize', 'impute_median',
-                          'impute_mean', 'log', 'sqrt'
-            outlier_indices: required for 'remove', 'impute_median', 'impute_mean'
-            **kwargs: additional arguments passed to the chosen method
-                      (e.g. lower_quantile, upper_quantile for winsorize)
-
-        Returns:
-            Treated DataFrame
-        """
-        if method == "remove":
-            return self.remove_outliers(outlier_indices)
-        elif method == "winsorize":
-            return self.winsorize(**kwargs)
-        elif method == "impute_median":
-            return self.impute_median(outlier_indices)
-        elif method == "impute_mean":
-            return self.impute_mean(outlier_indices)
-        elif method == "log":
-            return self.log_transform(**kwargs)
-        elif method == "sqrt":
-            return self.sqrt_transform(**kwargs)
-        else:
+        dispatch = {
+            "remove":        lambda: self.remove_outliers(outlier_indices),
+            "winsorize":     lambda: self.winsorize(outlier_indices, **kwargs),
+            "impute_median": lambda: self.impute_median(outlier_indices),
+            "impute_mean":   lambda: self.impute_mean(outlier_indices),
+            "log":           lambda: self.log_transform(**kwargs),
+            "sqrt":          lambda: self.sqrt_transform(**kwargs),
+        }
+        if method not in dispatch:
             raise ValueError(
                 f"Unknown method '{method}'. "
-                f"Available methods: 'remove', 'winsorize', 'impute_median', "
-                f"'impute_mean', 'log', 'sqrt'"
+                f"Available: {list(dispatch.keys())}"
             )
+        return dispatch[method]()
             
     
     
