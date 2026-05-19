@@ -142,16 +142,24 @@ class OrdinalEncoder:
         """
         # Convert to object dtype to safely handle mixed types (int, str, etc.)
         X_temp = np.asarray(X, dtype=object)
+        if X_temp.ndim != 2:
+           raise ValueError("X must be 2D array")        
+        
         n_features = X_temp.shape[1]
         self.categories_ = []
 
         for i in range(n_features):
             if self.categories == 'auto':
                 # Extract unique values and sort them as strings for consistency
-                col_cats = np.unique(X_temp[:, i].astype(str))
+                col_cats = np.unique(X_temp[:, i])
             else:
-                col_cats = np.array(self.categories[i], dtype=object)
+                col_cats = np.array(self.categories[i])
             self.categories_.append(col_cats)
+            
+        if self.handle_unknown == "use_encoded_value":
+           for cats in self.categories_:
+               if 0 <= self.unknown_value < len(cats):
+                  raise ValueError("unknown_value conflicts with valid category indices")
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -164,8 +172,14 @@ class OrdinalEncoder:
             - Type: ndarray of type float64.
         :raises ValueError: If an unknown category is detected and handle_unknown is 'error'.
         """
+        if not self.categories_:
+           raise ValueError("This OrdinalEncoder instance is not fitted yet.")
+        
         X_temp = np.asarray(X, dtype=object)
         X_out = np.empty(X_temp.shape, dtype=np.float64)
+        
+        if X_temp.shape[1] != len(self.categories_):
+           raise ValueError("Number of features does not match fitted data")
 
         for i, cats in enumerate(self.categories_):
             # Create a lookup dictionary for O(1) average time complexity
@@ -173,7 +187,8 @@ class OrdinalEncoder:
             
             def encode_val(val):
                 # Ensure type consistency during lookup
-                val_lookup = str(val) if self.categories == 'auto' else val
+                val_native = val.item() if hasattr(val, 'item') else val
+                val_lookup = val_native
                 
                 if val_lookup in mapping:
                     return mapping[val_lookup]
@@ -184,8 +199,8 @@ class OrdinalEncoder:
                 return self.unknown_value
 
             # Apply encoding logic across the entire column vector
-            v_encode = np.vectorize(encode_val)
-            X_out[:, i] = v_encode(X_temp[:, i])
+            for j, val in enumerate(X_temp[:, i]):
+              X_out[j, i] = encode_val(val)
             
         return X_out
 
@@ -209,17 +224,23 @@ class OrdinalEncoder:
         :return: Array of original categories.
             - Type: ndarray of type object.
         """
-        X_temp = np.asarray(X)
+        if not self.categories_:
+           raise ValueError("This OrdinalEncoder instance is not fitted yet.")
+        X_temp = np.asarray(X, dtype=object)
         X_inv = np.empty(X_temp.shape, dtype=object)
 
         for i, cats in enumerate(self.categories_):
-            indices = X_temp[:, i].astype(int)
-            
-            # Identify valid indices within the fitted category range
-            mask = (indices >= 0) & (indices < len(cats))
+            col = X_temp[:, i]  
+            col_float = col.astype(float)
+            valid_mask = (col == self.unknown_value) | (np.floor(col_float) == col_float)              
+            if not np.all(valid_mask):
+                raise ValueError("Encoded values must be integers or unknown_value")
+
+            indices = col.astype(int)
+
+            mask = (indices >= 0) & (indices < len(cats)) & (indices != self.unknown_value)
+
             X_inv[mask, i] = cats[indices[mask]]
-            
-            # Assign None to values that cannot be mapped back (like unknown_value)
-            X_inv[~mask, i] = None 
+            X_inv[~mask, i] = None
             
         return X_inv
