@@ -225,10 +225,10 @@ class LOF:
         scores = []
 
         for x in X:
-            knn_idx, _, _ = self._k_neighbors_test(x, X)
+            knn_idx, _ = self._k_neighbors_test(x)
 
             # Local density of x
-            lrd_x = self._lrd_test(x, X)
+            lrd_x = self._lrd_test(x)
 
             # Mean local density of x's neighbors
             lrd_neighbors = np.mean([self.lrd_train_[o] for o in knn_idx])
