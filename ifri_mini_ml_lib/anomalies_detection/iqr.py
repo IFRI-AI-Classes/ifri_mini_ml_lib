@@ -73,7 +73,10 @@ class IQR:
         """
         Internal helper for input validation and conversion.
         """
-        X_arr = np.array(X, dtype=float)
+        try:
+            X_arr = np.array(X, dtype=float)
+        except (ValueError, TypeError) as e:
+            raise TypeError("Input data must be numeric.") from e
 
         if X_arr.size == 0:
             raise ValueError("Input data must not be empty.")
@@ -83,9 +86,6 @@ class IQR:
 
         if X_arr.ndim != 2:
             raise ValueError(f"Input must be 1D or 2D array, got {X_arr.ndim}D.")
-
-        if not np.issubdtype(X_arr.dtype, np.number):
-             raise TypeError("Input data must be numeric.")
 
         if self.handle_nan == 'raise' and np.isnan(X_arr).any():
             raise ValueError("Input data contains NaN values. Set handle_nan='omit' to ignore them.")
@@ -113,6 +113,9 @@ class IQR:
         self.Q3_ = percentile_func(X_arr, 75, axis=0)
         self.IQR_ = self.Q3_ - self.Q1_
 
+        self.lower_bound_ = self.Q1_ - self.factor * self.IQR_
+        self.upper_bound_ = self.Q3_ + self.factor * self.IQR_
+
         # Handle constant features
         constant_features = self.IQR_ == 0
         if np.any(constant_features):
@@ -121,9 +124,9 @@ class IQR:
                 "These features will not contribute to anomaly detection.",
                 UserWarning
             )
-
-        self.lower_bound_ = self.Q1_ - self.factor * self.IQR_
-        self.upper_bound_ = self.Q3_ + self.factor * self.IQR_
+            # Neutralize constant features by expanding bounds to infinity
+            self.lower_bound_[constant_features] = -np.inf
+            self.upper_bound_[constant_features] = np.inf
 
         self._is_fitted = True
         return self
@@ -146,8 +149,10 @@ class IQR:
         if X_arr.shape[1] != self.lower_bound_.shape[0]:
             raise ValueError(f"Feature count mismatch: expected {self.lower_bound_.shape[0]}, got {X_arr.shape[1]}.")
 
-        below = X_arr < self.lower_bound_
-        above = X_arr > self.upper_bound_
+        # Use np.errstate to safely ignore NaN warnings when comparing elements
+        with np.errstate(invalid='ignore'):
+            below = X_arr < self.lower_bound_
+            above = X_arr > self.upper_bound_
         is_anomaly = np.any(below | above, axis=1)
 
         return is_anomaly.astype(int)

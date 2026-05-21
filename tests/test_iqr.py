@@ -211,7 +211,7 @@ def test_single_sample_raises():
 def test_non_numeric_data_raises():
     """Should raise TypeError for non-numeric data."""
     detector = IQR()
-    with pytest.raises(ValueError): # np.array(..., dtype=float) raises ValueError for non-numeric strings
+    with pytest.raises(TypeError):
         detector.fit([["a"], ["b"]])
 
 # ─────────────────────────────────────────────
@@ -248,3 +248,45 @@ def test_summary_runs_without_error(simple_1d_data, capsys):
 
     captured = capsys.readouterr()
     assert "IQR Detector Summary" in captured.out
+
+
+def test_constant_feature_truly_ignored():
+    """Verify that constant features are truly ignored and do not flag anomalies."""
+    detector = IQR(factor=1.5)
+    # Feature 0 is constant (5.0), Feature 1 is variable
+    X_train = np.array([
+        [5.0, 1.0],
+        [5.0, 2.0],
+        [5.0, 3.0],
+        [5.0, 4.0],
+    ])
+    detector.fit(X_train)
+
+    # Test data where Feature 0 is different from the constant (e.g., 10.0)
+    # but Feature 1 is perfectly normal. It should NOT be flagged as anomaly.
+    X_test = np.array([[10.0, 2.0]])
+    labels = detector.predict(X_test)
+    assert labels[0] == 0
+
+
+def test_predict_nan_no_warnings():
+    """Verify that predict() on data with NaNs doesn't emit RuntimeWarnings when handle_nan='omit'."""
+    detector = IQR(handle_nan='omit')
+    X_train = np.array([
+        [1.0, 2.0],
+        [2.0, 3.0],
+        [3.0, 4.0],
+        [4.0, 5.0],
+    ])
+    detector.fit(X_train)
+
+    X_test = np.array([
+        [np.nan, 3.0],
+        [2.0, np.nan],
+    ])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # Treat all warnings as exceptions
+        labels = detector.predict(X_test)
+    
+    assert labels.shape == (2,)
