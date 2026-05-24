@@ -1,13 +1,12 @@
 from typing import List, Tuple, Optional,Dict, Any
 
-from .resolver import resolve_config, validate_config, build_loss_kwargs,TASK_CONFIG
+from .resolver import resolve_config, validate_config, build_loss_kwargs, TASK_CONFIG
 from .optimizers import UPDATE_WEIGHTS_METHODS
 from .activation import ACTIVATIONS, DERIVATIVES
 from .initialization import initialize_weights
 from .data_split import split_train_validation
 from .loss import LOSS_FUNCTIONS
 import numpy as np
-from ..preprocessing.preparation.encoding import OneHotEncoder
 
 class MLP:
     """
@@ -270,11 +269,8 @@ class MLP:
         
         # Encode labels for classification
         if self.task == 'classification':
-            encoder = OneHotEncoder()
-            encoder.fit(y_orig)
-            self._label_encoder = encoder
-            self.classes_ = encoder.classes_
-            y_one_hot = encoder.transform(y_orig)
+            self.classes_, y_encoded = np.unique(y_orig, return_inverse=True)
+            y_one_hot = np.eye(len(self.classes_))[y_encoded]
             n_outputs = y_one_hot.shape[1]
             y_processed = y_one_hot
         else:  # regression
@@ -298,8 +294,8 @@ class MLP:
                 seed=self.random_state
             )
             if self.task == 'classification':
-                y_train = self._label_encoder.transform(y_train_raw)
-                y_val = self._label_encoder.transform(y_val_raw)
+                y_train = np.eye(len(self.classes_))[np.searchsorted(self.classes_, y_train_raw)]
+                y_val = np.eye(len(self.classes_))[np.searchsorted(self.classes_, y_val_raw)]
             else:
                 y_train = y_train_raw.reshape(-1, 1) if y_train_raw.ndim == 1 else y_train_raw.astype(float)
                 y_val = y_val_raw.reshape(-1, 1) if y_val_raw.ndim == 1 else y_val_raw.astype(float)

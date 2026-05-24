@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from ifri_mini_ml_lib.regression import LinearRegression
-from ifri_mini_ml_lib.classification import KNN
-
 class MissingValueHandler:
     """
     Class to handle missing values in datasets using various techniques
@@ -93,7 +90,8 @@ class MissingValueHandler:
         Returns:
             pd.DataFrame: Imputed data.
         """
-
+        from ifri_mini_ml_lib.classification import KNN
+        
         df = self._convert_to_dataframe(X)
 
         for col in df.columns:
@@ -130,6 +128,8 @@ class MissingValueHandler:
         Raises:
             ValueError: If target column doesn't exist in DataFrame.
         """
+        from ifri_mini_ml_lib.regression import LinearRegression
+        
         df = self._convert_to_dataframe(X)
 
         if target_col not in df.columns:
