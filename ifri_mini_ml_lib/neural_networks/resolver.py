@@ -5,7 +5,7 @@ from .loss import LOSS_FUNCTIONS
 TASK_CONFIG = {
     "classification": {
         "outputs": {"sigmoid", "softmax"},
-        "default_output": "sigmoid",
+        "default_output": "softmax",
         "default_loss": {
             "sigmoid": "binary_cross_entropy",
             "softmax": "categorical_cross_entropy"
@@ -61,6 +61,12 @@ def resolve_config(task, output_activation, loss_name):
     if output_activation == "auto" or output_activation is None:
         output_activation = config["default_output"]
 
+    if output_activation not in config["outputs"]:
+        raise ValueError(
+            f"Invalid output activation '{output_activation}' for task '{task}'. "
+            f"Allowed outputs: {config['outputs']}"
+        )
+    
     # LOSS
     if loss_name is None or loss_name == "auto":
         loss_name = config["default_loss"][output_activation]
