@@ -24,7 +24,7 @@ project:
           children:
             - file: notebooks/regression/linear_regression.ipynb
             - file: notebooks/regression/polynomial_regression.ipynb
-            
+
     - title: Data preprocessing
       children:
         - title: Preparation
@@ -40,9 +40,8 @@ project:
             - file: notebooks/preprocessing/dimensionality_reduction/pca.ipynb
             - file: notebooks/preprocessing/dimensionality_reduction/tsne.ipynb
         - title: Outliers
-          children:
-            - file: notebooks/outliers/outliers.ipynb
-            
+        - file: notebooks/outliers/outliers.ipynb
+
     - title: Unsupervised Learning
       children:
         - title: Anomalies detection
@@ -50,6 +49,13 @@ project:
             - file: notebooks/anomalies_detections/iqr.ipynb
             - file: notebooks/anomalies_detections/z_score.ipynb
             - file: notebooks/anomalies_detections/isolation.ipynb
+        - title: Clustering
+          children:
+            - file: notebooks/clustering/kmeans.ipynb
+            - file: notebooks/clustering/dbscan.ipynb
+            - file: notebooks/clustering/hierarchical_clustering.ipynb
+        - title: Association rules
+        - file: notebooks/association_rules/Association_rules.ipynb
 
     - title: Neural networks
       children:
@@ -57,12 +63,10 @@ project:
         - file: notebooks/neural_networks/mlp.ipynb
 
     - title: Bias and fairness
-      children:
-        - file: notebooks/evaluation/bias_evaluation.ipynb    
-    
+    - file: notebooks/evaluation/bias_evaluation.ipynb
+
     - title: Natural language processing
-      children:
-        - file: notebooks/nlp/nlp.ipynb
+    - file: notebooks/nlp/nlp.ipynb
 
   execute:
     execute_notebooks: auto

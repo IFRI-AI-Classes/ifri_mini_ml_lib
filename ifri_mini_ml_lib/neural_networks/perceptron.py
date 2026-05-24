@@ -1,4 +1,3 @@
-# pyrefly: ignore [missing-import]
 import numpy as np
 
 from .data_split import split_train_validation
@@ -95,7 +94,7 @@ class Perceptron:
   >>> pctBC.predict(X=X_BIN_V)
   [0 0 0 0]
   ```
-  ***NOTE*** : The model cannot accurately predict XOR gates.
+  ***NOTE*** : The model cannot accurately predict XOR problem.
   
   Perceptron limits
   -----------------
@@ -118,19 +117,19 @@ class Perceptron:
 
   """
 
-  def __init__(self, lr=0.001, n_iter=1000, early_stopping=True, patience=10, validation_split=0.2, shuffle=True, random_state=None):
-    self._lr = lr
-    self._n_iter = n_iter
-    self._early_stopping = early_stopping
-    self._patience = patience
-    self._validation_fraction = validation_split
-    self._shuffle = shuffle
-    self._random_state = random_state
+  def __init__(self, lr=0.001, n_iter=1000, early_stopping=False, patience=10, validation_split=0.2, shuffle=True, random_state=None):
+    self.lr = lr
+    self.n_iter = n_iter
+    self.early_stopping = early_stopping
+    self.patience = patience
+    self.validation_fraction = validation_split
+    self.shuffle = shuffle
+    self.random_state = random_state
 
-    self._weights : np.ndarray
-    self._bias : float # b ∈ R
+    self.weights : np.ndarray
+    self.bias : float # b ∈ R
     self.trained_epochs = 0
-    self._trained = False
+    self.trained = False
 
   def fit(self, X:list|np.ndarray, y:list|np.ndarray):
     """
@@ -172,48 +171,48 @@ class Perceptron:
     if X.shape[1] == 0:
         raise ValueError("Input data must have at least one feature.")
 
-    if self._lr <= 0:
+    if self.lr <= 0:
         raise ValueError("Learning rate must be positive.")
 
-    if self._n_iter <= 0:
+    if self.n_iter <= 0:
         raise ValueError("Number of iterations must be positive.")
 
-    if self._early_stopping and (
-      self._patience <= 0 or
-      self._validation_fraction <= 0 or
-      self._validation_fraction >= 1
+    if self.early_stopping and (
+      self.patience <= 0 or
+      self.validation_fraction <= 0 or
+      self.validation_fraction >= 1
     ):
       raise ValueError("Invalid early stopping parameters.")
 
 
     # Random seed for reproducibility
-    rng = np.random.default_rng(self._random_state)
+    rng = np.random.default_rng(self.random_state)
 
 
     # Train / Validation split
-    if self._early_stopping:
-      X_train, X_val, y_train, y_val = split_train_validation( X, y, seed=self._random_state, validation_fraction=self._validation_fraction)
+    if self.early_stopping:
+      X_train, X_val, y_train, y_val = split_train_validation(X, y, seed=self.random_state, validation_fraction=self.validation_fraction)
     else:
       X_train, y_train = X, y
       X_val, y_val = None, None
 
 
     # Init parameters
-    self._weights = rng.standard_normal(size=X_train.shape[1]) * 0.01
-    self._bias = 0.0
+    self.weights = rng.standard_normal(size=X_train.shape[1]) * 0.01
+    self.bias = 0.0
 
-    if self._early_stopping:
+    if self.early_stopping:
       best_error = float('inf')
-      best_weights = self._weights.copy()
-      best_bias = self._bias
+      best_weights = self.weights.copy()
+      best_bias = self.bias
       no_improve = 0
 
 
     # Training loop
 
-    for epoch in range(self._n_iter):
+    for epoch in range(self.n_iter):
 
-      if self._shuffle:
+      if self.shuffle:
         idx = rng.permutation(X_train.shape[0])
         X_shuffled = X_train[idx]
         y_shuffled = y_train[idx]
@@ -221,41 +220,41 @@ class Perceptron:
         X_shuffled, y_shuffled = X_train, y_train
 
       # forward pass (train)
-      y_pred = np.dot(X_shuffled, self._weights) + self._bias
+      y_pred = np.dot(X_shuffled, self.weights) + self.bias
       y_pred_class = np.where(y_pred >= 0, 1, 0)
       error = y_shuffled - y_pred_class
 
       # update
-      self._weights += self._lr * np.dot(X_shuffled.T, error)
-      self._bias += self._lr * np.sum(error)
+      self.weights += self.lr * np.dot(X_shuffled.T, error)
+      self.bias += self.lr * np.sum(error)
 
       # Early stopping 
 
-      if self._early_stopping and X_val is not None:
+      if self.early_stopping and X_val is not None:
 
         # validation loss
-        y_val_pred = np.dot(X_val, self._weights) + self._bias
+        y_val_pred = np.dot(X_val, self.weights) + self.bias
         y_val_pred_class = np.where(y_val_pred >= 0, 1, 0)
         val_error = np.mean( y_val != y_val_pred_class ) # classification error
 
         # check improvement
         if val_error < best_error :
           best_error = val_error
-          best_weights = self._weights.copy()
-          best_bias = self._bias
+          best_weights = self.weights.copy()
+          best_bias = self.bias
           no_improve = 0
         else:
           no_improve += 1
         
-        if no_improve >= self._patience:
+        if no_improve >= self.patience:
           break
       self.trained_epochs = epoch + 1
 
     # Restore best parameters
-    if self._early_stopping:
-      self._weights = best_weights
-      self._bias = best_bias
-    self._trained = True
+    if self.early_stopping:
+      self.weights = best_weights
+      self.bias = best_bias
+    self.trained = True
   
   def predict(self, X:list|np.ndarray):
     """
@@ -274,7 +273,7 @@ class Perceptron:
         If the model has not been trained yet, or if the input data is invalid (e.g., wrong number of features).
     """
 
-    if not self._trained:
+    if not self.trained:
       raise ValueError("The model must be trained before making predictions.")
 
     # Convert input
@@ -283,10 +282,10 @@ class Perceptron:
         X = X.reshape(-1, 1)
 
     # verify input shape
-    if X.shape[1] != self._weights.shape[0]:
-        raise ValueError(f"Input data must have {self._weights.shape[0]} features.")
+    if X.shape[1] != self.weights.shape[0]:
+        raise ValueError(f"Input data must have {self.weights.shape[0]} features.")
     
-    y_reg = np.dot(X, self._weights) + self._bias
+    y_reg = np.dot(X, self.weights) + self.bias
     y_pred = np.where(y_reg >= 0, 1, 0)
     return y_pred
 
@@ -295,19 +294,19 @@ class Perceptron:
       """
       Return the accuracy of the model on the provided data
       
-      Parameters:
-      -----------
+      Parameters
+      ----------
       X : np.ndarray of shape (n_samples, n_features)
           Test data
       y : np.ndarray of shape (n_samples,)
           True labels
           
-      Returns:
-      --------
+      Returns
+      -------
       accuracy : float
           Model accuracy
       """
-      if not self._trained:
+      if not self.trained:
           raise ValueError("The model must be trained before calculating its score.")
           
       y_pred = self.predict(X)

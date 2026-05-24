@@ -201,6 +201,19 @@ class DataAdapter:
                                      if item is not None and str(item).strip() != ""}
                 if clean_transaction:  # Don't add empty sets
                     transactions.append(clean_transaction)
+            # If it's a string, try to parse it as a set of items (e.g., "{item1, item2}")
+            elif isinstance(transaction, str):
+
+                clean_transaction = {
+                    item.strip()
+                    for item in transaction.strip("{}")
+                    .replace('"', '')
+                    .split(',')
+                    if item.strip()
+                }
+
+                if clean_transaction:
+                    transactions.append(clean_transaction)
             else:
                 # If single element, create a set with this element
                 if transaction is not None and str(transaction).strip() != "":

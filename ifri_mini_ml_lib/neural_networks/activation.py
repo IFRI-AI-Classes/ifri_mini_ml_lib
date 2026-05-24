@@ -3,7 +3,6 @@ import numpy as np
 from typing import List, Tuple
 
 
-
 # Activation functions and their derivatives
 def _leaky_relu( x: np.ndarray) -> np.ndarray:
     """
@@ -101,12 +100,6 @@ DERIVATIVES = {
     'leaky_relu': _leaky_relu_derivative,
     'softmax': _softmax_derivative,
     'linear': _linear_derivative,
-}
-
-# Allowed activations for regression and classification tasks
-TASK_ACTIVATIONS = {
-    "regression": {"sigmoid", "relu", "tanh", "leaky_relu"},
-    "classification": {"sigmoid", "relu", "tanh", "leaky_relu", "softmax"},
 }
 
 
