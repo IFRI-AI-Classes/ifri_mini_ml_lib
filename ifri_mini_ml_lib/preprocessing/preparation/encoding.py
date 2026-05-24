@@ -1,4 +1,6 @@
 import pandas as pd
+from typing import Union, List, Literal
+import numpy as np
 
 
 class CategoricalEncoder:
@@ -38,7 +40,7 @@ class CategoricalEncoder:
         if self.encoding_type == 'target' and y is None:
             raise ValueError("Target encoding requires target column `y`.")
         
-        for column in X.select_dtypes(include='object').columns:
+        for column in X.select_dtypes(include=['object', 'string']).columns:
             if self.encoding_type == 'label':
                 self.mapping[column] = {cat: idx for idx, cat in enumerate(X[column].unique())}
             elif self.encoding_type == 'ordinal':
@@ -72,7 +74,7 @@ class CategoricalEncoder:
         """
         X_encoded = X.copy()
 
-        for column in X_encoded.select_dtypes(include='object').columns:
+        for column in X_encoded.select_dtypes(include=['object', 'string']).columns:
             if self.encoding_type in ['label', 'ordinal', 'frequency', 'target']:
                 X_encoded[column] = X_encoded[column].map(self.mapping[column])
             elif self.encoding_type == 'onehot':
@@ -96,119 +98,150 @@ class CategoricalEncoder:
         """
         self.fit(X, y)
         return self.transform(X)
-    
-    
-class OneHotEncoder:
-    """
-    Custom One-Hot Encoder with fit/transform consistency.
 
-    Attributes:
-        categories_ (dict): mapping column -> list of categories
-        feature_names_ (list): generated one-hot column names
+class OrdinalEncoder:
+    """    
+    Encodes categorical features as an integer array (0 to n_categories - 1). 
+    Supports mixed data types and provides flexible strategies for handling unknown values 
+    encountered during transformation.
     """
 
-    def __init__(self, handle_unknown="ignore"):
+    def __init__(
+        self, 
+        categories: Union[Literal['auto'], List[List]] = 'auto', 
+        handle_unknown: Literal['error', 'use_encoded_value'] = 'error', 
+        unknown_value: int = -1
+    ):
         """
-        Args:
-            handle_unknown (str):
-                - "ignore" : unknown categories are encoded as all-zero rows
-                Ex : If in train_set we have categories likes Green and Red , if we got new categories like Blue it'll be encode as 0 0
-                - "error" : raise an error when unknown categories appear during transform
-        """
-        if handle_unknown not in {"ignore", "error"}:
-            raise ValueError("handle_unknown must be either 'ignore' or 'error'")
+        Initialize the encoder with specific behavior for categories and unknown values.
 
+        :param categories: Source of categories for each feature.
+            - 'auto' (str): Automatically determine categories from training data.
+            - list of lists: Manually provided categories for each column.
+        :param handle_unknown: Strategy for handling categories not seen during fitting.
+            - 'error' (str): Raise a ValueError if an unknown category is found.
+            - 'use_encoded_value' (str): Assign the value specified in `unknown_value`.
+        :param unknown_value: The integer value to assign to unknown categories.
+            - Type: int (defaults to -1).
+        """
+        self.categories = categories
         self.handle_unknown = handle_unknown
-        # To store categories
-        self.categories_ = {}
-        # To store feature_names
-        self.feature_names_ = []
-        # Flag to track if encoder has been fitted
-        self.fitted_ = False
+        self.unknown_value = unknown_value
+        self.categories_ = []
 
-    def fit(self, X : pd.DataFrame):
+    def fit(self, X: np.ndarray) -> 'OrdinalEncoder':
         """
-        Learn categories for each categorical column in the training data.
-        Args:
-            X (pd.DataFrame) : Features in the dataset
+        Fit the OrdinalEncoder to the input data.
+
+        Identifies and stores unique categories for each feature to build the 
+        internal mapping.
+
+        :param X: The data used to determine the categories.
+            - Type: array-like of shape (n_samples, n_features).
+        :return: The fitted encoder instance.
+            - Type: OrdinalEncoder.
         """
-        X = X.copy()
-        #In case it pass no-object or numerical categories
-        for column in X.select_dtypes(include=['object', 'category']).columns:
-            self.categories_[column] = sorted(X[column].dropna().unique())
+        # Convert to object dtype to safely handle mixed types (int, str, etc.)
+        X_temp = np.asarray(X, dtype=object)
+        if X_temp.ndim != 2:
+           raise ValueError("X must be 2D array")        
+        
+        n_features = X_temp.shape[1]
+        self.categories_ = []
 
-        # create column names
-        self.feature_names_ = [
-            f"{column}_{category}"
-            for column in X.select_dtypes(include=['object', 'category']).columns
-            for category in self.categories_[column]
-        ]
-
-        # Mark encoder as fitted
-        self.fitted_ = True
+        for i in range(n_features):
+            if self.categories == 'auto':
+                # Extract unique values and sort them as strings for consistency
+                col_cats = np.unique(X_temp[:, i])
+            else:
+                col_cats = np.array(self.categories[i])
+            self.categories_.append(col_cats)
+            
+        if self.handle_unknown == "use_encoded_value":
+           for cats in self.categories_:
+               if 0 <= self.unknown_value < len(cats):
+                  raise ValueError("unknown_value conflicts with valid category indices")
         return self
 
-    def transform(self, X : pd.DataFrame):
+    def transform(self, X: np.ndarray) -> np.ndarray:
         """
-        Transform dataset using learned categories.
+        Transform categorical data into numerical codes.
+
+        :param X: The data to transform.
+            - Type: array-like of shape (n_samples, n_features).
+        :return: Transformed numerical array.
+            - Type: ndarray of type float64.
+        :raises ValueError: If an unknown category is detected and handle_unknown is 'error'.
         """
-        if not self.fitted_:
-            raise ValueError("The encoder has not been fit yet. Call fit() before transform().")
+        if not self.categories_:
+           raise ValueError("This OrdinalEncoder instance is not fitted yet.")
+        
+        X_temp = np.asarray(X, dtype=object)
+        X_out = np.empty(X_temp.shape, dtype=np.float64)
+        
+        if X_temp.shape[1] != len(self.categories_):
+           raise ValueError("Number of features does not match fitted data")
 
-        X = X.copy()
-        encoded = X.drop(columns=X.select_dtypes(include=['object', 'category']).columns, errors='ignore')
+        for i, cats in enumerate(self.categories_):
+            # Create a lookup dictionary for O(1) average time complexity
+            mapping = {val: idx for idx, val in enumerate(cats)}
+            
+            def encode_val(val):
+                # Ensure type consistency during lookup
+                val_native = val.item() if hasattr(val, 'item') else val
+                val_lookup = val_native
+                
+                if val_lookup in mapping:
+                    return mapping[val_lookup]
+                
+                if self.handle_unknown == 'error':
+                    raise ValueError(f"Found unknown category '{val}' in column {i}")
+                
+                return self.unknown_value
 
-        for column in X.select_dtypes(include=['object', 'category']).columns:
-            if column not in self.categories_:
-                raise ValueError(f"Column '{column}' was not present during fit().")
+            # Apply encoding logic across the entire column vector
+            for j, val in enumerate(X_temp[:, i]):
+              X_out[j, i] = encode_val(val)
+            
+        return X_out
 
-            categories = self.categories_[column]
-            for category in categories:
-                # Transformation in OneHot
-                encoded[f"{column}_{category}"] = (X[column] == category).astype(int)
+    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Fit to data, then transform it in a single step.
 
-            if self.handle_unknown == "error":
-                unknown_mask = X[column].notna() & ~X[column].isin(categories)
-                if unknown_mask.any():
-                    unknown_values = sorted(X.loc[unknown_mask, column].unique())
-                    raise ValueError(
-                        f"Unknown categories found in column '{column}': {unknown_values}"
-                    )
-
-        for feature in self.feature_names_:
-            if feature not in encoded.columns:
-                encoded[feature] = 0
-
-        ordered_columns = [
-            feature for feature in self.feature_names_ if feature in encoded.columns
-        ] + [col for col in encoded.columns if col not in self.feature_names_]
-        encoded = encoded[ordered_columns]
-
-        return encoded
-
-    def fit_transform(self, X):
+        :param X: The input data.
+            - Type: array-like of shape (n_samples, n_features).
+        :return: Transformed data.
+            - Type: ndarray of type float64.
+        """
         return self.fit(X).transform(X)
-    
-    
-if __name__ == "__main__":
-    # Tests unitaires pour l'encodage One hot
-     
-    color_name_train = pd.DataFrame({"Color" : ["Green" , "Blue" , "Red" , "Yellow" ]})
-    color_name_test = pd.DataFrame({"Color" : ["Blue" , "Green"]})
-    
-    encoder = OneHotEncoder()
-    encoding_values = encoder.fit_transform(color_name_train)
-    
-    print(f"Results of OneHotEncoder for train\n{encoding_values}")
-    
-    #       Color_Blue  Color_Green  Color_Red  Color_Yellow
-    #0           0            1          0             0
-    #1           1            0          0             0
-    #2           0            0          1             0
-    #3           0            0          0             1
 
-    print(f"Results of OneHotEncoder for test\n{encoder.transform(color_name_test)}")
+    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Convert numerical codes back to their original categorical labels.
 
-    #   Color_Blue  Color_Green  Color_Red  Color_Yellow
-    #0           1            0          0             0
-    #1           0            1          0             0
+        :param X: The encoded numerical data.
+            - Type: array-like of shape (n_samples, n_features).
+        :return: Array of original categories.
+            - Type: ndarray of type object.
+        """
+        if not self.categories_:
+           raise ValueError("This OrdinalEncoder instance is not fitted yet.")
+        X_temp = np.asarray(X, dtype=object)
+        X_inv = np.empty(X_temp.shape, dtype=object)
+
+        for i, cats in enumerate(self.categories_):
+            col = X_temp[:, i]  
+            col_float = col.astype(float)
+            valid_mask = (col == self.unknown_value) | (np.floor(col_float) == col_float)              
+            if not np.all(valid_mask):
+                raise ValueError("Encoded values must be integers or unknown_value")
+
+            indices = col.astype(int)
+
+            mask = (indices >= 0) & (indices < len(cats)) & (indices != self.unknown_value)
+
+            X_inv[mask, i] = cats[indices[mask]]
+            X_inv[~mask, i] = None
+            
+        return X_inv
