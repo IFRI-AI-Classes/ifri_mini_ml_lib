@@ -17,6 +17,7 @@ class CategoricalEncoder:
         
     Args:
         encoding_type (str): Type of encoding to apply. Options: 'onehot', 'label', 'ordinal', 'frequency', 'target'. Default is 'onehot'.
+            ('onehot' is deprecated . It will be removed soon. Use OneHotEncoder instead)
         target_column (str): Name of the target column (required for target encoding). Default is None.
     """
     

@@ -58,7 +58,11 @@ project:
 
     - title: Bias and fairness
       children:
-        - file: notebooks/evaluation/bias_evaluation.ipynb
+        - file: notebooks/evaluation/bias_evaluation.ipynb    
+    
+    - title: Natural language processing
+      children:
+        - file: notebooks/nlp/nlp.ipynb
 
   execute:
     execute_notebooks: auto
