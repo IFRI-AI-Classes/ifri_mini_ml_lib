@@ -23,6 +23,7 @@ from . import neural_networks
 from . import association_rules
 from . import metrics
 
+
 version = "0.1.1"
 __all__ = [
     "classification",
