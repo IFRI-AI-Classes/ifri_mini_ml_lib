@@ -115,7 +115,7 @@ class MLP:
         self.beta1 = beta1
         self.beta2 = beta2
         self.epsilon = epsilon
-        self.momentum_factor = momentum
+        self.momentum = momentum
         self.tol = tol
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
@@ -200,7 +200,7 @@ class MLP:
         # Apply output activation if specified
         output_activation = self.output_activation_func(last_layer_input)
         activations.append(output_activation)
-        
+
         return activations, layer_inputs
     
 

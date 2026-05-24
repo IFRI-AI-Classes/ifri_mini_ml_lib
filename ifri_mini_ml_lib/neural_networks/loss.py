@@ -515,6 +515,10 @@ class BinaryCrossEntropy(Loss):
         - Each element is treated independently (no sum over axis=1 unlike CCE)
         """
         epsilon = 1e-15
+        if y_true.ndim == 1:
+            y_true = y_true.reshape(-1, 1)
+            y_pred = y_pred.reshape(-1, 1)
+    
         y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
         bce = -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
         l2 = self.l2_regularization(weights, y_true.shape[0])
@@ -770,7 +774,12 @@ class BinaryFocalLoss(Loss):
         float
             The total loss (Focal + L2 regularization if applicable).
         """
+        
         epsilon = 1e-15
+        if y_true.ndim == 1:
+            y_true = y_true.reshape(-1, 1)
+            y_pred = y_pred.reshape(-1, 1)
+        
         y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
         focal_loss = -np.mean(np.sum(
             self.alpha * (1 - y_pred) ** self.gamma * y_true * np.log(y_pred) + 
