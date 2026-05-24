@@ -10,6 +10,8 @@ project:
   # To autogenerate a Table of Contents, run "jupyter book init --write-toc"
   toc:
     - file: README.md
+    - title: Supervised learning
+      children:
     - title: Data preprocessing
       children:
         - title: Preparation
@@ -46,9 +48,18 @@ project:
         #   children:
         #     - file: notebooks/clustering/kmeans.ipynb
 
+    - title: Neural networks
+      children:
+        - file: notebooks/neural_networks/perceptron.ipynb
+        - file: notebooks/neural_networks/mlp.ipynb
+
+    - title: Bias and fairness
+      children:
+        - file: notebooks/evaluation/bias_evaluation.ipynb
+
   execute:
     execute_notebooks: auto
-    
+
 site:
   template: book-theme
   options:

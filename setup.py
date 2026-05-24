@@ -14,7 +14,8 @@ setup(
         'pandas',
         'scipy',
         'matplotlib',
-        'cvxpy'
+        'cvxpy',
+        'fairlearn'
     ],
     extras_require={
         "dev": [
