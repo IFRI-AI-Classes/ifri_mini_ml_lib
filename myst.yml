@@ -12,6 +12,19 @@ project:
     - file: README.md
     - title: Supervised learning
       children:
+        - title: Classification
+          children:
+            - file: notebooks/classification/knn.ipynb
+            - file: notebooks/classification/decision_tree.ipynb
+            - file: notebooks/classification/logistic_regression.ipynb
+            - file: notebooks/classification/naive_bayes.ipynb
+            - file: notebooks/classification/random_forest.ipynb
+            - file: notebooks/svm.ipynb
+        - title: Regression
+          children:
+            - file: notebooks/regression/linear_regression.ipynb
+            - file: notebooks/regression/polynomial_regression.ipynb
+            
     - title: Data preprocessing
       children:
         - title: Preparation
@@ -29,19 +42,7 @@ project:
         - title: Outliers
           children:
             - file: notebooks/outliers/outliers.ipynb
-
-    - title: Supervised learning
-      children:
-        - title: Classification
-          children:
-            - file: notebooks/classification/knn.ipynb
-            # add more classification notebooks here as you create them
-            # - file: notebooks/classification/decision_tree.ipynb
-            # - file: notebooks/classification/logistic_regression.ipynb
-        # - title: Regression
-        #   children:
-        #     - file: notebooks/regression/linear.ipynb
-
+            
     - title: Unsupervised Learning
       children:
         # - title: Clustering
