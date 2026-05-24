@@ -1,14 +1,14 @@
 import pytest
 import math
 import numpy as np
-from ifri_mini_ml_lib.preprocessing.text.tf_idf import TF_IDF
+from ifri_mini_ml_lib.preprocessing.text import TFIDFVectorizer
 
 # 1. FIT_TRANSFORM SIMPLE  
 
 def test_tfidf_fit_transform_simple():
     """fit_transform sur un corpus minimal doit retourner un ndarray (n_docs, n_terms)."""
     corpus = [["a", "b"], ["a", "c"]]
-    tfidf = TF_IDF()
+    tfidf = TFIDFVectorizer()
     matrix = tfidf.fit_transform(corpus)
 
     # La matrice doit être un ndarray NumPy
@@ -24,7 +24,7 @@ def test_tfidf_fit_transform_simple():
 def test_tfidf_idf_smooth_value():
     """Les poids IDF lissés doivent correspondre à la formule log((N+1)/(df+1))+1."""
     corpus = [["a", "b"], ["a", "c"]]
-    tfidf = TF_IDF(smooth_idf=True, norm=None)
+    tfidf = TFIDFVectorizer(smooth_idf=True, norm=None)
     tfidf.fit(corpus)
 
     N = 2
@@ -45,7 +45,7 @@ def test_tfidf_unknown_term_ignored():
     train_corpus = [["hello", "world"], ["hello", "python"]]
     test_corpus  = [["hello", "unknown_term"]]
 
-    tfidf = TF_IDF(norm=None)
+    tfidf = TFIDFVectorizer(norm=None)
     tfidf.fit(train_corpus)
 
     # Ne doit pas lever d'exception
@@ -61,7 +61,7 @@ def test_tfidf_unknown_term_ignored():
 
 def test_tfidf_transform_not_fitted_raises_error():
     """transform() appelé avant fit() doit lever une erreur."""
-    tfidf = TF_IDF()
+    tfidf = TFIDFVectorizer()
     # vocabulary_ et idf_ sont des dicts vides → la matrice sera vide ou
     # les indices seront introuvables selon l'implémentation.
     # Dans tous les cas, le comportement doit être une erreur explicite.
@@ -74,7 +74,7 @@ def test_tfidf_transform_not_fitted_raises_error():
 def test_tfidf_idf_standard_formula():
     """Avec smooth_idf=False, un terme universel doit avoir un IDF de zéro."""
     corpus = [["a", "b"], ["a", "c"]]
-    tfidf = TF_IDF(smooth_idf=False, norm=None)
+    tfidf = TFIDFVectorizer(smooth_idf=False, norm=None)
     tfidf.fit(corpus)
 
     N = 2
@@ -93,7 +93,7 @@ def test_tfidf_multiple_documents():
         ["chien", "court"],
         ["chat", "court"],
     ]
-    tfidf = TF_IDF()
+    tfidf = TFIDFVectorizer()
     matrix = tfidf.fit_transform(corpus)
 
     # Autant de lignes que de documents
@@ -112,7 +112,7 @@ def test_tfidf_multiple_documents():
 def test_tfidf_l2_norm_unit_length():
     """Avec norm='l2', chaque ligne du résultat doit avoir une norme de 1.0."""
     corpus = [["a", "b", "c"], ["b", "c", "d"], ["a", "d"]]
-    tfidf = TF_IDF(norm="l2")
+    tfidf = TFIDFVectorizer(norm="l2")
     matrix = tfidf.fit_transform(corpus)
 
     for i, row in enumerate(matrix):
@@ -127,7 +127,7 @@ def test_tfidf_l2_norm_unit_length():
 def test_tfidf_vocabulary_is_sorted():
     """Le vocabulaire doit être trié alphabétiquement et les index contigus."""
     corpus = [["banane", "abricot", "cerise"]]
-    tfidf = TF_IDF()
+    tfidf = TFIDFVectorizer()
     tfidf.fit(corpus)
 
     sorted_terms = sorted(tfidf.vocabulary_.keys())
@@ -139,10 +139,10 @@ def test_tfidf_fit_transform_equals_fit_then_transform():
     """fit_transform() doit produire le même résultat que fit() puis transform()."""
     corpus = [["x", "y"], ["y", "z"]]
 
-    tfidf_1 = TF_IDF(smooth_idf=True, norm="l2")
+    tfidf_1 = TFIDFVectorizer(smooth_idf=True, norm="l2")
     matrix_1 = tfidf_1.fit_transform(corpus)
 
-    tfidf_2 = TF_IDF(smooth_idf=True, norm="l2")
+    tfidf_2 = TFIDFVectorizer(smooth_idf=True, norm="l2")
     tfidf_2.fit(corpus)
     matrix_2 = tfidf_2.transform(corpus)
 
@@ -152,7 +152,7 @@ def test_tfidf_fit_transform_equals_fit_then_transform():
 def test_tfidf_norm_none_does_not_normalize():
     """Avec norm=None, les vecteurs ne doivent pas être ramenés à la norme unité."""
     corpus = [["a", "a", "b"]]
-    tfidf = TF_IDF(norm=None)
+    tfidf = TFIDFVectorizer(norm=None)
     matrix = tfidf.fit_transform(corpus)
 
     row_norm = np.linalg.norm(matrix[0])
@@ -167,8 +167,8 @@ def test_tfidf_sublinear_tf_reduces_weight():
     # doc avec "a" répété 5 fois → tf_brut = 5/5 = 1.0 ; tf_sublinear = 1 + log(5)
     doc = ["a"] * 5
 
-    tfidf_raw = TF_IDF(sublinear_tf=False, norm=None)
-    tfidf_sub = TF_IDF(sublinear_tf=True,  norm=None)
+    tfidf_raw = TFIDFVectorizer(sublinear_tf=False, norm=None)
+    tfidf_sub = TFIDFVectorizer(sublinear_tf=True,  norm=None)
 
     tf_raw = tfidf_raw._compute_tf(doc)["a"]   # 1.0
     tf_sub = tfidf_sub._compute_tf(doc)["a"]   # 1 + log(5) ≈ 2.609
@@ -184,7 +184,7 @@ def test_tfidf_zero_row_not_nan_after_l2():
     train = [["a", "b"], ["a", "c"]]
     test  = [["z"]]          # "z" absent du vocabulaire → ligne nulle
 
-    tfidf = TF_IDF(norm="l2")
+    tfidf = TFIDFVectorizer(norm="l2")
     tfidf.fit(train)
     result = tfidf.transform(test)
 
@@ -196,7 +196,7 @@ def test_tfidf_zero_row_not_nan_after_l2():
 def test_tfidf_single_document_corpus():
     """Un corpus d'un seul document doit fonctionner sans erreur."""
     corpus = [["mot", "unique", "ici"]]
-    tfidf = TF_IDF()
+    tfidf = TFIDFVectorizer()
     matrix = tfidf.fit_transform(corpus)
 
     assert matrix.shape == (1, 3)
