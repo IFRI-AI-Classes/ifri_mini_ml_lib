@@ -45,9 +45,11 @@ project:
             
     - title: Unsupervised Learning
       children:
-        # - title: Clustering
-        #   children:
-        #     - file: notebooks/clustering/kmeans.ipynb
+        - title: Anomalies detection
+          children:
+            - file: notebooks/anomalies_detections/iqr.ipynb
+            - file: notebooks/anomalies_detections/z_score.ipynb
+            - file: notebooks/anomalies_detections/isolation.ipynb
 
     - title: Neural networks
       children:
